@@ -219,7 +219,7 @@ export default class ProjectsController {
 
           // if (resUpdate["error"]) return resUpdate["response"];
 
-          realEstatesController.changeStatus(ctx, realEstate.id, 2);
+          realEstatesController.changeStatus(realEstate.id, 2);
         });
         return ctx.response.status(200).json({
           message: `Proyecto ${

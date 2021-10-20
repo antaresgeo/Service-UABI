@@ -7,7 +7,10 @@ Route.group(() => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().getList(ctx);
+
+      if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
+
+      return new RealEstatesController().filter(ctx);
     });
 
     Route.get("/project", async (ctx) => {
@@ -40,11 +43,12 @@ Route.group(() => {
       return new RealEstatesController().update(ctx);
     });
 
-    Route.put("/alt-status", async (ctx) => {
+    // DELETE
+    Route.delete("/delete", async (ctx) => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().changeStatus(ctx);
+      return new RealEstatesController().delete(ctx);
     });
   }).prefix("/real-estates");
 }).prefix("v1");
