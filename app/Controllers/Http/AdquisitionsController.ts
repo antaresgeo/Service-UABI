@@ -38,13 +38,12 @@ export default class AdquisitionsController {
   // GET
   public async getAll(ctx: HttpContextContract) {
     try {
-      const data: any = await Adquisition.all();
+      const results: any = await Adquisition.all();
 
-      const lists = data;
 
       return ctx.response
         .status(200)
-        .json({ message: "All adquisitions", data: lists });
+        .json({ message: "All adquisitions", results });
     } catch (error) {
       console.error(error);
       return ctx.response
@@ -74,7 +73,7 @@ export default class AdquisitionsController {
 
       ctx.response.status(200).json({
         message: `All adquisitions by Real Estate ${real_estate_id}`,
-        data: adquisitions,
+        results: adquisitions,
       });
     } catch (error) {
       console.error(error);
@@ -165,7 +164,7 @@ export default class AdquisitionsController {
 // 				id
 // 			);
 
-// 			ctx.response.status(200).json({ message: 'Updated successfully!', data: query });
+// 			ctx.response.status(200).json({ message: 'Updated successfully!', results: data: query });
 // 		}
 // 	} catch (error) {
 // 		console.error(error);
@@ -203,7 +202,7 @@ export default class AdquisitionsController {
 // 			return;
 // 		}
 
-// 		ctx.response.status(200).json({ message: 'Real Estate', data: realEstate });
+// 		ctx.response.status(200).json({ message: 'Real Estate', results: data: realEstate });
 // 	} catch (error) {
 // 		console.error(error);
 // 		try {

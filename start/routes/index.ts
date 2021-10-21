@@ -18,9 +18,10 @@
 |
 */
 
-import "./routes/project";
-import "./routes/realEstate";
-import "./routes/adquisition";
+import "./project";
+import "./realEstate";
+import "./acquisition";
+import "./auth";
 
 import Route from "@ioc:Adonis/Core/Route";
 

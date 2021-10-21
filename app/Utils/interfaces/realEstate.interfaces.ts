@@ -14,8 +14,8 @@ export interface IRealEstateAttributes {
   name: string;
   description: string;
   patrimonial_value: number;
-  address: string;
-  cbml: string;
+  location?: string;
+  cbml?: string;
 
   total_area: number;
   total_percentage: number;

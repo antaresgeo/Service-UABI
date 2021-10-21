@@ -14,18 +14,18 @@ export default class ProjectsController {
    * index
    */
   public async getList(ctx: HttpContextContract) {
-    let list;
+    let results: Project[];
     try {
-      list = await Project.query().where("status", 1).orderBy("id", "desc");
+      results = await Project.query().where("status", 1).orderBy("id", "desc");
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
         .json({ message: "Request to Projects failed!" });
     }
-    const data = list === null ? [] : list;
+    // results = results === null ? [] : results;
 
-    return ctx.response.json({ message: "List of all Projects", data });
+    return ctx.response.json({ message: "List of all Projects", results });
   }
 
   /**
@@ -33,7 +33,7 @@ export default class ProjectsController {
    */
   public async getOne(ctx: HttpContextContract) {
     const { id } = ctx.request.qs();
-    let project;
+    let project: Project | null;
 
     try {
       project = await Project.find(id);
@@ -44,7 +44,7 @@ export default class ProjectsController {
 
     const data = project === null ? {} : project;
 
-    return ctx.response.json({ message: "Project", data });
+    return ctx.response.json({ message: "Project", results: data });
   }
 
   // POST
@@ -57,23 +57,26 @@ export default class ProjectsController {
     const auditTrail: IAuditTrail = newAuditTrail();
 
     try {
-      await Project.create({
+      const project = await Project.create({
         name: name.toUpperCase(),
         description,
         dependency,
         status: 1,
         audit_trail: auditTrail,
       });
+
+      return ctx.response
+        .status(200)
+        .json({
+          message: "Proyecto creado satisfactoriamente.",
+          results: project,
+        });
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
         .json({ message: "Hubo un error al crear el Proyecto." });
     }
-
-    return ctx.response
-      .status(200)
-      .json({ message: "Proyecto creado satisfactoriamente." });
   }
 
   // PUT
@@ -129,7 +132,7 @@ export default class ProjectsController {
             .save();
 
           return ctx.response.status(200).json({
-            message: `Proyecto ${project.name} guardado satisfactoriamente`,
+            message: `Proyecto ${project.name} actualizado satisfactoriamente`, results: project,
           });
         } catch (error) {
           console.error(error);
@@ -157,10 +160,10 @@ export default class ProjectsController {
 
       const tmpProject = await project.save();
 
-      return { success: true, data: tmpProject };
+      return { success: true, results:  tmpProject };
     } catch (error) {
       console.error(`Error changing status:\n${error}`);
-      return { success: false, data: error };
+      return { success: false, results:  error };
     }
   }
 
@@ -225,7 +228,6 @@ export default class ProjectsController {
           message: `Proyecto ${
             res["data"].status === 1 ? "activado" : "inactivado"
           }.\n\n${data.length} bienes inmuebles desasociados.`,
-          id: IDProject,
         });
       }
     } else {

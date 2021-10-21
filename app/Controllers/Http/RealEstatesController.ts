@@ -9,67 +9,71 @@ import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 
 export default class RealEstatesController {
+  private sum (num1: number, num2: number): number {
+    return num1 + num2;
+  }
+  
   // GET
   /**
    * index
    */
   public async getList(ctx: HttpContextContract) {
-    const { page, pageSize } = ctx.request.qs();
+    const { q, page, pageSize } = ctx.request.qs();
+    let results, tmpPage: number, tmpPageSize: number, realEstates;
 
-    let list;
+    if (!pageSize) tmpPageSize = 10;
+    else tmpPageSize = pageSize;
+
+    if (!page) tmpPage = 1;
+    else tmpPage = page;
+
+    let count: number = tmpPage * tmpPageSize - tmpPageSize;
+    console.log(count);
+
     try {
-      list = await RealEstate.query()
-        .where("status", 1)
-        .orderBy("id", "desc")
-        .limit(pageSize);
+      if (!q) {
+        results = await RealEstate.query()
+          .where("status", 1)
+          .orderBy("id", "desc")
+          .limit(tmpPageSize)
+          .offset(count);
+      } else {
+        results = await RealEstate.query()
+          .where("status", 1)
+          .where("registry_number", q)
+          .orderBy("id", "desc")
+          .limit(tmpPageSize)
+          .offset(count);
+      }
+
+      results = results === null ? [] : results;
+
+      try {
+        realEstates = await RealEstate.query().where("status", 1);
+      } catch (error) {
+        console.error(error);
+        return ctx.response.status(500).json({
+          message: "Error al traer la lista de todos los Bienes Inmuebles.",
+        });
+      }
+
+      return ctx.response.json({
+        message: "List of all Real Estates",
+        results,
+        page: tmpPage,
+        count: results.length,
+        next_page: realEstates.length - tmpPage * tmpPageSize !== 10 ? this.sum(parseInt(tmpPage + ""), 1) : null,
+        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        total_results: realEstates.length,
+      });
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
-        .json({ message: "Request to Real Estates failed!" });
-    }
-    const data = list === null ? [] : list;
-
-    return ctx.response.json({ message: "List of all Real Estates", data });
-  }
-
-  public async filter(ctx: HttpContextContract) {
-    const { q, page, pageSize } = ctx.request.qs();
-
-    if (q && page && pageSize) {
-      let list;
-      try {
-        list = await RealEstate.query()
-          .where("status", 1)
-          .where("registry_number", q)
-          .orderBy("id", "desc")
-          .limit(pageSize);
-      } catch (error) {
-        console.error(error);
-        return ctx.response
-          .status(500)
-          .json({ message: "Request to Real Estates failed!" });
-      }
-      const data: IRealEstateAttributes[] = list === null ? [] : list;
-
-      // const next_page =
-
-      return ctx.response.json({
-        message: "List of all Real Estates",
-        data,
-        page,
-        count: pageSize,
-        next_page: data.length / pageSize < 0 ? page + 1 : null,
-        previous_page: page - 1 < 0 ? page - 1 : null,
-        total_results: data.length,
-      });
-    } else {
-      return ctx.response.json({
-        message: "Complete the query params.",
-        error: true,
-      });
+        .json({ message: "Error al traer la lista de los Bienes Inmuebles." });
     }
   }
+
 
   /**
    * Get real estates by Project
@@ -90,7 +94,7 @@ export default class RealEstatesController {
     }
     const data = list === null ? [] : list;
 
-    return ctx.response.json({ message: "List of all Real Estates", data });
+    return ctx.response.json({ message: "List of all Real Estates", results: data });
   }
 
   /**
@@ -109,7 +113,7 @@ export default class RealEstatesController {
 
     const data = realEstate === null ? {} : realEstate;
 
-    return ctx.response.json({ message: "Real Estate", data });
+    return ctx.response.json({ message: "Real Estate", results: data });
   }
 
   // POST
@@ -117,31 +121,29 @@ export default class RealEstatesController {
    * create
    */
   public async create(ctx: HttpContextContract) {
-    // const data: any = ctx.request.body();
     const payload: IRealEstateAttributes = await ctx.request.validate(
       CreateRealEstate
     );
 
-    console.log(payload);
-
     const auditTrail: IAuditTrail = newAuditTrail();
 
     try {
-      await RealEstate.create({
+      const realEstate = await RealEstate.create({
         ...payload,
         status: 1,
         audit_trail: auditTrail,
       });
+      return ctx.response.status(200).json({
+        message: "Bien Inmueble creado correctamente.",
+        results: realEstate,
+      });
     } catch (error) {
       console.error(error);
-      return ctx.response
-        .status(500)
-        .json({ message: "Project create failed!" });
+      return ctx.response.status(500).json({
+        message: "A ocurrido un error inesperado al crear el Bien Inmueble.",
+        error,
+      });
     }
-
-    return ctx.response
-      .status(200)
-      .json({ message: "Project created successfully!" });
   }
 
   // PUT
@@ -163,26 +165,26 @@ export default class RealEstatesController {
 
     try {
       if (typeof _id === "string") {
-        const project = await RealEstate.findOrFail(_id);
+        const realEstate = await RealEstate.findOrFail(_id);
 
         let updatedValues: IUpdatedValues = {
           lastest: {
-            name: project.name,
-            description: project.description,
-            dependency: project.dependency,
-            status: project.status,
+            name: realEstate.name,
+            description: realEstate.description,
+            dependency: realEstate.dependency,
+            status: realEstate.status,
           },
           new: newData,
         };
 
-        let tmpData: IRealEstateAttributes = project;
+        let tmpData: IRealEstateAttributes = realEstate;
         if (tmpData.audit_trail?.updated_values)
           if (!tmpData.audit_trail.updated_values.oldest)
             updatedValues.oldest = {
-              name: project.name,
-              description: project.description,
-              dependency: project.dependency,
-              status: project.status,
+              name: realEstate.name,
+              description: realEstate.description,
+              dependency: realEstate.dependency,
+              status: realEstate.status,
             };
           else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
 
@@ -196,7 +198,7 @@ export default class RealEstatesController {
 
         // Updating data
         try {
-          await project
+          await realEstate
             .merge({
               ...newData,
               audit_trail: auditTrail,
@@ -205,7 +207,7 @@ export default class RealEstatesController {
 
           return ctx.response
             .status(200)
-            .json({ message: "Updated successfully!" });
+            .json({ message: "Updated successfully!", results:  realEstate });
         } catch (error) {
           console.error(error);
           if (alt) {
@@ -241,10 +243,10 @@ export default class RealEstatesController {
 
       const tmpRealEstate = await realEstate.save();
 
-      return { success: true, data: tmpRealEstate };
+      return { success: true, results: tmpRealEstate };
     } catch (error) {
       console.error(`Error changing status:\n${error}`);
-      return { success: false, data: error };
+      return { success: false, results: error };
     }
   }
 
@@ -286,7 +288,7 @@ export default class RealEstatesController {
         message: `Bien Inmueble ${
           res["data"].status === 1 ? "activado" : "inactivado"
         }.`,
-        id: IDProject,
+        results: IDProject
       });
     } else {
       return ctx.response.status(500).json({
