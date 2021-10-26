@@ -18,6 +18,15 @@ export interface ISupportsDocuments {
   path: string;
 }
 
+export interface IDataToken {
+  id: number;
+}
+
+export interface IDataUser {
+  id: number;
+  name: string;
+}
+
 export * from "./project.interfaces";
 export * from "./realEstate.interfaces";
 export * from "./adquisitions.interfaces";

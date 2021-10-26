@@ -1,58 +1,7 @@
 
-DROP table if EXISTS datails_user cascade;
-DROP table if EXISTS users cascade;
-DROP table if EXISTS roles;
 
-CREATE table IF NOT EXISTS roles (
-	id SERIAL PRIMARY KEY,
-	name varchar(200) NOT NULL,
-	permisions json NOT NULL,
-	status int not null,
-	audit_trail json not null
-);
 
-CREATE table IF NOT EXISTS users (
-	id SERIAL PRIMARY KEY,
-	id_number varchar(200) not null,
-	password varchar(200) NOT NULL,
-	rol_id int not null,
-	status int not null,
-	audit_trail json not null,
-	CONSTRAINT fk_rol
-		FOREIGN KEY(rol_id) 
-	  REFERENCES roles(id),
-	CONSTRAINT un_id_number
-		UNIQUE KEY(un_id_number)
-	  
-);
-
-CREATE table IF NOT EXISTS datails_user (
-	id SERIAL PRIMARY KEY,
-
-	society_type varchar(100) not null,
-	entity_type varchar(100) not null,
-	id_type varchar(100) not null,
-	id_number varchar(100) not null,
-	names json not null,
-	surnames json not null,
-	email varchar(100) not null,
-	location varchar(100) not null,
-	cellphone_number double precision not null,
-	phone_number double precision not null,
-	politics boolean not null,
-	notification boolean not null,
-	gender varchar(10) not null,
-
-	user_id int not null,
-
-	status int not null,
-	audit_trail json not null,
-	CONSTRAINT fk_user
-      FOREIGN KEY(user_id) 
-	  REFERENCES users(id)
-);
-
--- DROP table if EXISTS estate_areas;
+DROP table if EXISTS insurabilities cascade;
 DROP table if EXISTS acquisitions cascade;
 DROP table if EXISTS real_estates cascade;
 DROP table if EXISTS projects;

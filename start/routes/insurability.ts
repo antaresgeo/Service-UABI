@@ -11,6 +11,9 @@ Route.group(() => {
       if (ctx.request.qs().real_estate_id)
         return new InsurabilitiesController().getByRealEstate(ctx);
 
+      if (ctx.request.qs().id)
+        return new InsurabilitiesController().getOne(ctx);
+
       return new InsurabilitiesController().getAll(ctx);
     });
 

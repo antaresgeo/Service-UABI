@@ -1,5 +1,6 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
+import AuditTrail from "App/Utils/classes/AuditTrail";
 import { newAuditTrail } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 
@@ -40,6 +41,10 @@ export default class InsurabilitiesController {
   public async getAll(ctx: HttpContextContract) {
     try {
       const results: any = await Insurability.query().where("status", 1);
+      const auditTrail = new AuditTrail(
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+      );
+      console.log(auditTrail.getCreatedOn());
 
       return ctx.response
         .status(200)
@@ -81,6 +86,25 @@ export default class InsurabilitiesController {
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }
+  }
+
+  /**
+   * getOne
+   */
+  public async getOne(ctx: HttpContextContract) {
+    const { id } = ctx.request.qs();
+    let insurability: Insurability | null;
+
+    try {
+      insurability = await Insurability.find(id);
+    } catch (error) {
+      console.error(error);
+      return ctx.response.status(500).json({ message: "insurability error" });
+    }
+
+    const data = insurability === null ? {} : insurability;
+
+    return ctx.response.json({ message: "insurability", results: data });
   }
 
   // PUT
