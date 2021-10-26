@@ -19,7 +19,10 @@ export default class ProjectsController {
    */
   public async getList(ctx: HttpContextContract) {
     const { q, page, pageSize } = ctx.request.qs();
-    let results: Project[], tmpPage: number, tmpPageSize: number, projects;
+    let results: Project[] | null = null,
+      tmpPage: number,
+      tmpPageSize: number,
+      projects;
 
     if (!pageSize) tmpPageSize = 10;
     else tmpPageSize = pageSize;
@@ -36,7 +39,7 @@ export default class ProjectsController {
           .orderBy("id", "desc")
           .limit(tmpPageSize)
           .offset(count);
-      } else {
+      } else if (typeof q === "string") {
         results = await Project.query()
           .where("status", 1)
           .where("registry_number", q)
@@ -232,9 +235,10 @@ export default class ProjectsController {
         .json({ message: "Este proyecto no puede ser activado." });
 
     const res = await this.changeStatus(id);
+    console.log(res);
 
     if (res["success"] === true) {
-      const IDProject = res["data"]["$attributes"]["id"];
+      const IDProject = res["results"]["$attributes"]["id"];
 
       let list;
       try {
@@ -252,7 +256,7 @@ export default class ProjectsController {
       if (data === []) {
         return ctx.response.status(200).json({
           message: `Proyecto ${
-            res["data"].status === 1 ? "activado" : "inactivado"
+            res["results"].status === 1 ? "activado" : "inactivado"
           }.`,
           id: IDProject,
         });
@@ -273,14 +277,14 @@ export default class ProjectsController {
         });
         return ctx.response.status(200).json({
           message: `Proyecto ${
-            res["data"].status === 1 ? "activado" : "inactivado"
+            res["results"].status === 1 ? "activado" : "inactivado"
           }.\n\n${data.length} bienes inmuebles desasociados.`,
         });
       }
     } else {
       return ctx.response.status(500).json({
         message: "Error al inactivar el proyecto.",
-        error: res["data"],
+        error: res["results"],
       });
     }
   }
