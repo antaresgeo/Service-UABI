@@ -131,6 +131,31 @@ CREATE table if not EXISTS acquisitions (
 	  REFERENCES real_estates(id)
 );
 
+-- INSURABILITIES
+
+CREATE table if not EXISTS insurabilities (
+	id SERIAL PRIMARY key,
+	
+	registry_number int NOT NULL,
+	
+	vigency_start varchar(50) NOT NULL,
+	vigency_end varchar(50) NOT NULL,
+	
+	insurance_broker varchar(100) NOT NULL,
+	insurance_company varchar(100) NOT NULL,
+	
+	insurance_value double PRECISION NOT NULL,
+	insurance_document_id varchar(200) NOT NULL,
+
+	real_estate_id int,
+		
+	status int not null,
+	audit_trail json not null,
+	CONSTRAINT fk_real_estate_ins
+      FOREIGN KEY(real_estate_id) 
+	  REFERENCES real_estates(id)
+);
+
 -- INSERTS
 insert 
 	into projects 

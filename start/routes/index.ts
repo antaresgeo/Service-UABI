@@ -21,6 +21,8 @@
 import "./project";
 import "./realEstate";
 import "./acquisition";
+import "./insurability";
+
 import "./auth";
 
 import Route from "@ioc:Adonis/Core/Route";

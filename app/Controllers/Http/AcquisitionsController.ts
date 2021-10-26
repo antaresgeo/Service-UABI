@@ -1,11 +1,11 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import Adquisition from "App/Models/Adquisition";
+import Acquisition from "App/Models/Acquisition";
 import { newAuditTrail } from "App/Utils/functions";
 import { IAuditTrail } from "App/Utils/interfaces";
 
 export default class AdquisitionsController {
   /**
-   * create adquisition
+   * create Acquisition
    */
   public async create(ctx: HttpContextContract) {
     let dataAdquisition = ctx.request.body();
@@ -17,7 +17,7 @@ export default class AdquisitionsController {
       dataAdquisition.status = 1;
 
       // Service consumption
-      const newAdquisition = await Adquisition.create(dataAdquisition);
+      const newAdquisition = await Acquisition.create(dataAdquisition);
       if (typeof newAdquisition === "number")
         return ctx.response
           .status(500)
@@ -38,8 +38,7 @@ export default class AdquisitionsController {
   // GET
   public async getAll(ctx: HttpContextContract) {
     try {
-      const results: any = await Adquisition.all();
-
+      const results: any = await Acquisition.query().where("status", 1);
 
       return ctx.response
         .status(200)
@@ -61,10 +60,9 @@ export default class AdquisitionsController {
 
       let adquisitions;
       if (typeof real_estate_id === "string")
-        adquisitions = await Adquisition.query().where(
-          "real_estate_id",
-          real_estate_id
-        );
+        adquisitions = await Acquisition.query()
+          .where("real_estate_id", real_estate_id)
+          .where("status", 1);
 
       if (!adquisitions) {
         ctx.response.status(404).json({ error: "No Real Esate Found" });
@@ -91,7 +89,7 @@ export default class AdquisitionsController {
     const { id } = ctx.request.qs();
 
     try {
-      const project = await Adquisition.findOrFail(id);
+      const project = await Acquisition.findOrFail(id);
 
       project.status = project.status === 1 ? 0 : 1;
 

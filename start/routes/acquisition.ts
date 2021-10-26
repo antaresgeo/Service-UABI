@@ -20,7 +20,7 @@ Route.group(() => {
 
       Route.get("/", async (ctx) => {
         const { default: AdquisitionsController } = await import(
-          "App/Controllers/Http/AdquisitionsController"
+          "App/Controllers/Http/AcquisitionsController"
         );
 
         if (ctx.request.qs().real_estate_id)
@@ -32,7 +32,7 @@ Route.group(() => {
       // POST
       Route.post("/", async (ctx) => {
         const { default: AdquisitionsController } = await import(
-          "App/Controllers/Http/AdquisitionsController"
+          "App/Controllers/Http/AcquisitionsController"
         );
         return new AdquisitionsController().create(ctx);
       });
