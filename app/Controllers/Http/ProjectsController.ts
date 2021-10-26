@@ -31,13 +31,13 @@ export default class ProjectsController {
     console.log(count);
     try {
       if (!q) {
-        results = await RealEstate.query()
+        results = await Project.query()
           .where("status", 1)
           .orderBy("id", "desc")
           .limit(tmpPageSize)
           .offset(count);
       } else {
-        results = await RealEstate.query()
+        results = await Project.query()
           .where("status", 1)
           .where("registry_number", q)
           .orderBy("id", "desc")
@@ -48,7 +48,7 @@ export default class ProjectsController {
       results = results === null ? [] : results;
 
       try {
-        projects = await RealEstate.query().where("status", 1);
+        projects = await Project.query().where("status", 1);
       } catch (error) {
         console.error(error);
         return ctx.response.status(500).json({
