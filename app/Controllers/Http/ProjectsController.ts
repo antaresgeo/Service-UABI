@@ -9,23 +9,71 @@ import Project from "./../../Models/Project";
 import { newAuditTrail } from "./../../Utils/functions";
 
 export default class ProjectsController {
+  private sum(num1: number, num2: number): number {
+    return num1 + num2;
+  }
+
   // GET
   /**
    * index
    */
   public async getList(ctx: HttpContextContract) {
-    let results: Project[];
+    const { q, page, pageSize } = ctx.request.qs();
+    let results: Project[], tmpPage: number, tmpPageSize: number, projects;
+
+    if (!pageSize) tmpPageSize = 10;
+    else tmpPageSize = pageSize;
+
+    if (!page) tmpPage = 1;
+    else tmpPage = page;
+
+    let count: number = tmpPage * tmpPageSize - tmpPageSize;
+    console.log(count);
     try {
-      results = await Project.query().where("status", 1).orderBy("id", "desc");
+      if (!q) {
+        results = await RealEstate.query()
+          .where("status", 1)
+          .orderBy("id", "desc")
+          .limit(tmpPageSize)
+          .offset(count);
+      } else {
+        results = await RealEstate.query()
+          .where("status", 1)
+          .where("registry_number", q)
+          .orderBy("id", "desc")
+          .limit(tmpPageSize)
+          .offset(count);
+      }
+
+      results = results === null ? [] : results;
+
+      try {
+        projects = await RealEstate.query().where("status", 1);
+      } catch (error) {
+        console.error(error);
+        return ctx.response.status(500).json({
+          message: "Error al traer la lista de todos los Bienes Inmuebles.",
+        });
+      }
+
+      return ctx.response.json({
+        message: "List of all Real Estates",
+        results,
+        page: tmpPage,
+        count: results.length,
+        next_page:
+          projects.length - tmpPage * tmpPageSize !== 10
+            ? this.sum(parseInt(tmpPage + ""), 1)
+            : null,
+        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        total_results: projects.length,
+      });
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
         .json({ message: "Request to Projects failed!" });
     }
-    // results = results === null ? [] : results;
-
-    return ctx.response.json({ message: "List of all Projects", results });
   }
 
   /**
@@ -65,12 +113,10 @@ export default class ProjectsController {
         audit_trail: auditTrail,
       });
 
-      return ctx.response
-        .status(200)
-        .json({
-          message: "Proyecto creado satisfactoriamente.",
-          results: project,
-        });
+      return ctx.response.status(200).json({
+        message: "Proyecto creado satisfactoriamente.",
+        results: project,
+      });
     } catch (error) {
       console.error(error);
       return ctx.response
@@ -132,7 +178,8 @@ export default class ProjectsController {
             .save();
 
           return ctx.response.status(200).json({
-            message: `Proyecto ${project.name} actualizado satisfactoriamente`, results: project,
+            message: `Proyecto ${project.name} actualizado satisfactoriamente`,
+            results: project,
           });
         } catch (error) {
           console.error(error);
@@ -160,10 +207,10 @@ export default class ProjectsController {
 
       const tmpProject = await project.save();
 
-      return { success: true, results:  tmpProject };
+      return { success: true, results: tmpProject };
     } catch (error) {
       console.error(`Error changing status:\n${error}`);
-      return { success: false, results:  error };
+      return { success: false, results: error };
     }
   }
 
