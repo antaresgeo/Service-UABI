@@ -6,9 +6,9 @@ export interface IUpdatedValues {
 
 export interface IAuditTrail {
   created_by?: string;
-  created_on?: string;
+  created_on?: number;
   updated_by: string | null;
-  updated_on: string | null;
+  updated_on: number | null;
   updated_values: IUpdatedValues | null;
 }
 

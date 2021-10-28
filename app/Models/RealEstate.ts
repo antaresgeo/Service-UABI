@@ -46,9 +46,6 @@ export default class RealEstate extends BaseModel {
   public supports_documents: ISupportsDocuments | undefined;
 
   @column()
-  public project_id: number;
-
-  @column()
   public status: number;
 
   @column()

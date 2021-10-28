@@ -1,8 +1,6 @@
-
-
-
 DROP table if EXISTS insurabilities cascade;
 DROP table if EXISTS acquisitions cascade;
+DROP table if EXISTS real_estates_projects cascade;
 DROP table if EXISTS real_estates cascade;
 DROP table if EXISTS projects;
 
@@ -19,7 +17,7 @@ CREATE table if not EXISTS projects (
 
 CREATE table if not EXISTS real_estates (
 	id SERIAL PRIMARY KEY,
-	sap_id varchar(100),
+	sap_id varchar(100) UNIQUE,
 	
 	dependency varchar(200) NOT NULL,
 	destination_type varchar(200) NOT NULL,
@@ -42,15 +40,19 @@ CREATE table if not EXISTS real_estates (
 	
 	supports_documents json,
 	
-	project_id int not null,
-	
 	status int not null,
-	audit_trail json not null,
-	CONSTRAINT fk_project
-      FOREIGN KEY(project_id) 
-	  REFERENCES projects(id)
+	audit_trail json not null
 );
 
+create table if not EXISTS real_estates_projects (
+	project_id int,
+	real_estate_id int,
+	PRIMARY KEY (project_id, real_estate_id),
+	FOREIGN KEY (project_id)
+		REFERENCES projects(id),
+	FOREIGN KEY (real_estate_id)
+		REFERENCES real_estates(id)
+);
 
 CREATE table if not EXISTS acquisitions (
 	id SERIAL PRIMARY key,

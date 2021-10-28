@@ -40,6 +40,7 @@ export default class ProjectsController {
           .limit(tmpPageSize)
           .offset(count);
       } else if (typeof q === "string") {
+        // Dependencia y Código
         results = await Project.query()
           .where("status", 1)
           .where("registry_number", q)

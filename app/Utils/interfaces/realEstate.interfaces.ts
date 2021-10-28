@@ -24,8 +24,7 @@ export interface IRealEstateAttributes {
   materials?: string;
 
   supports_documents?: ISupportsDocuments;
-
-  project_id: number;
+  projects_id?: number[];
 
   status?: number;
   audit_trail?: IAuditTrail;

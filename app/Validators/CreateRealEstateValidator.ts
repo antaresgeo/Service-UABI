@@ -51,7 +51,7 @@ export default class CreateRealEstateValidator {
       path: schema.string(),
     }),
 
-    project_id: schema.number(),
+    projects_id: schema.array.optional().members(schema.number()),
   });
 
   /**

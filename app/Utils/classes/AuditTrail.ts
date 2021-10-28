@@ -15,10 +15,9 @@ export default class AuditTrail {
   constructor(token?: string) {
     this.token = token ? token : null;
 
+    this.dataUser = { id: 1, name: "Administrador" };
     if (this.token !== null) {
       //   const decodedJWT = this.decodeJWT();
-      this.dataUser = { id: 1, name: "Administrador" };
-
       //   this.createdBy = decodedJWT.auditTrail.createdBy;
     }
     this.createdBy = this.dataUser.name;
