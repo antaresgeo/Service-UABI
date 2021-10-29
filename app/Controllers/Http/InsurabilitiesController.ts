@@ -144,7 +144,7 @@ export default class InsurabilitiesController {
           created_by: tmpData.audit_trail?.created_by,
           created_on: tmpData.audit_trail?.created_on,
           updated_by: "Administrator",
-          updated_on: String(new Date().getTime()),
+          updated_on: new Date().getTime(),
           updated_values: updatedValues,
         };
 
