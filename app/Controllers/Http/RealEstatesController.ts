@@ -34,6 +34,7 @@ export default class RealEstatesController {
 
     if (!allStates) tmpAllStates = false;
     else tmpAllStates = allStates;
+    console.log(tmpAllStates);
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
@@ -426,6 +427,7 @@ export default class RealEstatesController {
           res["data"].status === 1 ? "activado" : "inactivado"
         }.`,
         results: IDProject,
+        list,
       });
     } else {
       return ctx.response.status(500).json({

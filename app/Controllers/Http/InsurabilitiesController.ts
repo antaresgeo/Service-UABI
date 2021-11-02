@@ -179,18 +179,18 @@ export default class InsurabilitiesController {
   /**
    * changeStatus
    */
-  private async changeStatus(id: string | number) {
-    try {
-      const project = await Insurability.findOrFail(id);
+  // private async changeStatus(id: string | number) {
+  //   try {
+  //     const project = await Insurability.findOrFail(id);
 
-      project.status = project.status === 1 ? 0 : 1;
+  //     project.status = project.status === 1 ? 0 : 1;
 
-      const tmpProject = await project.save();
+  //     const tmpProject = await project.save();
 
-      return { success: true, results: tmpProject };
-    } catch (error) {
-      console.error(`Error changing status:\n${error}`);
-      return { success: false, results: error };
-    }
-  }
+  //     return { success: true, results: tmpProject };
+  //   } catch (error) {
+  //     console.error(`Error changing status:\n${error}`);
+  //     return { success: false, results: error };
+  //   }
+  // }
 }
