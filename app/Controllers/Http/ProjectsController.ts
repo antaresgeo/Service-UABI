@@ -1,12 +1,12 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import RealEstate from "App/Models/RealEstate";
+import AuditTrail from "App/Utils/classes/AuditTrail";
 import {
   IAuditTrail,
   IProjectAttributes,
   IUpdatedValues,
 } from "App/Utils/interfaces";
 import Project from "./../../Models/Project";
-import { newAuditTrail } from "./../../Utils/functions";
 
 export default class ProjectsController {
   private sum(num1: number, num2: number): number {
@@ -18,8 +18,9 @@ export default class ProjectsController {
    * index
    */
   public async getList(ctx: HttpContextContract) {
-    const { q, page, pageSize } = ctx.request.qs();
+    const { filters, page, pageSize } = ctx.request.qs();
     let results: Project[] | null = null,
+      data: any[] = [],
       tmpPage: number,
       tmpPageSize: number,
       projects;
@@ -28,28 +29,50 @@ export default class ProjectsController {
     else tmpPageSize = pageSize;
 
     if (!page) tmpPage = 1;
-    else tmpPage = page;
+    else tmpPage = parseInt(page);
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
-    console.log(count);
+
     try {
-      if (!q) {
+      if (filters) {
+        if (typeof filters.q === "string")
+          results = await Project.query()
+            .from("projects as p")
+            .innerJoin("status as s", "p.status", "s.id")
+            .select("*")
+            .select("p.name as project_name")
+            .select("p.id as project_id")
+            .select("s.name as status_name")
+            .where("status", 1)
+            .whereRaw(`'name' LIKE '%${filters.q}%'`)
+            .orderBy("p.id", "asc")
+            .limit(tmpPageSize)
+            .offset(count);
+      } else {
         results = await Project.query()
+          .from("projects as p")
+          .innerJoin("status as s", "p.status", "s.id")
+          .select("*")
+          .select("p.name as project_name")
+          .select("p.id as project_id")
+          .select("s.name as status_name")
           .where("status", 1)
-          .orderBy("id", "desc")
-          .limit(tmpPageSize)
-          .offset(count);
-      } else if (typeof q === "string") {
-        // Dependencia y Código
-        results = await Project.query()
-          .where("status", 1)
-          .where("registry_number", q)
-          .orderBy("id", "desc")
+          .orderBy("p.id", "asc")
           .limit(tmpPageSize)
           .offset(count);
       }
 
       results = results === null ? [] : results;
+      console.log(results);
+
+      results.map((realEstate) => {
+        data.push({
+          ...realEstate["$original"],
+          id: realEstate["$extras"]["project_id"],
+          name: realEstate["$extras"]["project_name"],
+          status: realEstate["$extras"]["status_name"],
+        });
+      });
 
       try {
         projects = await Project.query().where("status", 1);
@@ -60,16 +83,25 @@ export default class ProjectsController {
         });
       }
 
+      count = results.length;
+      console.log(results["$extras"]);
+
+      let next_page: number | null =
+        tmpPage * tmpPageSize < projects.length
+          ? this.sum(parseInt(tmpPage + ""), 1)
+          : null;
+      console.log(tmpPage);
+      console.log(tmpPage - 1);
+
+      let previous_page: number | null = tmpPage - 1 > 0 ? tmpPage - 1 : null;
+
       return ctx.response.json({
         message: "List of all Real Estates",
-        results,
+        results: data,
         page: tmpPage,
         count: results.length,
-        next_page:
-          projects.length - tmpPage * tmpPageSize !== 10
-            ? this.sum(parseInt(tmpPage + ""), 1)
-            : null,
-        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        next_page,
+        previous_page,
         total_results: projects.length,
       });
     } catch (error) {
@@ -104,17 +136,32 @@ export default class ProjectsController {
    * create
    */
   public async create(ctx: HttpContextContract) {
-    const { name, description, dependency } = ctx.request.body();
+    const {
+      name,
+      description,
+      dependency,
+      subdependency,
+      management_center,
+      cost_center,
+    } = ctx.request.body();
 
-    const auditTrail: IAuditTrail = newAuditTrail();
+    const auditTrail: AuditTrail = new AuditTrail();
+
+    const dataToCreate: IProjectAttributes = {
+      name: name.toUpperCase(),
+      description,
+      dependency: dependency.toUpperCase(),
+      subdependency: subdependency.toUpperCase(),
+      management_center,
+      cost_center,
+
+      status: 1,
+      audit_trail: auditTrail.getAsJson(),
+    };
 
     try {
       const project = await Project.create({
-        name: name.toUpperCase(),
-        description,
-        dependency,
-        status: 1,
-        audit_trail: auditTrail,
+        ...dataToCreate,
       });
 
       return ctx.response.status(200).json({
@@ -151,7 +198,7 @@ export default class ProjectsController {
           new: newData,
         };
 
-        let tmpData: IProjectAttributes = project;
+        let tmpData: Project = project;
         if (tmpData.audit_trail?.updated_values)
           if (!tmpData.audit_trail.updated_values.oldest)
             updatedValues.oldest = {
@@ -166,7 +213,7 @@ export default class ProjectsController {
           created_by: tmpData.audit_trail?.created_by,
           created_on: tmpData.audit_trail?.created_on,
           updated_by: "UABI",
-          updated_on: String(new Date().getTime()),
+          updated_on: new Date().getTime(),
           updated_values: updatedValues,
         };
 

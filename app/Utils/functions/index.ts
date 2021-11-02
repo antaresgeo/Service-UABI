@@ -7,7 +7,7 @@ export const newAuditTrail = (token: string = ""): IAuditTrail => {
   if (token === "") {
     let auditTrail: IAuditTrail = {
       created_by: "Administrador",
-      created_on: String(new Date().getTime()),
+      created_on: new Date().getTime(),
       updated_by: null,
       updated_on: null,
       updated_values: null,
@@ -16,7 +16,7 @@ export const newAuditTrail = (token: string = ""): IAuditTrail => {
   }
   return {
     created_by: "Administrador",
-    created_on: String(new Date().getTime()),
+    created_on: new Date().getTime(),
     updated_by: null,
     updated_on: null,
     updated_values: null,

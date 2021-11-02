@@ -1,47 +1,66 @@
+DROP table if EXISTS insurance_brokers cascade;
 DROP table if EXISTS insurabilities cascade;
 DROP table if EXISTS acquisitions cascade;
 DROP table if EXISTS real_estates_projects cascade;
 DROP table if EXISTS real_estates cascade;
 DROP table if EXISTS projects;
+DROP table if EXISTS status;
+
+-- GENERAL TABLES
+CREATE TABLE IF NOT EXISTS status (
+	id INT PRIMARY KEY,
+	name VARCHAR(25) UNIQUE
+);
+
+-- CREATE TABLE IF NOT EXISTS audit_trail (
+-- 	id SERIAL PRIMARY KEY,
+
+-- 	name VARCHAR(25) UNIQUE
+-- );
 
 CREATE table if not EXISTS projects (
 	id SERIAL PRIMARY KEY,
+	
 	name varchar(200) NOT NULL,
 	description varchar(1000) NOT NULL,
+
 	dependency varchar(200) NOT NULL,
-	status int not null,
-	audit_trail json not null
+	subdependency varchar(200) NOT NULL,
+	management_center int NOT NULL,
+	cost_center int NOT NULL,
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_project_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
 );
-
-
 
 CREATE table if not EXISTS real_estates (
 	id SERIAL PRIMARY KEY,
 	sap_id varchar(100) UNIQUE,
 	
-	dependency varchar(200) NOT NULL,
-	destination_type varchar(200) NOT NULL,
+	tipology varchar (50) NOT NULL,
 	accounting_account varchar(200) NOT NULL,
-	cost_center varchar(200) NOT NULL,
 	
+	destination_type varchar(200) NOT NULL,
 	registry_number varchar(200) NOT NULL,
-	registry_number_document_id varchar(200),
 	name varchar(200) NOT NULL,
 	description varchar(1000) NOT NULL,
-	patrimonial_value double precision not null,
-	location varchar(100) NOT NULL,
-	cbml varchar(45) NOT NULL,
-	
+	patrimonial_value double precision NOT NULL,
+	reconstruction_value double precision NOT NULL,
 	total_area double PRECISION NOT NULL,
 	total_percentage INT NOT NULL,
-	zone varchar(10) not null,
-	tipology varchar (50) not null,
-	materials varchar (1000),
+	materials text,
 	
-	supports_documents json,
+	zone varchar(10) NOT NULL,
+	address json NOT NULL,
 	
-	status int not null,
-	audit_trail json not null
+	supports_documents text,
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL
 );
 
 create table if not EXISTS real_estates_projects (
@@ -64,26 +83,25 @@ CREATE table if not EXISTS acquisitions (
 	act_number varchar(100) NOT NULL,
 	act_value double PRECISION NOT NULL,
 
-	plot_area double precision not null,
+	plot_area double precision NOT NULL,
 	construction_area double precision,
 	acquired_percentage int NOT NULL,
 	seller varchar(50) NOT NULL,
 	
-	entity_type varchar (100) not null,
-	entity_number varchar(100) not null,
+	entity_type varchar (100) NOT NULL,
+	entity_number varchar(100) NOT NULL,
 	address varchar(100),
 	
-	real_estate_id int not null,
+	real_estate_id int NOT NULL,
 		
-	status int not null,
-	audit_trail json not null,
+	status int NOT NULL,
+	audit_trail json NOT NULL,
 	CONSTRAINT fk_real_estate
       FOREIGN KEY(real_estate_id) 
 	  REFERENCES real_estates(id)
 );
 
 -- INSURABILITIES
-
 CREATE table if not EXISTS insurabilities (
 	id SERIAL PRIMARY key,
 	
@@ -100,21 +118,52 @@ CREATE table if not EXISTS insurabilities (
 
 	real_estate_id int,
 		
-	status int not null,
-	audit_trail json not null,
+	status int NOT NULL,
+	audit_trail json NOT NULL,
 	CONSTRAINT fk_real_estate_ins
       FOREIGN KEY(real_estate_id) 
 	  REFERENCES real_estates(id)
 );
 
+CREATE table if not EXISTS insurance_brokers (
+	id SERIAL PRIMARY KEY,
+	
+	name varchar(100) NOT NULL,
+	nit int NOT NULL,
+	location_id varchar(10) NOT NULL,
+	phone varchar(20) NOT NULL,
+
+	information_contact json NOT NULL,
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL
+);
+
+CREATE table if not EXISTS insurance_companies (
+	id SERIAL PRIMARY KEY,
+	
+	name varchar(100) NOT NULL,
+	nit int NOT NULL,
+	location_id varchar(10) NOT NULL,
+	phone varchar(20) NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL
+);
+
 -- INSERTS
+INSERT INTO status VALUES (0, 'Inactivo'), (1, 'Activo');
+
 insert 
 	into projects 
 	values (
 		0,
 		'Sin proyecto.', 
 		'Proyecto para los bienes inmuebles que se les desasocia el proyecto.', 
-		'DEPENDENCIA', 
+		'ALCALDÍA',
+		'ALCALDÍA', 
+		70000000,
+		70001000,
 		0,
 		'{"created_by":"Administrator","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
 	);

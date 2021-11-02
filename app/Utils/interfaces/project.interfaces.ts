@@ -2,9 +2,15 @@ import { IAuditTrail } from ".";
 
 export interface IProjectAttributes {
   id?: number;
+
   name: string;
   description: string;
+
   dependency: string;
-  audit_trail?: IAuditTrail;
+  subdependency: string;
+  management_center: number;
+  cost_center: number;
+
   status: number;
+  audit_trail?: IAuditTrail;
 }

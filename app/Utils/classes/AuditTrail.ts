@@ -1,7 +1,6 @@
-import { http } from "Config/app";
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken";
 import moment from "moment";
-import { IDataToken, IDataUser, IUpdatedValues } from "../interfaces";
+import { IDataUser, IUpdatedValues } from "../interfaces";
 
 export default class AuditTrail {
   private token: string | null;
@@ -78,19 +77,19 @@ export default class AuditTrail {
   }
 
   // PRIVATE METHODS
-  private decodeJWT() {
-    try {
-      let decode = jwt.verify(this.token, "your-256-bit-secret");
-      console.log(decode);
-      return decode;
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  // private decodeJWT() {
+  //   try {
+  //     let decode = jwt.verify(this.token, "your-256-bit-secret");
+  //     console.log(decode);
+  //     return decode;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
 
-  private getDataUser(id: number): any {
-    //   http.
-  }
+  // private getDataUser(id: number): any {
+  //   //   http.
+  // }
 
   // PUBLIC METHODS
   /**
@@ -102,7 +101,7 @@ export default class AuditTrail {
   //     if (token === "") {
   //       let auditTrail: IAuditTrail = {
   //         created_by: "Administrador",
-  //         created_on: String(new Date().getTime()),
+  //         created_on: new Date().getTime(),
   //         updated_by: null,
   //         updated_on: null,
   //         updated_values: null,
@@ -111,7 +110,7 @@ export default class AuditTrail {
   //     }
   //     return {
   //       created_by: "Administrador",
-  //       created_on: String(new Date().getTime()),
+  //       created_on: new Date().getTime(),
   //       updated_by: null,
   //       updated_on: null,
   //       updated_values: null,
