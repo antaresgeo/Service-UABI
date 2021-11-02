@@ -9,23 +9,75 @@ import Project from "./../../Models/Project";
 import { newAuditTrail } from "./../../Utils/functions";
 
 export default class ProjectsController {
+  private sum(num1: number, num2: number): number {
+    return num1 + num2;
+  }
+
   // GET
   /**
    * index
    */
   public async getList(ctx: HttpContextContract) {
-    let list;
+    const { q, page, pageSize } = ctx.request.qs();
+    let results: Project[] | null = null,
+      tmpPage: number,
+      tmpPageSize: number,
+      projects;
+
+    if (!pageSize) tmpPageSize = 10;
+    else tmpPageSize = pageSize;
+
+    if (!page) tmpPage = 1;
+    else tmpPage = page;
+
+    let count: number = tmpPage * tmpPageSize - tmpPageSize;
+    console.log(count);
     try {
-      list = await Project.query().where("status", 1).orderBy("id", "desc");
+      if (!q) {
+        results = await Project.query()
+          .where("status", 1)
+          .orderBy("id", "desc")
+          .limit(tmpPageSize)
+          .offset(count);
+      } else if (typeof q === "string") {
+        // Dependencia y Código
+        results = await Project.query()
+          .where("status", 1)
+          .where("registry_number", q)
+          .orderBy("id", "desc")
+          .limit(tmpPageSize)
+          .offset(count);
+      }
+
+      results = results === null ? [] : results;
+
+      try {
+        projects = await Project.query().where("status", 1);
+      } catch (error) {
+        console.error(error);
+        return ctx.response.status(500).json({
+          message: "Error al traer la lista de todos los Bienes Inmuebles.",
+        });
+      }
+
+      return ctx.response.json({
+        message: "List of all Real Estates",
+        results,
+        page: tmpPage,
+        count: results.length,
+        next_page:
+          projects.length - tmpPage * tmpPageSize !== 10
+            ? this.sum(parseInt(tmpPage + ""), 1)
+            : null,
+        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        total_results: projects.length,
+      });
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
         .json({ message: "Request to Projects failed!" });
     }
-    const data = list === null ? [] : list;
-
-    return ctx.response.json({ message: "List of all Projects", data });
   }
 
   /**
@@ -33,7 +85,7 @@ export default class ProjectsController {
    */
   public async getOne(ctx: HttpContextContract) {
     const { id } = ctx.request.qs();
-    let project;
+    let project: Project | null;
 
     try {
       project = await Project.find(id);
@@ -44,7 +96,7 @@ export default class ProjectsController {
 
     const data = project === null ? {} : project;
 
-    return ctx.response.json({ message: "Project", data });
+    return ctx.response.json({ message: "Project", results: data });
   }
 
   // POST
@@ -57,12 +109,17 @@ export default class ProjectsController {
     const auditTrail: IAuditTrail = newAuditTrail();
 
     try {
-      await Project.create({
+      const project = await Project.create({
         name: name.toUpperCase(),
         description,
         dependency,
         status: 1,
         audit_trail: auditTrail,
+      });
+
+      return ctx.response.status(200).json({
+        message: "Proyecto creado satisfactoriamente.",
+        results: project,
       });
     } catch (error) {
       console.error(error);
@@ -70,10 +127,6 @@ export default class ProjectsController {
         .status(500)
         .json({ message: "Hubo un error al crear el Proyecto." });
     }
-
-    return ctx.response
-      .status(200)
-      .json({ message: "Proyecto creado satisfactoriamente." });
   }
 
   // PUT
@@ -129,7 +182,8 @@ export default class ProjectsController {
             .save();
 
           return ctx.response.status(200).json({
-            message: `Proyecto ${project.name} guardado satisfactoriamente`,
+            message: `Proyecto ${project.name} actualizado satisfactoriamente`,
+            results: project,
           });
         } catch (error) {
           console.error(error);
@@ -157,10 +211,10 @@ export default class ProjectsController {
 
       const tmpProject = await project.save();
 
-      return { success: true, data: tmpProject };
+      return { success: true, results: tmpProject };
     } catch (error) {
       console.error(`Error changing status:\n${error}`);
-      return { success: false, data: error };
+      return { success: false, results: error };
     }
   }
 
@@ -182,9 +236,10 @@ export default class ProjectsController {
         .json({ message: "Este proyecto no puede ser activado." });
 
     const res = await this.changeStatus(id);
+    console.log(res);
 
     if (res["success"] === true) {
-      const IDProject = res["data"]["$attributes"]["id"];
+      const IDProject = res["results"]["$attributes"]["id"];
 
       let list;
       try {
@@ -202,7 +257,7 @@ export default class ProjectsController {
       if (data === []) {
         return ctx.response.status(200).json({
           message: `Proyecto ${
-            res["data"].status === 1 ? "activado" : "inactivado"
+            res["results"].status === 1 ? "activado" : "inactivado"
           }.`,
           id: IDProject,
         });
@@ -223,15 +278,14 @@ export default class ProjectsController {
         });
         return ctx.response.status(200).json({
           message: `Proyecto ${
-            res["data"].status === 1 ? "activado" : "inactivado"
+            res["results"].status === 1 ? "activado" : "inactivado"
           }.\n\n${data.length} bienes inmuebles desasociados.`,
-          id: IDProject,
         });
       }
     } else {
       return ctx.response.status(500).json({
         message: "Error al inactivar el proyecto.",
-        error: res["data"],
+        error: res["results"],
       });
     }
   }

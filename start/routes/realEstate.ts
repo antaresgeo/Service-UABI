@@ -8,9 +8,10 @@ Route.group(() => {
         "App/Controllers/Http/RealEstatesController"
       );
 
-      if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
+      // if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
+      return new RealEstatesController().getList(ctx);
 
-      return new RealEstatesController().filter(ctx);
+      // return new RealEstatesController().filter(ctx);
     });
 
     Route.get("/project", async (ctx) => {

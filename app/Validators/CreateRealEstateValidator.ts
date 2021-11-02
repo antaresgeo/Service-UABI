@@ -36,8 +36,8 @@ export default class CreateRealEstateValidator {
     name: schema.string({ trim: true }),
     description: schema.string({ trim: true }),
     patrimonial_value: schema.number(),
-    address: schema.string({ trim: true }),
-    cbml: schema.string({ trim: true }),
+    location: schema.string.optional({ trim: true }),
+    cbml: schema.string.optional({ trim: true }),
 
     total_area: schema.number(),
     total_percentage: schema.number(),
@@ -51,7 +51,7 @@ export default class CreateRealEstateValidator {
       path: schema.string(),
     }),
 
-    project_id: schema.number(),
+    projects_id: schema.array.optional().members(schema.number()),
   });
 
   /**

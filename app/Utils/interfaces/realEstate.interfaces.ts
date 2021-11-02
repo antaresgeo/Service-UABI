@@ -14,8 +14,8 @@ export interface IRealEstateAttributes {
   name: string;
   description: string;
   patrimonial_value: number;
-  address: string;
-  cbml: string;
+  location?: string;
+  cbml?: string;
 
   total_area: number;
   total_percentage: number;
@@ -24,8 +24,7 @@ export interface IRealEstateAttributes {
   materials?: string;
 
   supports_documents?: ISupportsDocuments;
-
-  project_id: number;
+  projects_id?: number[];
 
   status?: number;
   audit_trail?: IAuditTrail;

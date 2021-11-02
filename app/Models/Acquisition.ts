@@ -1,7 +1,7 @@
 import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
 import { IAuditTrail } from "App/Utils/interfaces";
 
-export default class Adquisition extends BaseModel {
+export default class Acquisition extends BaseModel {
   @column({ isPrimary: true })
   public id: number;
 

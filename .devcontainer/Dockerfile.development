@@ -1,0 +1,16 @@
+
+# # DEVELOPMENT
+FROM node:14.17.6-alpine3.13
+# RUN apt uptade
+# RUN apt install git
+
+WORKDIR /dev/app
+# COPY package*.json ./
+COPY . .
+RUN npm install
+
+# COPY .env .
+# EXPOSE 3001
+
+# RUN npm run dev
+CMD ["npm", "run", "dev"]

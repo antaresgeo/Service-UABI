@@ -27,9 +27,9 @@ export default class RealEstate extends BaseModel {
   @column()
   public patrimonial_value: number;
   @column()
-  public address: string;
+  public location: string | undefined;
   @column()
-  public cbml: string;
+  public cbml: string | undefined;
 
   @column()
   public total_area: number;
@@ -44,9 +44,6 @@ export default class RealEstate extends BaseModel {
 
   @column()
   public supports_documents: ISupportsDocuments | undefined;
-
-  @column()
-  public project_id: number;
 
   @column()
   public status: number;

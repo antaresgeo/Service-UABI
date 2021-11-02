@@ -1,0 +1,5 @@
+{
+	"name": "api-service-uabi",
+	"dockerFile": "Dockerfile.development",
+	"appPort": 3001
+}
