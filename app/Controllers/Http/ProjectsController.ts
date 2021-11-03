@@ -1,18 +1,25 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import RealEstate from "App/Models/RealEstate";
+
+// ******* UTILS *******
+// CLASSES
 import AuditTrail from "App/Utils/classes/AuditTrail";
+
+// FUNCTIONS
+import { sum } from "App/Utils/functions";
+
+// INTERFACES
 import {
   IAuditTrail,
   IProjectAttributes,
   IUpdatedValues,
 } from "App/Utils/interfaces";
-import Project from "./../../Models/Project";
+
+// MODELS
+import RealEstate from "App/Models/RealEstate";
+import Project from "App/Models/Project";
+import RealEstatesProject from "App/Models/RealEstatesProject";
 
 export default class ProjectsController {
-  private sum(num1: number, num2: number): number {
-    return num1 + num2;
-  }
-
   // GET
   /**
    * index
@@ -88,7 +95,7 @@ export default class ProjectsController {
 
       let next_page: number | null =
         tmpPage * tmpPageSize < projects.length
-          ? this.sum(parseInt(tmpPage + ""), 1)
+          ? sum(parseInt(tmpPage + ""), 1)
           : null;
       console.log(tmpPage);
       console.log(tmpPage - 1);
@@ -288,18 +295,36 @@ export default class ProjectsController {
     if (res["success"] === true) {
       const IDProject = res["results"]["$attributes"]["id"];
 
-      let list;
+      let results;
+
       try {
-        list = await RealEstate.query()
-          .where("project_id", parseInt(IDProject))
-          .orderBy("id", "desc");
+        results = await RealEstatesProject.query()
+          .from("real_estates_projects as a")
+          .innerJoin("projects as p", "a.project_id", "p.id")
+          .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+          .select("p.name as project_name")
+          .select("*")
+          .where("re.id", id);
+        // .orderBy("re.id", "desc")
+        // .limit(tmpPageSize)
+        // .offset(count);
+        // realEstate = await RealEstate.find(id);
       } catch (error) {
         console.error(error);
-        return ctx.response
-          .status(500)
-          .json({ message: "Request to Real Estates failed!" });
+        return ctx.response.status(500).json({ message: "Real Estate error" });
       }
-      const data = list === null ? [] : list;
+
+      // try {
+      //   list = await RealEstate.query()
+      //     .where("project_id", parseInt(IDProject))
+      //     .orderBy("id", "desc");
+      // } catch (error) {
+      //   console.error(error);
+      //   return ctx.response
+      //     .status(500)
+      //     .json({ message: "Request to Real Estates failed!" });
+      // }
+      const data = results === null ? [] : results;
 
       if (data === []) {
         return ctx.response.status(200).json({
