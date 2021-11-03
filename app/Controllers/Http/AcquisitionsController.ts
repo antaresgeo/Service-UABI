@@ -1,6 +1,5 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Acquisition from "App/Models/Acquisition";
-import { IAuditTrail } from "App/Utils/interfaces";
 import AuditTrail from "./../../Utils/classes/AuditTrail";
 
 export default class AdquisitionsController {

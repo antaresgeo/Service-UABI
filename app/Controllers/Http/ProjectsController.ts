@@ -8,11 +8,7 @@ import AuditTrail from "App/Utils/classes/AuditTrail";
 import { sum } from "App/Utils/functions";
 
 // INTERFACES
-import {
-  IAuditTrail,
-  IProjectAttributes,
-  IUpdatedValues,
-} from "App/Utils/interfaces";
+import { IProjectAttributes } from "App/Utils/interfaces";
 
 // MODELS
 import RealEstate from "App/Models/RealEstate";
@@ -195,43 +191,16 @@ export default class ProjectsController {
       if (typeof id === "string") {
         const project = await Project.findOrFail(id);
 
-        let updatedValues: IUpdatedValues = {
-          lastest: {
-            name: project.name,
-            description: project.description,
-            dependency: project.dependency,
-            status: project.status,
-          },
-          new: newData,
-        };
-
-        let tmpData: Project = project;
-        if (tmpData.audit_trail?.updated_values)
-          if (!tmpData.audit_trail.updated_values.oldest)
-            updatedValues.oldest = {
-              name: project.name,
-              description: project.description,
-              dependency: project.dependency,
-              status: project.status,
-            };
-          else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
-
-        let auditTrail: IAuditTrail = {
-          created_by: tmpData.audit_trail?.created_by,
-          created_on: tmpData.audit_trail?.created_on,
-          updated_by: "UABI",
-          updated_on: new Date().getTime(),
-          updated_values: updatedValues,
-        };
+        const auditTrail = new AuditTrail(undefined, project.audit_trail);
+        auditTrail.update("Administrador", newData, project);
 
         // Updating data
         try {
           await project
             .merge({
+              ...newData,
               name: newData.name.toUpperCase(),
-              description: newData.description,
-              dependency: newData.dependency,
-              audit_trail: auditTrail,
+              audit_trail: auditTrail.getAsJson(),
             })
             .save();
 
