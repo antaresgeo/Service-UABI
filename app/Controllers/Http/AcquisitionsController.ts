@@ -1,7 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Acquisition from "App/Models/Acquisition";
-import { newAuditTrail } from "App/Utils/functions";
 import { IAuditTrail } from "App/Utils/interfaces";
+import AuditTrail from "./../../Utils/classes/AuditTrail";
 
 export default class AdquisitionsController {
   /**
@@ -12,8 +12,8 @@ export default class AdquisitionsController {
 
     try {
       // Creation: Data of audit trail
-      let auditTrail: IAuditTrail = newAuditTrail();
-      dataAdquisition.audit_trail = auditTrail;
+      let auditTrail: AuditTrail = new AuditTrail();
+      dataAdquisition.audit_trail = auditTrail.getAsJson();
       dataAdquisition.status = 1;
 
       // Service consumption
