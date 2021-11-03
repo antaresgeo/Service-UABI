@@ -237,14 +237,12 @@ export default class RealEstatesController {
    * create
    */
   public async create(ctx: HttpContextContract) {
-    const payload: IRealEstateAttributes = await ctx.request.validate(
-      CreateRealEstate
-    );
+    const payload: any = await ctx.request.validate(CreateRealEstate);
 
     const auditTrail: AuditTrail = new AuditTrail();
 
     try {
-      let dataRealEstate = { ...payload };
+      let dataRealEstate: IRealEstateAttributes = { ...payload };
       delete dataRealEstate.projects_id;
       dataRealEstate.status = 1;
       dataRealEstate.audit_trail = auditTrail.getAsJson();
@@ -308,7 +306,6 @@ export default class RealEstatesController {
           lastest: {
             name: realEstate.name,
             description: realEstate.description,
-            dependency: realEstate.dependency,
             status: realEstate.status,
           },
           new: newData,
@@ -320,7 +317,6 @@ export default class RealEstatesController {
             updatedValues.oldest = {
               name: realEstate.name,
               description: realEstate.description,
-              dependency: realEstate.dependency,
               status: realEstate.status,
             };
           else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
