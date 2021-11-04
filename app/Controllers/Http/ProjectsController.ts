@@ -256,7 +256,7 @@ export default class ProjectsController {
     if (id === "0")
       return ctx.response
         .status(400)
-        .json({ message: "Este proyecto no puede ser activado." });
+        .json({ message: "Este proyecto no puede ser inactivado." });
 
     const res = await this.changeStatus(id);
     console.log(res);

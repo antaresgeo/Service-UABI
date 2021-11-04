@@ -8,30 +8,36 @@ export default class AdquisitionsController {
    */
   public async create(ctx: HttpContextContract) {
     let dataAdquisition = ctx.request.body();
+    let newAcquisitions: any[] = [];
 
-    try {
-      // Creation: Data of audit trail
-      let auditTrail: AuditTrail = new AuditTrail();
-      dataAdquisition.audit_trail = auditTrail.getAsJson();
-      dataAdquisition.status = 1;
+    let data = dataAdquisition.data;
 
-      // Service consumption
-      const newAdquisition = await Acquisition.create(dataAdquisition);
-      if (typeof newAdquisition === "number")
+    data.map(async (act) => {
+      try {
+        // Creation: Data of audit trail
+        let auditTrail: AuditTrail = new AuditTrail();
+        act.audit_trail = auditTrail.getAsJson();
+        act.status = 1;
+
+        // Service consumption
+        const newAdquisition = await Acquisition.create(act);
+        // if (typeof newAdquisition === "number")
+        //   return ctx.response
+        //     .status(500)
+        //     .json({ message: "¡Error al crear el bien inmueble!" });
+        newAcquisitions.push(newAdquisition);
+      } catch (error) {
+        console.error(error);
         return ctx.response
           .status(500)
-          .json({ message: "¡Error al crear el bien inmueble!" });
+          .json({ message: "Error interno: Servidor", error });
+      }
+    });
 
-      return ctx.response.status(200).json({
-        message: "¡Nueva Adquisición creada satisfactoriamente!",
-        data: newAdquisition,
-      });
-    } catch (error) {
-      console.error(error);
-      return ctx.response
-        .status(500)
-        .json({ message: "Error interno: Servidor", error });
-    }
+    return ctx.response.status(200).json({
+      message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
+      results: newAcquisitions,
+    });
   }
 
   // GET

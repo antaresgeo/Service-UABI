@@ -24,14 +24,14 @@ export default class Acquisition extends BaseModel {
   @column()
   public acquired_percentage: number;
   @column()
-  public seller: string;
+  public origin: string;
 
   @column()
   public entity_type: string;
   @column()
   public entity_number: string;
   @column()
-  public address: string;
+  public city: string;
 
   @column()
   public real_estate_id: number;

@@ -86,11 +86,11 @@ CREATE table if not EXISTS acquisitions (
 	plot_area double precision NOT NULL,
 	construction_area double precision,
 	acquired_percentage int NOT NULL,
-	seller varchar(50) NOT NULL,
+	origin varchar(50) NOT NULL,
 	
 	entity_type varchar (100) NOT NULL,
 	entity_number varchar(100) NOT NULL,
-	address varchar(100),
+	city varchar(100),
 	
 	real_estate_id int NOT NULL,
 		
