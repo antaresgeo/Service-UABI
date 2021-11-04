@@ -1,5 +1,5 @@
 import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
-import { IAuditTrail, ISupportsDocuments } from "App/Utils/interfaces";
+import { IAuditTrail } from "App/Utils/interfaces";
 
 export default class RealEstate extends BaseModel {
   @column({ isPrimary: true })
@@ -37,7 +37,7 @@ export default class RealEstate extends BaseModel {
   public address: any | undefined;
 
   @column()
-  public supports_documents: ISupportsDocuments[] | undefined;
+  public supports_documents: string | undefined;
 
   @column()
   public status: number;

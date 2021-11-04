@@ -25,13 +25,7 @@ export default class CreateRealEstateValidator {
       .optional()
       .members({ name: schema.string({ trim: true }) }),
 
-    supports_documents: schema.array.optional().members(
-      schema.object.optional().members({
-        id: schema.string(),
-        name: schema.string(),
-        path: schema.string(),
-      })
-    ),
+    supports_documents: schema.string.optional({ trim: true }),
   });
 
   /**

@@ -107,11 +107,12 @@ CREATE table if not EXISTS insurabilities (
 	
 	registry_number int NOT NULL,
 	
-	vigency_start varchar(50) NOT NULL,
-	vigency_end varchar(50) NOT NULL,
+	vigency_start bigint NOT NULL,
+	vigency_end bigint NOT NULL,
 	
 	insurance_broker varchar(100) NOT NULL,
-	insurance_company varchar(100) NOT NULL,
+	insurance_companies varchar(1000) NOT NULL,
+	type_assurance varchar(100) NOT NULL,
 	
 	insurance_value double PRECISION NOT NULL,
 	insurance_document_id varchar(200) NOT NULL,
@@ -164,6 +165,6 @@ insert
 		'ALCALDÍA', 
 		70000000,
 		70001000,
-		0,
+		1,
 		'{"created_by":"Administrator","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
 	);

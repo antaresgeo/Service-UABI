@@ -1,4 +1,4 @@
-import { IAuditTrail, ISupportsDocuments } from ".";
+import { IAuditTrail } from ".";
 
 export interface IRealEstateAttributes {
   id?: number;
@@ -20,7 +20,7 @@ export interface IRealEstateAttributes {
   zone: string;
   address?: any;
 
-  supports_documents?: ISupportsDocuments[];
+  supports_documents?: string;
   projects_id?: number[];
 
   status?: number;

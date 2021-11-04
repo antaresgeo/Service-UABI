@@ -9,14 +9,16 @@ export default class Insurability extends BaseModel {
   public registry_number: number;
 
   @column()
-  public vigency_start: string;
+  public vigency_start: number;
   @column()
-  public vigency_end: string;
+  public vigency_end: number;
 
   @column()
   public insurance_broker: string;
   @column()
-  public insurance_company: string;
+  public insurance_companies: string;
+  @column()
+  public type_assurance: string;
 
   @column()
   public insurance_value: number;

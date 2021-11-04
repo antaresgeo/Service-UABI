@@ -227,7 +227,10 @@ export default class RealEstatesController {
       j++;
     }
 
-    // const data = results === null ? {} : results[0]["$extras"];
+    data[0]["supports_documents"] =
+      data[0]["supports_documents"] === null
+        ? []
+        : data[0]["supports_documents"].split(",");
 
     return ctx.response.json({ message: "Real Estate", results: data[0] });
   }
@@ -253,7 +256,7 @@ export default class RealEstatesController {
 
       if (payload.projects_id)
         await this.createRelation(payload.projects_id, realEstate);
-      else await this.createRelation([0], realEstate);
+      else await this.createRelation([1], realEstate);
 
       return ctx.response.status(200).json({
         message: "Bien Inmueble creado correctamente.",
@@ -270,12 +273,18 @@ export default class RealEstatesController {
 
   private async createRelation(projectsId: number[], realEstate: RealEstate) {
     try {
-      projectsId.map(async (id) => {
+      if (projectsId.length > 0)
+        projectsId.map(async (id) => {
+          await RealEstatesProject.create({
+            project_id: id,
+            real_estate_id: realEstate.id,
+          });
+        });
+      else
         await RealEstatesProject.create({
-          project_id: id,
+          project_id: 1,
           real_estate_id: realEstate.id,
         });
-      });
     } catch (error) {
       console.error(error);
     }

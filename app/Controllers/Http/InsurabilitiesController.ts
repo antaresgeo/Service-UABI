@@ -1,7 +1,6 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { newAuditTrail } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 
 export default class InsurabilitiesController {
@@ -14,8 +13,8 @@ export default class InsurabilitiesController {
 
     try {
       // Creation: Data of audit trail
-      let auditTrail: IAuditTrail = newAuditTrail();
-      dataInsurability.audit_trail = auditTrail;
+      let auditTrail: AuditTrail = new AuditTrail();
+      dataInsurability.audit_trail = auditTrail.getAsJson();
       dataInsurability.status = 1;
 
       // Service consumption
@@ -40,15 +39,30 @@ export default class InsurabilitiesController {
   // GET
   public async getAll(ctx: HttpContextContract) {
     try {
-      const results: any = await Insurability.query().where("status", 1);
-      const auditTrail = new AuditTrail(
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-      );
-      console.log(auditTrail.getCreatedOn());
+      const results: any = await Insurability.query()
+        .select("re.name as name_real_estate")
+        .select("insurabilities.*")
+        .innerJoin(
+          "real_estates as re",
+          "insurabilities.real_estate_id",
+          "re.id"
+        )
+        .where("insurabilities.status", 1);
+
+      console.log(results);
+      let data: any[] = [];
+      results.map((re) => {
+        let tmp = {
+          ...re["$attributes"],
+          name_real_estate: re["$extras"]["name_real_estate"],
+        };
+        delete tmp.real_estate_id;
+        data.push(tmp);
+      });
 
       return ctx.response
         .status(200)
-        .json({ message: "All Insurabilities", results });
+        .json({ message: "All Insurabilities", results: data });
     } catch (error) {
       console.error(error);
       return ctx.response
