@@ -34,6 +34,7 @@ export default class RealEstatesController {
 
     if (!allStates) tmpAllStates = false;
     else tmpAllStates = allStates;
+    console.log(tmpAllStates);
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
@@ -425,6 +426,7 @@ export default class RealEstatesController {
           .status(500)
           .json({ message: "Request to Real Estates failed!" });
       }
+      console.log(list);
 
       return ctx.response.status(200).json({
         message: `Bien Inmueble ${

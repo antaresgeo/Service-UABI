@@ -11,7 +11,7 @@ import { sum } from "App/Utils/functions";
 import { IProjectAttributes } from "App/Utils/interfaces";
 
 // MODELS
-import RealEstate from "App/Models/RealEstate";
+// import RealEstate from "App/Models/RealEstate";
 import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 
