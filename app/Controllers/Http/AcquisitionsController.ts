@@ -7,6 +7,40 @@ export default class AdquisitionsController {
    * create Acquisition
    */
   public async create(ctx: HttpContextContract) {
+    let dataAdquisition = ctx.request.body(),
+      newAdquisition;
+
+    let data = { ...dataAdquisition };
+
+    try {
+      // Creation: Data of audit trail
+      let auditTrail: AuditTrail = new AuditTrail();
+      data.audit_trail = auditTrail.getAsJson();
+      data.status = 1;
+
+      // Service consumption
+      newAdquisition = await Acquisition.create(data);
+      // if (typeof newAdquisition === "number")
+      //   return ctx.response
+      //     .status(500)
+      //     .json({ message: "¡Error al crear el bien inmueble!" });
+    } catch (error) {
+      console.error(error);
+      return ctx.response
+        .status(500)
+        .json({ message: "Error interno: Servidor", error });
+    }
+
+    return ctx.response.status(200).json({
+      message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
+      results: newAdquisition,
+    });
+  }
+
+  /**
+   * create Acquisition
+   */
+  public async createMany(ctx: HttpContextContract) {
     let dataAdquisition = ctx.request.body();
     let newAcquisitions: any[] = [];
 
@@ -90,25 +124,29 @@ export default class AdquisitionsController {
   /**
    * changeStatus
    */
-  public async changeStatus(ctx: HttpContextContract) {
-    const { id } = ctx.request.qs();
-
+  private async changeStatus(id) {
     try {
       const project = await Acquisition.findOrFail(id);
 
       project.status = project.status === 1 ? 0 : 1;
 
       await project.save();
+    } catch (error) {}
+  }
+
+  /**
+   * inactivate
+   */
+  public inactivate(ctx: HttpContextContract) {
+    try {
     } catch (error) {
       console.error(error);
-      return ctx.response
-        .status(500)
-        .json({ message: "Project update failed!" });
-    }
 
-    return ctx.response
-      .status(200)
-      .json({ message: "Project updated successfully!" });
+      return ctx.response
+        .status(200)
+        .json({ message: "Project updated successfully!" });
+    }
+    return ctx.response.status(500).json({ message: "Project update failed!" });
   }
 }
 // export const update = async (ctx.request: ctx.requestuest, ctx.response: ctx.responseponse) => {

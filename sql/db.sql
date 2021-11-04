@@ -106,6 +106,7 @@ CREATE table if not EXISTS insurabilities (
 	id SERIAL PRIMARY key,
 	
 	registry_number int NOT NULL,
+	policy_type varchar(50) NOT NULL,
 	
 	vigency_start bigint NOT NULL,
 	vigency_end bigint NOT NULL,

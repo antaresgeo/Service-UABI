@@ -193,8 +193,6 @@ export default class RealEstatesController {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
-    console.log(results);
-
     let data: any[] = [];
 
     let tmpLastRealEstate: RealEstate = results[0],
@@ -203,7 +201,7 @@ export default class RealEstatesController {
       if (j !== results.length)
         if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
           if (typeof results[j]["$extras"]["project_name"] === "string")
-            results[j]["$extras"]["project_name"] = [
+            results[j]["$extras"]["projects_name"] = [
               {
                 id: tmpLastRealEstate["$attributes"]["project_id"],
                 name: tmpLastRealEstate["$extras"]["project_name"],
@@ -220,10 +218,29 @@ export default class RealEstatesController {
           if (j !== results.length) tmpLastRealEstate = results[j];
         } else {
           console.log(tmpLastRealEstate["$extras"]);
+          let tmp = {
+            ...tmpLastRealEstate["$extras"],
+            projects: {
+              id: tmpLastRealEstate["$original"]["project_id"],
+              name: results["$extras"]["project_name"],
+            },
+          };
+          delete tmp["project_name"];
           data.push(tmpLastRealEstate["$extras"]);
           if (j !== results.length) tmpLastRealEstate = results[j];
         }
-      else data.push(tmpLastRealEstate["$extras"]);
+      else {
+        let tmp = {
+          ...tmpLastRealEstate["$extras"],
+          projects: {
+            id: tmpLastRealEstate["$original"]["project_id"],
+            name: tmpLastRealEstate["$extras"]["project_name"],
+          },
+        };
+        delete tmp["project_name"];
+
+        data.push(tmp);
+      }
 
       j++;
     }
