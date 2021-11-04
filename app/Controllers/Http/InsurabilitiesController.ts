@@ -54,7 +54,10 @@ export default class InsurabilitiesController {
       results.map((re) => {
         let tmp = {
           ...re["$attributes"],
-          name_real_estate: re["$extras"]["name_real_estate"],
+          real_estate: {
+            name: re["$extras"]["name_real_estate"],
+            id: re["$attributes"].real_estate_id,
+          },
         };
         delete tmp.real_estate_id;
         data.push(tmp);

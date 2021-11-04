@@ -124,29 +124,48 @@ export default class AdquisitionsController {
   /**
    * changeStatus
    */
-  private async changeStatus(id) {
+  private async changeStatus(id: string | number) {
     try {
-      const project = await Acquisition.findOrFail(id);
+      const acquisition = await Acquisition.findOrFail(id);
 
-      project.status = project.status === 1 ? 0 : 1;
+      acquisition.status = acquisition.status === 1 ? 0 : 1;
 
-      await project.save();
-    } catch (error) {}
+      const tmpProject = await acquisition.save();
+
+      return { success: true, results: tmpProject };
+    } catch (error) {
+      console.error(`Error changing status:\n${error}`);
+      return { success: false, results: error };
+    }
   }
 
   /**
    * inactivate
    */
-  public inactivate(ctx: HttpContextContract) {
+  public async inactivate(ctx: HttpContextContract) {
     try {
+      const { id } = ctx.request.qs();
+
+      const { success, results } = await this.changeStatus(id);
+
+      if (success)
+        return ctx.response.status(200).json({
+          message: `Proyecto ${
+            results.status === 1 ? "activado" : "inactivado"
+          }.`,
+          id: results["$attributes"]["id"],
+        });
+      else
+        return ctx.response
+          .status(500)
+          .json({ message: "Project update failed!" });
     } catch (error) {
       console.error(error);
 
       return ctx.response
-        .status(200)
-        .json({ message: "Project updated successfully!" });
+        .status(500)
+        .json({ message: "Project update failed!" });
     }
-    return ctx.response.status(500).json({ message: "Project update failed!" });
   }
 }
 // export const update = async (ctx.request: ctx.requestuest, ctx.response: ctx.responseponse) => {
