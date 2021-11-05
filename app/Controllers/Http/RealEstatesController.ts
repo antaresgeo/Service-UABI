@@ -1,6 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
+import { sum } from "App/Utils/functions";
 import {
   IAuditTrail,
   IRealEstateAttributes,
@@ -10,9 +11,9 @@ import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 
 export default class RealEstatesController {
-  private sum(num1: number, num2: number): number {
-    return num1 + num2;
-  }
+  // private sum(num1: number, num2: number): number {
+  //   return num1 + num2;
+  // }
 
   // GET
   /**
@@ -116,7 +117,7 @@ export default class RealEstatesController {
         next_page:
           realEstates.length - tmpPage * tmpPageSize !== 10 &&
           realEstates.length - tmpPage * tmpPageSize > 0
-            ? this.sum(parseInt(tmpPage + ""), 1)
+            ? sum(parseInt(tmpPage + ""), 1)
             : null,
         previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
         total_results: realEstates.length,

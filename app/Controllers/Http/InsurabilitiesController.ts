@@ -1,6 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
 import AuditTrail from "App/Utils/classes/AuditTrail";
+import { sum } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 
 export default class InsurabilitiesController {
@@ -38,6 +39,15 @@ export default class InsurabilitiesController {
 
   // GET
   public async getAll(ctx: HttpContextContract) {
+    const { /*q,*/ page, pageSize } = ctx.request.qs();
+    let /*results,*/ tmpPage: number, tmpPageSize: number, realEstates;
+
+    if (!pageSize) tmpPageSize = 10;
+    else tmpPageSize = pageSize;
+
+    if (!page) tmpPage = 1;
+    else tmpPage = page;
+
     try {
       const results: any = await Insurability.query()
         .select("re.name as name_real_estate")
@@ -47,7 +57,8 @@ export default class InsurabilitiesController {
           "insurabilities.real_estate_id",
           "re.id"
         )
-        .where("insurabilities.status", 1);
+        .where("insurabilities.status", 1)
+        .orderBy("id", "desc");
 
       console.log(results);
       let data: any[] = [];
@@ -63,9 +74,20 @@ export default class InsurabilitiesController {
         data.push(tmp);
       });
 
-      return ctx.response
-        .status(200)
-        .json({ message: "All Insurabilities", results: data });
+      return ctx.response.status(200).json({
+        message: "All Insurabilities",
+        results: data,
+
+        page: tmpPage,
+        count: data.length,
+        next_page:
+          realEstates.length - tmpPage * tmpPageSize !== 10 &&
+          realEstates.length - tmpPage * tmpPageSize > 0
+            ? sum(parseInt(tmpPage + ""), 1)
+            : null,
+        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        total_results: realEstates.length,
+      });
     } catch (error) {
       console.error(error);
       return ctx.response
