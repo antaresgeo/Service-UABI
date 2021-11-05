@@ -107,7 +107,8 @@ export default class InsurabilitiesController {
       if (typeof real_estate_id === "string")
         insurabilities = await Insurability.query()
           .where("real_estate_id", real_estate_id)
-          .where("status", 1);
+          .where("status", 1)
+          .orderBy("id", "desc");
 
       if (insurabilities === null) {
         return ctx.response
