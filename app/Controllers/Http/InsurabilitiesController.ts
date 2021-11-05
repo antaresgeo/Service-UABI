@@ -1,7 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { sum } from "App/Utils/functions";
+import { sum, validateDate } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 
 export default class InsurabilitiesController {
@@ -60,7 +60,6 @@ export default class InsurabilitiesController {
         .where("insurabilities.status", 1)
         .orderBy("id", "desc");
 
-      console.log(results);
       let data: any[] = [];
       results.map((re) => {
         let tmp = {
@@ -69,9 +68,11 @@ export default class InsurabilitiesController {
             name: re["$extras"]["name_real_estate"],
             id: re["$attributes"].real_estate_id,
           },
+          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
         };
+
         delete tmp.real_estate_id;
-        data.push(tmp);
+        if (tmp.status === "Vigente") data.push(tmp);
       });
 
       return ctx.response.status(200).json({
@@ -116,9 +117,18 @@ export default class InsurabilitiesController {
           .json({ error: "No insurability Found" });
       }
 
+      let data: any[] = [];
+      insurabilities.map((re) => {
+        let tmp = {
+          ...re["$attributes"],
+          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+        };
+        data.push(tmp);
+      });
+
       ctx.response.status(200).json({
         message: `All insurabilities by Real Estate ${real_estate_id}`,
-        results: insurabilities,
+        results: data,
       });
     } catch (error) {
       console.error(error);
