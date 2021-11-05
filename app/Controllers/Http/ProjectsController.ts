@@ -48,7 +48,7 @@ export default class ProjectsController {
             .select("s.name as status_name")
             .where("status", 1)
             .whereRaw(`'name' LIKE '%${filters.q}%'`)
-            .orderBy("p.id", "asc")
+            .orderBy("p.id", "desc")
             .limit(tmpPageSize)
             .offset(count);
       } else {
@@ -60,7 +60,7 @@ export default class ProjectsController {
           .select("p.id as project_id")
           .select("s.name as status_name")
           .where("status", 1)
-          .orderBy("p.id", "asc")
+          .orderBy("p.id", "desc")
           .limit(tmpPageSize)
           .offset(count);
       }
@@ -98,9 +98,12 @@ export default class ProjectsController {
 
       let previous_page: number | null = tmpPage - 1 > 0 ? tmpPage - 1 : null;
 
+      const lastElement = data.pop();
+      const res = [lastElement, ...data];
+
       return ctx.response.json({
         message: "List of all Real Estates",
-        results: data,
+        results: res,
         page: tmpPage,
         count: results.length,
         next_page,
