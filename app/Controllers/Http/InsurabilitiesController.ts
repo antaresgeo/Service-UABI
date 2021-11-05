@@ -40,7 +40,7 @@ export default class InsurabilitiesController {
   // GET
   public async getAll(ctx: HttpContextContract) {
     const { /*q,*/ page, pageSize } = ctx.request.qs();
-    let /*results,*/ tmpPage: number, tmpPageSize: number, realEstates;
+    let /*results,*/ tmpPage: number, tmpPageSize: number;
 
     if (!pageSize) tmpPageSize = 10;
     else tmpPageSize = pageSize;
@@ -81,12 +81,12 @@ export default class InsurabilitiesController {
         page: tmpPage,
         count: data.length,
         next_page:
-          realEstates.length - tmpPage * tmpPageSize !== 10 &&
-          realEstates.length - tmpPage * tmpPageSize > 0
+          data.length - tmpPage * tmpPageSize !== 10 &&
+          data.length - tmpPage * tmpPageSize > 0
             ? sum(parseInt(tmpPage + ""), 1)
             : null,
         previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
-        total_results: realEstates.length,
+        total_results: data.length,
       });
     } catch (error) {
       console.error(error);
