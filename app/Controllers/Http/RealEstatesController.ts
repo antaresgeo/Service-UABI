@@ -431,24 +431,26 @@ export default class RealEstatesController {
     const res = await this.changeStatus(id);
 
     if (res["success"] === true) {
-      const IDProject = res["data"]["$attributes"]["id"];
+      const IDProject = res["results"]["$attributes"]["id"];
+      const realEstatesProjects = await RealEstatesProject.query().where(
+        "real_estate_id",
+        IDProject
+      );
 
-      let list;
+      console.log(realEstatesProjects);
       try {
-        list = await RealEstate.query()
-          .where("project_id", parseInt(IDProject))
-          .orderBy("id", "desc");
+        realEstatesProjects.map((tmp) => {
+          tmp.delete();
+        });
       } catch (error) {
-        console.error(error);
-        return ctx.response
-          .status(500)
-          .json({ message: "Request to Real Estates failed!" });
+        return ctx.response.status(500).json({
+          message: "Error al eliminar relación con proyecto(s).",
+        });
       }
-      console.log(list);
 
       return ctx.response.status(200).json({
         message: `Bien Inmueble ${
-          res["data"].status === 1 ? "activado" : "inactivado"
+          res["results"].status === 1 ? "activado" : "inactivado"
         }.`,
         results: IDProject,
       });
