@@ -1,5 +1,5 @@
 import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
-import { IAuditTrail, ISupportsDocuments } from "App/Utils/interfaces";
+import { IAuditTrail } from "App/Utils/interfaces";
 
 export default class RealEstate extends BaseModel {
   @column({ isPrimary: true })
@@ -8,18 +8,14 @@ export default class RealEstate extends BaseModel {
   public sap_id: string | undefined;
 
   @column()
-  public dependency: string;
+  public tipology: string;
+  @column()
+  public accounting_account: string;
+
   @column()
   public destination_type: string;
   @column()
-  public accounting_account: string;
-  @column()
-  public cost_center: string;
-
-  @column()
   public registry_number: string;
-  @column()
-  public registry_number_document_id: string | undefined;
   @column()
   public name: string;
   @column()
@@ -27,27 +23,24 @@ export default class RealEstate extends BaseModel {
   @column()
   public patrimonial_value: number;
   @column()
-  public location: string | undefined;
-  @column()
-  public cbml: string | undefined;
-
+  public reconstruction_value: number;
   @column()
   public total_area: number;
   @column()
   public total_percentage: number;
   @column()
-  public zone: string;
-  @column()
-  public tipology: string;
-  @column()
   public materials: string | undefined;
 
   @column()
-  public supports_documents: ISupportsDocuments | undefined;
+  public zone: string;
+  @column()
+  public address: any | undefined;
+
+  @column()
+  public supports_documents: string | undefined;
 
   @column()
   public status: number;
-
   @column()
   public audit_trail: IAuditTrail;
 }

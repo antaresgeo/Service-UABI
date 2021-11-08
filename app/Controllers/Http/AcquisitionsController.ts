@@ -1,38 +1,77 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Acquisition from "App/Models/Acquisition";
-import { newAuditTrail } from "App/Utils/functions";
-import { IAuditTrail } from "App/Utils/interfaces";
+import AuditTrail from "./../../Utils/classes/AuditTrail";
 
 export default class AdquisitionsController {
   /**
    * create Acquisition
    */
   public async create(ctx: HttpContextContract) {
-    let dataAdquisition = ctx.request.body();
+    let dataAdquisition = ctx.request.body(),
+      newAdquisition;
+
+    let data = { ...dataAdquisition };
 
     try {
       // Creation: Data of audit trail
-      let auditTrail: IAuditTrail = newAuditTrail();
-      dataAdquisition.audit_trail = auditTrail;
-      dataAdquisition.status = 1;
+      let auditTrail: AuditTrail = new AuditTrail();
+      data.audit_trail = auditTrail.getAsJson();
+      data.status = 1;
 
       // Service consumption
-      const newAdquisition = await Acquisition.create(dataAdquisition);
-      if (typeof newAdquisition === "number")
-        return ctx.response
-          .status(500)
-          .json({ message: "¡Error al crear el bien inmueble!" });
-
-      return ctx.response.status(200).json({
-        message: "¡Nueva Adquisición creada satisfactoriamente!",
-        data: newAdquisition,
-      });
+      newAdquisition = await Acquisition.create(data);
+      // if (typeof newAdquisition === "number")
+      //   return ctx.response
+      //     .status(500)
+      //     .json({ message: "¡Error al crear el bien inmueble!" });
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }
+
+    return ctx.response.status(200).json({
+      message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
+      results: newAdquisition,
+    });
+  }
+
+  /**
+   * create Acquisition
+   */
+  public async createMany(ctx: HttpContextContract) {
+    let dataAdquisition = ctx.request.body();
+    let newAcquisitions: any[] = [];
+
+    let data = dataAdquisition.data;
+
+    data.map(async (act) => {
+      try {
+        // Creation: Data of audit trail
+        let auditTrail: AuditTrail = new AuditTrail();
+        act.audit_trail = auditTrail.getAsJson();
+        act.status = 1;
+
+        // Service consumption
+        const newAdquisition = await Acquisition.create(act);
+        // if (typeof newAdquisition === "number")
+        //   return ctx.response
+        //     .status(500)
+        //     .json({ message: "¡Error al crear el bien inmueble!" });
+        newAcquisitions.push(newAdquisition);
+      } catch (error) {
+        console.error(error);
+        return ctx.response
+          .status(500)
+          .json({ message: "Error interno: Servidor", error });
+      }
+    });
+
+    return ctx.response.status(200).json({
+      message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
+      results: newAcquisitions,
+    });
   }
 
   // GET
@@ -85,25 +124,48 @@ export default class AdquisitionsController {
   /**
    * changeStatus
    */
-  public async changeStatus(ctx: HttpContextContract) {
-    const { id } = ctx.request.qs();
-
+  private async changeStatus(id: string | number) {
     try {
-      const project = await Acquisition.findOrFail(id);
+      const acquisition = await Acquisition.findOrFail(id);
 
-      project.status = project.status === 1 ? 0 : 1;
+      acquisition.status = acquisition.status === 1 ? 0 : 1;
 
-      await project.save();
+      const tmpProject = await acquisition.save();
+
+      return { success: true, results: tmpProject };
+    } catch (error) {
+      console.error(`Error changing status:\n${error}`);
+      return { success: false, results: error };
+    }
+  }
+
+  /**
+   * inactivate
+   */
+  public async inactivate(ctx: HttpContextContract) {
+    try {
+      const { id } = ctx.request.qs();
+
+      const { success, results } = await this.changeStatus(id);
+
+      if (success)
+        return ctx.response.status(200).json({
+          message: `Proyecto ${
+            results.status === 1 ? "activado" : "inactivado"
+          }.`,
+          id: results["$attributes"]["id"],
+        });
+      else
+        return ctx.response
+          .status(500)
+          .json({ message: "Project update failed!" });
     } catch (error) {
       console.error(error);
+
       return ctx.response
         .status(500)
         .json({ message: "Project update failed!" });
     }
-
-    return ctx.response
-      .status(200)
-      .json({ message: "Project updated successfully!" });
   }
 }
 // export const update = async (ctx.request: ctx.requestuest, ctx.response: ctx.responseponse) => {

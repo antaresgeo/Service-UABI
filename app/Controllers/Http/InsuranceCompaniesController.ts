@@ -1,40 +1,40 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 import {
-  IInsuranceBroker,
-  IPayloadInsuranceBroker,
+  IInsuranceCompany,
+  IPayloadInsuranceCompany,
 } from "App/Utils/interfaces/insurances.interfaces";
-import CreateInsuranceBrokerValidator from "./../../Validators/CreateInsuranceBrokerValidator";
-import InsuranceBroker from "./../../Models/InsuranceBroker";
+import CreateInsuranceCompanyValidator from "./../../Validators/CreateInsuranceCompanyValidator";
+import InsuranceCompany from "./../../Models/InsuranceCompany";
 import { changeStatus, sum } from "App/Utils/functions";
 
-export default class InsuranceBrokersController {
+export default class InsuranceCompaniesController {
   public async index({}: HttpContextContract) {}
 
   public async create({ request, response }: HttpContextContract) {
-    const payload: IPayloadInsuranceBroker = await request.validate(
-      CreateInsuranceBrokerValidator
+    const payload: IPayloadInsuranceCompany = await request.validate(
+      CreateInsuranceCompanyValidator
     );
     const auditTrail: AuditTrail = new AuditTrail();
 
     try {
-      let dataInsuranceBroker: IInsuranceBroker = { ...payload };
-      dataInsuranceBroker.status = 1;
-      dataInsuranceBroker.audit_trail = auditTrail.getAsJson();
+      let dataInsuranceCompany: IInsuranceCompany = { ...payload };
+      dataInsuranceCompany.status = 1;
+      dataInsuranceCompany.audit_trail = auditTrail.getAsJson();
 
-      const insuranceBroker = await InsuranceBroker.create({
-        ...dataInsuranceBroker,
+      const insuranceCompany = await InsuranceCompany.create({
+        ...dataInsuranceCompany,
       });
 
       return response.status(200).json({
-        message: "Corredor de Seguros creado correctamente.",
-        results: insuranceBroker,
+        message: "Compañía Aseguradora creada correctamente.",
+        results: insuranceCompany,
       });
     } catch (error) {
       console.error(error);
       return response.status(500).json({
         message:
-          "A ocurrido un error inesperado al crear el Corredor de Seguros.",
+          "A ocurrido un error inesperado al crear la Compañía Aseguradora.",
         error,
       });
     }
@@ -45,19 +45,19 @@ export default class InsuranceBrokersController {
    */
   public async list({ response }: HttpContextContract) {
     try {
-      const insuranceBrokers = await InsuranceBroker.query()
+      const insuranceCompanies = await InsuranceCompany.query()
         .where("status", 1)
         .orderBy("id", "desc");
 
       return response.status(200).json({
-        message: "Lista de Corredor de Seguros.",
-        results: insuranceBrokers,
+        message: "Lista de Compañías Aseguradoras.",
+        results: insuranceCompanies,
       });
     } catch (error) {
       console.error(error);
       return response.status(200).json({
         message:
-          "A ocurrido un error inesperado al obtener la lista de Corredor de Seguros.",
+          "A ocurrido un error inesperado al obtener la lista de Compañías Aseguradoras.",
         error,
       });
     }
@@ -67,22 +67,22 @@ export default class InsuranceBrokersController {
 
   public async show({ response }: HttpContextContract, id: number) {
     try {
-      const insuranceBroker = await InsuranceBroker.findOrFail(id);
+      const insuranceBroker = await InsuranceCompany.findOrFail(id);
 
       return response.status(200).json({
-        message: `Corredor de Seguros con ID: ${insuranceBroker.id}.`,
+        message: `Compañía Aseguradora con ID: ${insuranceBroker.id}.`,
         results: insuranceBroker,
       });
     } catch (error) {
       let message: string =
-          "A ocurrido un error inesperado al obtener el Corredor de Seguros.",
+          "A ocurrido un error inesperado al obtener la Compañía Aseguradora.",
         status: number = 500;
 
       console.error(error.message);
       console.error(error);
       if (error.message === "E_ROW_NOT_FOUND: Row not found") {
         message =
-          "No se ha encontrado un Corredor de Seguros para el ID buscado.";
+          "No se ha encontrado una Compañía Aseguradora para el ID buscado.";
         status = 400;
       }
       return response.status(status).json({
@@ -105,30 +105,30 @@ export default class InsuranceBrokersController {
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
     try {
-      const insuranceBrokers = await InsuranceBroker.query()
+      const insuranceCompanies = await InsuranceCompany.query()
         .where("status", 1)
         .orderBy("id", "desc")
         .limit(tmpPageSize)
         .offset(count);
 
       return response.status(200).json({
-        message: "Lista con paginación de Corredor de Seguros.",
-        results: insuranceBrokers,
+        message: "Lista con paginación de Compañías Aseguradoras.",
+        results: insuranceCompanies,
         page: tmpPage,
-        count: insuranceBrokers.length,
+        count: insuranceCompanies.length,
         next_page:
-          insuranceBrokers.length - tmpPage * tmpPageSize !== 10 &&
-          insuranceBrokers.length - tmpPage * tmpPageSize > 0
+          insuranceCompanies.length - tmpPage * tmpPageSize !== 10 &&
+          insuranceCompanies.length - tmpPage * tmpPageSize > 0
             ? sum(parseInt(tmpPage + ""), 1)
             : null,
         previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
-        total_results: insuranceBrokers.length,
+        total_results: insuranceCompanies.length,
       });
     } catch (error) {
       console.error(error);
       return response.status(500).json({
         message:
-          "A ocurrido un error inesperado al obtener la lista de Corredor de Seguros.",
+          "A ocurrido un error inesperado al obtener la lista de Compañías Aseguradoras.",
         error,
       });
     }
@@ -149,7 +149,7 @@ export default class InsuranceBrokersController {
     }
 
     try {
-      const insuranceBroker = await InsuranceBroker.findOrFail(_id);
+      const insuranceBroker = await InsuranceCompany.findOrFail(_id);
 
       const auditTrail = new AuditTrail(undefined, insuranceBroker.audit_trail);
       auditTrail.update("Administrador", newData, insuranceBroker);
@@ -164,7 +164,7 @@ export default class InsuranceBrokersController {
           .save();
 
         return response.status(200).json({
-          message: `Corredor de Seguros ${insuranceBrokerUpdated.name} actualizado satisfactoriamente.`,
+          message: `Compañía Aseguradora ${insuranceBrokerUpdated.name} actualizada satisfactoriamente.`,
           results: insuranceBrokerUpdated,
         });
       } catch (error) {
@@ -178,7 +178,7 @@ export default class InsuranceBrokersController {
       }
     } catch (error) {
       let message: string =
-          "A ocurrido un error inesperado al obtener el Corredor de Seguros.",
+          "A ocurrido un error inesperado al obtener el Compañía Aseguradora.",
         status: number = 500;
 
       console.error(error.message);
@@ -202,26 +202,26 @@ export default class InsuranceBrokersController {
     const { id } = request.params();
 
     const { success, results } = await changeStatus(
-      InsuranceBroker,
+      InsuranceCompany,
       id,
       "inactivate"
     );
 
     if (success)
       return response.status(200).json({
-        message: "Corredor de Seguros Inactivado",
+        message: "Compañía Aseguradora Inactivada",
         results,
       });
     else {
       let message: string =
-          "A ocurrido un error inesperado al inactivar el Corredor de Seguros.",
+          "A ocurrido un error inesperado al inactivar la Compañía Aseguradora.",
         status: number = 500;
 
       console.error(results.message);
       console.error(results);
       if (results.message === "E_ROW_NOT_FOUND: Row not found") {
         message =
-          "No se ha encontrado un Corredor de Seguros para el ID buscado.";
+          "No se ha encontrado una Compañía Aseguradora para el ID buscado.";
         status = 400;
       }
       return response.status(status).json({

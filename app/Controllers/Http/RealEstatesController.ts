@@ -1,6 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
+import { sum } from "App/Utils/functions";
 import {
   IAuditTrail,
   IRealEstateAttributes,
@@ -10,10 +11,6 @@ import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 
 export default class RealEstatesController {
-  private sum(num1: number, num2: number): number {
-    return num1 + num2;
-  }
-
   // GET
   /**
    * index
@@ -62,8 +59,6 @@ export default class RealEstatesController {
           .limit(tmpPageSize)
           .offset(count);
       }
-      console.log(results);
-
       results = results === null ? [] : results;
 
       let data: any[] = [];
@@ -116,7 +111,7 @@ export default class RealEstatesController {
         next_page:
           realEstates.length - tmpPage * tmpPageSize !== 10 &&
           realEstates.length - tmpPage * tmpPageSize > 0
-            ? this.sum(parseInt(tmpPage + ""), 1)
+            ? sum(parseInt(tmpPage + ""), 1)
             : null,
         previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
         total_results: realEstates.length,
@@ -193,8 +188,6 @@ export default class RealEstatesController {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
-    console.log(results);
-
     let data: any[] = [];
 
     let tmpLastRealEstate: RealEstate = results[0],
@@ -203,7 +196,7 @@ export default class RealEstatesController {
       if (j !== results.length)
         if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
           if (typeof results[j]["$extras"]["project_name"] === "string")
-            results[j]["$extras"]["project_name"] = [
+            results[j]["$extras"]["projects_name"] = [
               {
                 id: tmpLastRealEstate["$attributes"]["project_id"],
                 name: tmpLastRealEstate["$extras"]["project_name"],
@@ -220,15 +213,37 @@ export default class RealEstatesController {
           if (j !== results.length) tmpLastRealEstate = results[j];
         } else {
           console.log(tmpLastRealEstate["$extras"]);
+          let tmp = {
+            ...tmpLastRealEstate["$extras"],
+            projects: {
+              id: tmpLastRealEstate["$original"]["project_id"],
+              name: results["$extras"]["project_name"],
+            },
+          };
+          delete tmp["project_name"];
           data.push(tmpLastRealEstate["$extras"]);
           if (j !== results.length) tmpLastRealEstate = results[j];
         }
-      else data.push(tmpLastRealEstate["$extras"]);
+      else {
+        let tmp = {
+          ...tmpLastRealEstate["$extras"],
+          projects: {
+            id: tmpLastRealEstate["$original"]["project_id"],
+            name: tmpLastRealEstate["$extras"]["project_name"],
+          },
+        };
+        delete tmp["project_name"];
+
+        data.push(tmp);
+      }
 
       j++;
     }
 
-    // const data = results === null ? {} : results[0]["$extras"];
+    data[0]["supports_documents"] =
+      data[0]["supports_documents"] === null
+        ? []
+        : data[0]["supports_documents"].split(",");
 
     return ctx.response.json({ message: "Real Estate", results: data[0] });
   }
@@ -238,14 +253,12 @@ export default class RealEstatesController {
    * create
    */
   public async create(ctx: HttpContextContract) {
-    const payload: IRealEstateAttributes = await ctx.request.validate(
-      CreateRealEstate
-    );
+    const payload: any = await ctx.request.validate(CreateRealEstate);
 
     const auditTrail: AuditTrail = new AuditTrail();
 
     try {
-      let dataRealEstate = { ...payload };
+      let dataRealEstate: IRealEstateAttributes = { ...payload };
       delete dataRealEstate.projects_id;
       dataRealEstate.status = 1;
       dataRealEstate.audit_trail = auditTrail.getAsJson();
@@ -256,7 +269,7 @@ export default class RealEstatesController {
 
       if (payload.projects_id)
         await this.createRelation(payload.projects_id, realEstate);
-      else await this.createRelation([0], realEstate);
+      else await this.createRelation([1], realEstate);
 
       return ctx.response.status(200).json({
         message: "Bien Inmueble creado correctamente.",
@@ -273,12 +286,18 @@ export default class RealEstatesController {
 
   private async createRelation(projectsId: number[], realEstate: RealEstate) {
     try {
-      projectsId.map(async (id) => {
+      if (projectsId.length > 0)
+        projectsId.map(async (id) => {
+          await RealEstatesProject.create({
+            project_id: id,
+            real_estate_id: realEstate.id,
+          });
+        });
+      else
         await RealEstatesProject.create({
-          project_id: id,
+          project_id: 1,
           real_estate_id: realEstate.id,
         });
-      });
     } catch (error) {
       console.error(error);
     }
@@ -299,7 +318,6 @@ export default class RealEstatesController {
       const { id } = ctx.request.qs();
       _id = id;
     }
-    console.log(newData, _id);
 
     try {
       if (typeof _id === "string") {
@@ -309,7 +327,6 @@ export default class RealEstatesController {
           lastest: {
             name: realEstate.name,
             description: realEstate.description,
-            dependency: realEstate.dependency,
             status: realEstate.status,
           },
           new: newData,
@@ -321,7 +338,6 @@ export default class RealEstatesController {
             updatedValues.oldest = {
               name: realEstate.name,
               description: realEstate.description,
-              dependency: realEstate.dependency,
               status: realEstate.status,
             };
           else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
@@ -408,23 +424,26 @@ export default class RealEstatesController {
     const res = await this.changeStatus(id);
 
     if (res["success"] === true) {
-      const IDProject = res["data"]["$attributes"]["id"];
+      const IDProject = res["results"]["$attributes"]["id"];
+      const realEstatesProjects = await RealEstatesProject.query().where(
+        "real_estate_id",
+        IDProject
+      );
 
-      let list;
+      console.log(realEstatesProjects);
       try {
-        list = await RealEstate.query()
-          .where("project_id", parseInt(IDProject))
-          .orderBy("id", "desc");
+        realEstatesProjects.map((tmp) => {
+          tmp.delete();
+        });
       } catch (error) {
-        console.error(error);
-        return ctx.response
-          .status(500)
-          .json({ message: "Request to Real Estates failed!" });
+        return ctx.response.status(500).json({
+          message: "Error al eliminar relación con proyecto(s).",
+        });
       }
 
       return ctx.response.status(200).json({
         message: `Bien Inmueble ${
-          res["data"].status === 1 ? "activado" : "inactivado"
+          res["results"].status === 1 ? "activado" : "inactivado"
         }.`,
         results: IDProject,
         list,

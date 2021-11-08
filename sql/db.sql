@@ -3,8 +3,16 @@ DROP table if EXISTS insurabilities cascade;
 DROP table if EXISTS acquisitions cascade;
 DROP table if EXISTS real_estates_projects cascade;
 DROP table if EXISTS real_estates cascade;
-DROP table if EXISTS projects;
+DROP table if EXISTS projects cascade;
 DROP table if EXISTS status;
+
+-- CREATE TYPE bug_status AS ENUM ('new', 'open', 'closed');
+
+-- CREATE TABLE bug (
+--     id serial,
+--     description text,
+--     status bug_status
+-- );
 
 -- GENERAL TABLES
 CREATE TABLE IF NOT EXISTS status (
@@ -17,6 +25,12 @@ CREATE TABLE IF NOT EXISTS status (
 
 -- 	name VARCHAR(25) UNIQUE
 -- );
+
+-- CREATE TABLE IF NOT EXISTS registers (
+-- 	id SERIAL PRIMARY KEY,
+-- 	date BIGINT NOT NULL,
+-- 	action VARCHAR()
+-- )
 
 CREATE table if not EXISTS projects (
 	id SERIAL PRIMARY KEY,
@@ -86,11 +100,11 @@ CREATE table if not EXISTS acquisitions (
 	plot_area double precision NOT NULL,
 	construction_area double precision,
 	acquired_percentage int NOT NULL,
-	seller varchar(50) NOT NULL,
+	origin varchar(50) NOT NULL,
 	
 	entity_type varchar (100) NOT NULL,
 	entity_number varchar(100) NOT NULL,
-	address varchar(100),
+	city varchar(100),
 	
 	real_estate_id int NOT NULL,
 		
@@ -106,12 +120,14 @@ CREATE table if not EXISTS insurabilities (
 	id SERIAL PRIMARY key,
 	
 	registry_number int NOT NULL,
+	policy_type varchar(50) NOT NULL,
 	
-	vigency_start varchar(50) NOT NULL,
-	vigency_end varchar(50) NOT NULL,
+	vigency_start bigint NOT NULL,
+	vigency_end bigint NOT NULL,
 	
 	insurance_broker varchar(100) NOT NULL,
-	insurance_company varchar(100) NOT NULL,
+	insurance_companies varchar(1000) NOT NULL,
+	type_assurance varchar(100) NOT NULL,
 	
 	insurance_value double PRECISION NOT NULL,
 	insurance_document_id varchar(200) NOT NULL,
@@ -133,7 +149,7 @@ CREATE table if not EXISTS insurance_brokers (
 	location_id varchar(10) NOT NULL,
 	phone varchar(20) NOT NULL,
 
-	information_contact json NOT NULL,
+	contact_information json NOT NULL,
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL
@@ -152,18 +168,18 @@ CREATE table if not EXISTS insurance_companies (
 );
 
 -- INSERTS
-INSERT INTO status VALUES (0, 'Inactivo'), (1, 'Activo');
+INSERT INTO status VALUES (0, 'Inactivo'), (1, 'Activo'), (2, 'Finalizado'), (3, 'Vigente'), (4, 'Vencido');
 
 insert 
 	into projects 
 	values (
 		0,
-		'Sin proyecto.', 
-		'Proyecto para los bienes inmuebles que se les desasocia el proyecto.', 
+		'SIN PROYECTO', 
+		'Proyecto para los bienes inmuebles que se encuentran sin proyecto.', 
 		'ALCALDÍA',
 		'ALCALDÍA', 
 		70000000,
 		70001000,
-		0,
+		1,
 		'{"created_by":"Administrator","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
 	);

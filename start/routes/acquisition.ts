@@ -34,7 +34,11 @@ Route.group(() => {
         const { default: AdquisitionsController } = await import(
           "App/Controllers/Http/AcquisitionsController"
         );
-        return new AdquisitionsController().create(ctx);
+
+        if (ctx.request.qs().action === "many")
+          return new AdquisitionsController().createMany(ctx);
+        else if (ctx.request.qs().action === "one")
+          return new AdquisitionsController().create(ctx);
       });
 
       // PUT
@@ -45,12 +49,12 @@ Route.group(() => {
       //   return new AdquisitionsController().update(ctx);
       // });
 
-      // Route.put("/alt-status", async (ctx) => {
-      //   const { default: AdquisitionsController } = await import(
-      //     "App/Controllers/Http/AdquisitionsController"
-      //   );
-      //   return new AdquisitionsController().changeStatus(ctx);
-      // });
+      Route.delete("/", async (ctx) => {
+        const { default: AcquisitionsController } = await import(
+          "App/Controllers/Http/AcquisitionsController"
+        );
+        return new AcquisitionsController().inactivate(ctx);
+      });
     }).prefix("/adquisitions");
   }).prefix("/real-estates");
 }).prefix("v1");

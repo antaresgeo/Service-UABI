@@ -1,119 +1,61 @@
-import crypto from "crypto";
-import bcrypt from "bcrypt";
 import moment from "moment";
-import { IAuditTrail } from "./../interfaces";
+import AuditTrail from "../classes/AuditTrail";
 
-export const newAuditTrail = (token: string = ""): IAuditTrail => {
-  if (token === "") {
-    let auditTrail: IAuditTrail = {
-      created_by: "Administrador",
-      created_on: new Date().getTime(),
-      updated_by: null,
-      updated_on: null,
-      updated_values: null,
-    };
-    return auditTrail;
-  }
-  return {
-    created_by: "Administrador",
-    created_on: new Date().getTime(),
-    updated_by: null,
-    updated_on: null,
-    updated_values: null,
-  };
+export const sum = (num1: number, num2: number): number => {
+  return num1 + num2;
 };
 
-// Authentification
-export const authenticationUme = () => {
-  // cadena
+export const validateDate = (vigencyEnd: number) => {
+  let dateNow = moment().valueOf();
+  var discharge = moment(vigencyEnd);
+  const diff = discharge.diff(dateNow, "days");
 
-  let hexdec = "10681D4015638022C919FCB3A8A996B75997C66B"
-
-    .toString()
-
-    .toUpperCase();
-
-  let dateNow = moment(new Date(), "YYYY-MM-DD'T'HH:mm:ssZ")
-    // .add(-5, "hours")
-
-    .toString();
-
-  // contraseña
-
-  // let password = ConfigEnv.UME_PASSWORD;
-  let password = "6tC8dvgfr@C";
-
-  let passwordbas = base64encode(password).toString();
-
-  //usuario
-
-  // let user = ConfigEnv.UME_USER;
-  let user = "USR_UABI_UME";
-
-  let userBase64 = base64encode(user).toString();
-
-  // llave
-
-  let key = `${hexdec}${dateNow}${passwordbas}`;
-
-  let encryption = sha256(key).toUpperCase();
-
-  let keybas = base64encode(encryption).toString();
-
-  const Authorization = {
-    fecha: dateNow,
-    usuario: userBase64,
-    llave: keybas,
-    cadena: hexdec,
-  };
-
-  return Authorization;
+  return diff < 0 ? "Vencida" : "Vigente";
 };
 
-export const base64encode = async (string: string) => {
-  // create a buffer
-  const buff = Buffer.from(string, "utf-8");
+type Action = "inactivate" | "terminate" | "activate";
 
-  // decode buffer as Base64
-  return buff.toString("base64");
-};
-
-function sha256(str: string) {
-  // secret or salt to be hashed with
-  const secret = "4xc3lS0fTw4r3.*";
-
-  // create a sha-256 hasher
-  const sha256Hasher = crypto.createHmac("sha256", secret);
-
-  // hash the string
-  // and set the output format
-  return sha256Hasher.update(str).digest("hex");
-}
-
-export const bcryptEncode = async (passwordNaked: string): Promise<string> => {
-  const saltRounds = 10;
+export const changeStatus = async (
+  model: any,
+  id: string | number,
+  action: Action
+) => {
   try {
-    console.log("line 96 works");
-    const hash = await bcrypt.hash(passwordNaked, saltRounds);
+    const data = await model.findOrFail(id);
 
-    // Store hash in your password DB.
-    console.log(hash);
-    return hash;
+    const auditTrail = new AuditTrail(undefined, data.audit_trail);
+
+    if (action === "inactivate") {
+      if (data.status != 0) data.status = 0;
+      else
+        return {
+          success: false,
+          results: {
+            name: "Already inactivate",
+            message:
+              "Already inactivate, please defore inactivate, activate it.",
+          },
+        };
+    }
+
+    if (action === "activate") data.status = 1;
+
+    auditTrail.update("Administrador", { status: data.status }, data);
+    const tmpModel = await data.save();
+
+    return { success: true, results: tmpModel };
   } catch (error) {
-    console.log(error);
-
-    return Promise.reject("Error hashing the password");
+    console.error(`Error changing status:\n${error}`);
+    return { success: false, results: error };
   }
 };
 
-export const bcryptCompare = async (password, hash) => {
-  try {
-    const flag = bcrypt.compare(password, hash);
-    console.log(flag);
-
-    return flag;
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-};
+// private decodeJWT() {
+//   try {
+//     let decode = jwt.verify(this.token, "your-256-bit-secret");
+//     console.log(decode);
+//     return decode;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }

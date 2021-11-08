@@ -1,7 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { newAuditTrail } from "App/Utils/functions";
+import { sum, validateDate } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 
 export default class InsurabilitiesController {
@@ -14,8 +14,8 @@ export default class InsurabilitiesController {
 
     try {
       // Creation: Data of audit trail
-      let auditTrail: IAuditTrail = newAuditTrail();
-      dataInsurability.audit_trail = auditTrail;
+      let auditTrail: AuditTrail = new AuditTrail();
+      dataInsurability.audit_trail = auditTrail.getAsJson();
       dataInsurability.status = 1;
 
       // Service consumption
@@ -39,16 +39,56 @@ export default class InsurabilitiesController {
 
   // GET
   public async getAll(ctx: HttpContextContract) {
-    try {
-      const results: any = await Insurability.query().where("status", 1);
-      const auditTrail = new AuditTrail(
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-      );
-      console.log(auditTrail.getCreatedOn());
+    const { /*q,*/ page, pageSize } = ctx.request.qs();
+    let /*results,*/ tmpPage: number, tmpPageSize: number;
 
-      return ctx.response
-        .status(200)
-        .json({ message: "All Insurabilities", results });
+    if (!pageSize) tmpPageSize = 10;
+    else tmpPageSize = pageSize;
+
+    if (!page) tmpPage = 1;
+    else tmpPage = page;
+
+    try {
+      const results: any = await Insurability.query()
+        .select("re.name as name_real_estate")
+        .select("insurabilities.*")
+        .innerJoin(
+          "real_estates as re",
+          "insurabilities.real_estate_id",
+          "re.id"
+        )
+        .where("insurabilities.status", 1)
+        .orderBy("id", "desc");
+
+      let data: any[] = [];
+      results.map((re) => {
+        let tmp = {
+          ...re["$attributes"],
+          real_estate: {
+            name: re["$extras"]["name_real_estate"],
+            id: re["$attributes"].real_estate_id,
+          },
+          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+        };
+
+        delete tmp.real_estate_id;
+        if (tmp.status === "Vigente") data.push(tmp);
+      });
+
+      return ctx.response.status(200).json({
+        message: "All Insurabilities",
+        results: data,
+
+        page: tmpPage,
+        count: data.length,
+        next_page:
+          data.length - tmpPage * tmpPageSize !== 10 &&
+          data.length - tmpPage * tmpPageSize > 0
+            ? sum(parseInt(tmpPage + ""), 1)
+            : null,
+        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        total_results: data.length,
+      });
     } catch (error) {
       console.error(error);
       return ctx.response
@@ -68,7 +108,8 @@ export default class InsurabilitiesController {
       if (typeof real_estate_id === "string")
         insurabilities = await Insurability.query()
           .where("real_estate_id", real_estate_id)
-          .where("status", 1);
+          .where("status", 1)
+          .orderBy("id", "desc");
 
       if (insurabilities === null) {
         return ctx.response
@@ -76,9 +117,18 @@ export default class InsurabilitiesController {
           .json({ error: "No insurability Found" });
       }
 
+      let data: any[] = [];
+      insurabilities.map((re) => {
+        let tmp = {
+          ...re["$attributes"],
+          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+        };
+        data.push(tmp);
+      });
+
       ctx.response.status(200).json({
         message: `All insurabilities by Real Estate ${real_estate_id}`,
-        results: insurabilities,
+        results: data,
       });
     } catch (error) {
       console.error(error);

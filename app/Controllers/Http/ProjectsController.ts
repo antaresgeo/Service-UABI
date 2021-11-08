@@ -1,18 +1,21 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import RealEstate from "App/Models/RealEstate";
+
+// ******* UTILS *******
+// CLASSES
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import {
-  IAuditTrail,
-  IProjectAttributes,
-  IUpdatedValues,
-} from "App/Utils/interfaces";
-import Project from "./../../Models/Project";
+
+// FUNCTIONS
+import { sum } from "App/Utils/functions";
+
+// INTERFACES
+import { IProjectAttributes } from "App/Utils/interfaces";
+
+// MODELS
+// import RealEstate from "App/Models/RealEstate";
+import Project from "App/Models/Project";
+import RealEstatesProject from "App/Models/RealEstatesProject";
 
 export default class ProjectsController {
-  private sum(num1: number, num2: number): number {
-    return num1 + num2;
-  }
-
   // GET
   /**
    * index
@@ -45,7 +48,7 @@ export default class ProjectsController {
             .select("s.name as status_name")
             .where("status", 1)
             .whereRaw(`'name' LIKE '%${filters.q}%'`)
-            .orderBy("p.id", "asc")
+            .orderBy("p.id", "desc")
             .limit(tmpPageSize)
             .offset(count);
       } else {
@@ -57,7 +60,7 @@ export default class ProjectsController {
           .select("p.id as project_id")
           .select("s.name as status_name")
           .where("status", 1)
-          .orderBy("p.id", "asc")
+          .orderBy("p.id", "desc")
           .limit(tmpPageSize)
           .offset(count);
       }
@@ -88,16 +91,19 @@ export default class ProjectsController {
 
       let next_page: number | null =
         tmpPage * tmpPageSize < projects.length
-          ? this.sum(parseInt(tmpPage + ""), 1)
+          ? sum(parseInt(tmpPage + ""), 1)
           : null;
       console.log(tmpPage);
       console.log(tmpPage - 1);
 
       let previous_page: number | null = tmpPage - 1 > 0 ? tmpPage - 1 : null;
 
+      const lastElement = data.pop();
+      const res = [lastElement, ...data];
+
       return ctx.response.json({
         message: "List of all Real Estates",
-        results: data,
+        results: res,
         page: tmpPage,
         count: results.length,
         next_page,
@@ -188,43 +194,16 @@ export default class ProjectsController {
       if (typeof id === "string") {
         const project = await Project.findOrFail(id);
 
-        let updatedValues: IUpdatedValues = {
-          lastest: {
-            name: project.name,
-            description: project.description,
-            dependency: project.dependency,
-            status: project.status,
-          },
-          new: newData,
-        };
-
-        let tmpData: Project = project;
-        if (tmpData.audit_trail?.updated_values)
-          if (!tmpData.audit_trail.updated_values.oldest)
-            updatedValues.oldest = {
-              name: project.name,
-              description: project.description,
-              dependency: project.dependency,
-              status: project.status,
-            };
-          else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
-
-        let auditTrail: IAuditTrail = {
-          created_by: tmpData.audit_trail?.created_by,
-          created_on: tmpData.audit_trail?.created_on,
-          updated_by: "UABI",
-          updated_on: new Date().getTime(),
-          updated_values: updatedValues,
-        };
+        const auditTrail = new AuditTrail(undefined, project.audit_trail);
+        auditTrail.update("Administrador", newData, project);
 
         // Updating data
         try {
           await project
             .merge({
+              ...newData,
               name: newData.name.toUpperCase(),
-              description: newData.description,
-              dependency: newData.dependency,
-              audit_trail: auditTrail,
+              audit_trail: auditTrail.getAsJson(),
             })
             .save();
 
@@ -280,7 +259,7 @@ export default class ProjectsController {
     if (id === "0")
       return ctx.response
         .status(400)
-        .json({ message: "Este proyecto no puede ser activado." });
+        .json({ message: "Este proyecto no puede ser inactivado." });
 
     const res = await this.changeStatus(id);
     console.log(res);
@@ -288,18 +267,36 @@ export default class ProjectsController {
     if (res["success"] === true) {
       const IDProject = res["results"]["$attributes"]["id"];
 
-      let list;
+      let results;
+
       try {
-        list = await RealEstate.query()
-          .where("project_id", parseInt(IDProject))
-          .orderBy("id", "desc");
+        results = await RealEstatesProject.query()
+          .from("real_estates_projects as a")
+          .innerJoin("projects as p", "a.project_id", "p.id")
+          .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+          .select("p.name as project_name")
+          .select("*")
+          .where("re.id", id);
+        // .orderBy("re.id", "desc")
+        // .limit(tmpPageSize)
+        // .offset(count);
+        // realEstate = await RealEstate.find(id);
       } catch (error) {
         console.error(error);
-        return ctx.response
-          .status(500)
-          .json({ message: "Request to Real Estates failed!" });
+        return ctx.response.status(500).json({ message: "Real Estate error" });
       }
-      const data = list === null ? [] : list;
+
+      // try {
+      //   list = await RealEstate.query()
+      //     .where("project_id", parseInt(IDProject))
+      //     .orderBy("id", "desc");
+      // } catch (error) {
+      //   console.error(error);
+      //   return ctx.response
+      //     .status(500)
+      //     .json({ message: "Request to Real Estates failed!" });
+      // }
+      const data = results === null ? [] : results;
 
       if (data === []) {
         return ctx.response.status(200).json({
