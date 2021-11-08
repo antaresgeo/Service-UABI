@@ -446,7 +446,6 @@ export default class RealEstatesController {
           res["results"].status === 1 ? "activado" : "inactivado"
         }.`,
         results: IDProject,
-        list,
       });
     } else {
       return ctx.response.status(500).json({
