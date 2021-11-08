@@ -11,10 +11,6 @@ import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 
 export default class RealEstatesController {
-  // private sum(num1: number, num2: number): number {
-  //   return num1 + num2;
-  // }
-
   // GET
   /**
    * index
@@ -63,8 +59,6 @@ export default class RealEstatesController {
           .limit(tmpPageSize)
           .offset(count);
       }
-      console.log(results);
-
       results = results === null ? [] : results;
 
       let data: any[] = [];
@@ -324,7 +318,6 @@ export default class RealEstatesController {
       const { id } = ctx.request.qs();
       _id = id;
     }
-    console.log(newData, _id);
 
     try {
       if (typeof _id === "string") {

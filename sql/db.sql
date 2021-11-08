@@ -3,8 +3,16 @@ DROP table if EXISTS insurabilities cascade;
 DROP table if EXISTS acquisitions cascade;
 DROP table if EXISTS real_estates_projects cascade;
 DROP table if EXISTS real_estates cascade;
-DROP table if EXISTS projects;
+DROP table if EXISTS projects cascade;
 DROP table if EXISTS status;
+
+-- CREATE TYPE bug_status AS ENUM ('new', 'open', 'closed');
+
+-- CREATE TABLE bug (
+--     id serial,
+--     description text,
+--     status bug_status
+-- );
 
 -- GENERAL TABLES
 CREATE TABLE IF NOT EXISTS status (
@@ -17,6 +25,12 @@ CREATE TABLE IF NOT EXISTS status (
 
 -- 	name VARCHAR(25) UNIQUE
 -- );
+
+-- CREATE TABLE IF NOT EXISTS registers (
+-- 	id SERIAL PRIMARY KEY,
+-- 	date BIGINT NOT NULL,
+-- 	action VARCHAR()
+-- )
 
 CREATE table if not EXISTS projects (
 	id SERIAL PRIMARY KEY,
@@ -135,7 +149,7 @@ CREATE table if not EXISTS insurance_brokers (
 	location_id varchar(10) NOT NULL,
 	phone varchar(20) NOT NULL,
 
-	information_contact json NOT NULL,
+	contact_information json NOT NULL,
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL
@@ -154,14 +168,14 @@ CREATE table if not EXISTS insurance_companies (
 );
 
 -- INSERTS
-INSERT INTO status VALUES (0, 'Inactivo'), (1, 'Activo');
+INSERT INTO status VALUES (0, 'Inactivo'), (1, 'Activo'), (2, 'Finalizado'), (3, 'Vigente'), (4, 'Vencido');
 
 insert 
 	into projects 
 	values (
 		0,
-		'Sin proyecto.', 
-		'Proyecto para los bienes inmuebles que se les desasocia el proyecto.', 
+		'SIN PROYECTO', 
+		'Proyecto para los bienes inmuebles que se encuentran sin proyecto.', 
 		'ALCALDÍA',
 		'ALCALDÍA', 
 		70000000,
