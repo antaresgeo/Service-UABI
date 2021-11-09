@@ -335,6 +335,8 @@ export default class RealEstatesController {
       _id = id;
     }
 
+    delete newData.projects;
+
     try {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
