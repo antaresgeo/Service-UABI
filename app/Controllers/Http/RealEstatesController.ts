@@ -188,6 +188,22 @@ export default class RealEstatesController {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
+    console.log(
+      results[0]["$extras"][
+        "tipology;accounting_account;destination_type;registry_number;na"
+      ]
+    );
+
+    console.log(results[0]["$extras"]);
+    if (
+      results[0]["$extras"][
+        "tipology;accounting_account;destination_type;registry_number;na"
+      ] === null
+    )
+      delete results[0]["$extras"][
+        "tipology;accounting_account;destination_type;registry_number;na"
+      ];
+
     let data: any[] = [];
 
     let tmpLastRealEstate: RealEstate = results[0],
