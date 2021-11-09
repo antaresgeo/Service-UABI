@@ -334,6 +334,7 @@ export default class RealEstatesController {
       const { id } = ctx.request.qs();
       _id = id;
     }
+    console.log(newData.projects);
 
     let projects = newData.projects;
     delete newData.projects;
@@ -371,19 +372,21 @@ export default class RealEstatesController {
 
         // Updating data
         try {
-          await realEstate
+          const realEstateUpdated = await realEstate
             .merge({
               ...newData,
               audit_trail: auditTrail,
             })
             .save();
+          console.log(realEstateUpdated);
 
-          return ctx.response
-            .status(200)
-            .json({
-              message: "Updated successfully!",
-              results: { ...realEstate, projects },
-            });
+          return ctx.response.status(200).json({
+            message: "Updated successfully!",
+            results: {
+              ...realEstateUpdated["$attributes"],
+              projects,
+            },
+          });
         } catch (error) {
           console.error(error);
           if (alt) {
