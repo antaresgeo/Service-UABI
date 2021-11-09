@@ -335,6 +335,7 @@ export default class RealEstatesController {
       _id = id;
     }
 
+    let projects = newData.projects;
     delete newData.projects;
 
     try {
@@ -379,7 +380,10 @@ export default class RealEstatesController {
 
           return ctx.response
             .status(200)
-            .json({ message: "Updated successfully!", results: realEstate });
+            .json({
+              message: "Updated successfully!",
+              results: { ...realEstate, projects },
+            });
         } catch (error) {
           console.error(error);
           if (alt) {
