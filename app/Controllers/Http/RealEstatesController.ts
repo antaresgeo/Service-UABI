@@ -157,10 +157,14 @@ export default class RealEstatesController {
         .from("real_estates_projects as a")
         .innerJoin("projects as p", "a.project_id", "p.id")
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+        .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
         .select([
           "p.name as project_name",
           "p.description as project_description",
-          "p.dependency as project_dependency",
+          "cc.dependency as re_dependency",
+          "cc.subdependency as re_subdependency",
+          "cc.management_center as re_management_center",
+          "cc.cost_center as re_cost_center",
         ])
         .select("*")
         .where("a.project_id", parseInt(id))
@@ -398,7 +402,6 @@ export default class RealEstatesController {
       const { id } = request.qs();
       _id = id;
     }
-    console.log(newData.projects);
 
     let projects = newData.projects;
     delete newData.projects;
