@@ -54,9 +54,6 @@ export default class RealEstatesController {
           .where("re.status", 1)
           .orderBy("re.id", "desc")
           .limit(tmpPageSize)
-          // .withAggregate('real_estates_projects', (query) => {
-          //   query.array
-          // })
           .offset(count);
       } else {
         results = await RealEstatesProject.query()
@@ -71,8 +68,6 @@ export default class RealEstatesController {
 
       let data: any[] = [];
 
-      // let tmpLastRealEstate: RealEstate = results[0],
-      //   j = 1;
       console.log(results);
 
       results.map((re) => {
@@ -82,9 +77,9 @@ export default class RealEstatesController {
             id: re["project_id"],
             name: re["$extras"]["project_name"],
           },
+          id: re["$extras"]["re_id"],
           status: re["$extras"]["name"],
           name: re["$extras"]["re_name"],
-          id: re["$extras"]["re_id"],
           materials: re["$extras"]["materials"].split(","),
         };
 
@@ -95,50 +90,6 @@ export default class RealEstatesController {
 
         data.push(tmp);
       });
-
-      // for (let i = 0; i < results.length; i++) {
-      //   if (j !== results.length)
-      //     if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
-      //       if (typeof results[j]["$extras"]["project_name"] === "string")
-      //         results[j]["$extras"]["project_name"] = [
-      //           {
-      //             id: tmpLastRealEstate["$attributes"]["project_id"],
-      //             name: tmpLastRealEstate["$extras"]["project_name"],
-      //           },
-      //           {
-      //             id: results[j]["$attributes"]["project_id"],
-      //             name: results[j]["$extras"]["project_name"],
-      //           },
-      //         ];
-      //       else
-      //         results[j]["$extras"]["project_name"].push(
-      //           results[j]["$extras"]["project_name"]
-      //         );
-      //       if (j !== results.length) tmpLastRealEstate = results[j];
-      //     } else {
-      //       let tmp = {
-      //         ...tmpLastRealEstate["$extras"],
-      //         name: tmpLastRealEstate["$extras"]["re_name"],
-      //         status: tmpLastRealEstate["$extras"]["name"],
-      //       };
-      //       delete tmp["re_name"];
-
-      //       data.push(tmp);
-      //       if (j !== results.length) tmpLastRealEstate = results[j];
-      //     }
-      //   else {
-      //     let tmp = {
-      //       ...tmpLastRealEstate["$extras"],
-      //       name: tmpLastRealEstate["$extras"]["re_name"],
-      //       status: tmpLastRealEstate["$extras"]["name"],
-      //     };
-
-      //     delete tmp["re_name"];
-      //     data.push(tmp);
-      //   }
-
-      //   j++;
-      // }
 
       try {
         realEstates = await RealEstate.query().where("status", 1);
@@ -230,97 +181,44 @@ export default class RealEstatesController {
         .innerJoin("projects as p", "a.project_id", "p.id")
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
         .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+        .innerJoin("status as s", "re.status", "s.id")
         .select("p.name as project_name")
         .select("re.id as re_id")
         .select("*")
         .where("re.id", id);
-      console.log(results);
-
-      // .orderBy("re.id", "desc")
-      // .limit(tmpPageSize)
-      // .offset(count);
-      // realEstate = await RealEstate.find(id);
+      console.log(results[0]);
     } catch (error) {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
 
-    // Esto no sé de donde sale. Se elimina ya que es innecesario :)
-    // if (
-    //   results[0]["$extras"][
-    //     "tipology;accounting_account;destination_type;registry_number;na"
-    //   ] === null
-    // )
-    //   delete results[0]["$extras"][
-    //     "tipology;accounting_account;destination_type;registry_number;na"
-    //   ];
+    let project: any = {};
 
-    let data: any[] = [];
+    project = {
+      ...results[0]["$extras"],
+      project: {
+        id: results[0]["$original"]["project_id"],
+        name: results[0]["$extras"]["project_name"],
+      },
+      id: results[0]["$extras"]["re_id"],
+      status: results[0]["$extras"]["name"],
+      name: results[0]["$extras"]["re_name"],
+      materials: results[0]["$extras"]["materials"].split(","),
+    };
 
-    let tmpLastRealEstate: RealEstate = results[0],
-      j = 1;
-    for (let i = 0; i < results.length; i++) {
-      if (j !== results.length)
-        if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
-          console.log(tmpLastRealEstate["$extras"]);
+    delete project["project_name"];
+    delete project["project_description"];
+    delete project["re_name"];
+    delete project["re_id"];
 
-          if (typeof results[j]["$extras"]["project_name"] === "string")
-            results[j]["$extras"]["projects_name"] = [
-              {
-                id: tmpLastRealEstate["$attributes"]["project_id"],
-                name: tmpLastRealEstate["$extras"]["project_name"],
-              },
-              {
-                id: results[j]["$attributes"]["project_id"],
-                name: results[j]["$extras"]["project_name"],
-              },
-            ];
-          else
-            results[j]["$extras"]["project_name"].push(
-              results[j]["$extras"]["project_name"]
-            );
-          if (j !== results.length) tmpLastRealEstate = results[j];
-        } else {
-          console.log(tmpLastRealEstate["$extras"]);
-          let tmp = {
-            ...tmpLastRealEstate["$extras"],
-            projects: {
-              id: tmpLastRealEstate["$original"]["project_id"],
-              name: results["$extras"]["project_name"],
-            },
-          };
-          delete tmp["project_name"];
-          data.push(tmpLastRealEstate["$extras"]);
-          if (j !== results.length) tmpLastRealEstate = results[j];
-        }
-      else {
-        let tmp = {
-          ...tmpLastRealEstate["$extras"],
-          id: tmpLastRealEstate["$extras"]["re_id"],
-          projects: [
-            {
-              id: tmpLastRealEstate["$original"]["project_id"],
-              name: tmpLastRealEstate["$extras"]["project_name"],
-            },
-          ],
-        };
-        delete tmp["project_name"];
-        delete tmp["re_id"];
+    console.log(project);
 
-        data.push(tmp);
-      }
-
-      j++;
-    }
-
-    console.log(data);
-
-    data[0]["supports_documents"] =
-      data[0]["supports_documents"] === null
+    project["supports_documents"] =
+      project["supports_documents"] === null
         ? []
-        : data[0]["supports_documents"].split(",");
+        : project["supports_documents"].split(",");
 
-    return ctx.response.json({ message: "Real Estate", results: data[0] });
+    return ctx.response.json({ message: "Real Estate", results: project });
   }
 
   // POST
