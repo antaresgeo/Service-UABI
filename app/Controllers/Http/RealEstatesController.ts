@@ -44,8 +44,12 @@ export default class RealEstatesController {
           .innerJoin("projects as p", "a.project_id", "p.id")
           .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
           .innerJoin("status as s", "re.status", "s.id")
-          .select("p.name as project_name")
-          .select("re.name as re_name")
+          .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+          .select([
+            "p.name as project_name",
+            "re.name as re_name",
+            "re.id as re_id",
+          ])
           .select("*")
           .where("re.status", 1)
           .orderBy("re.id", "desc")
@@ -67,53 +71,74 @@ export default class RealEstatesController {
 
       let data: any[] = [];
 
-      let tmpLastRealEstate: RealEstate = results[0],
-        j = 1;
+      // let tmpLastRealEstate: RealEstate = results[0],
+      //   j = 1;
       console.log(results);
 
-      for (let i = 0; i < results.length; i++) {
-        if (j !== results.length)
-          if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
-            if (typeof results[j]["$extras"]["project_name"] === "string")
-              results[j]["$extras"]["project_name"] = [
-                {
-                  id: tmpLastRealEstate["$attributes"]["project_id"],
-                  name: tmpLastRealEstate["$extras"]["project_name"],
-                },
-                {
-                  id: results[j]["$attributes"]["project_id"],
-                  name: results[j]["$extras"]["project_name"],
-                },
-              ];
-            else
-              results[j]["$extras"]["project_name"].push(
-                results[j]["$extras"]["project_name"]
-              );
-            if (j !== results.length) tmpLastRealEstate = results[j];
-          } else {
-            let tmp = {
-              ...tmpLastRealEstate["$extras"],
-              name: tmpLastRealEstate["$extras"]["re_name"],
-              status: tmpLastRealEstate["$extras"]["name"],
-            };
-            delete tmp["re_name"];
+      results.map((re) => {
+        let tmp = {
+          ...re["$extras"],
+          project: {
+            id: re["project_id"],
+            name: re["$extras"]["project_name"],
+          },
+          status: re["$extras"]["name"],
+          name: re["re_name"],
+          id: re["$extras"]["re_id"],
+          materials: re["$extras"]["materials"].split(","),
+        };
 
-            data.push(tmp);
-            if (j !== results.length) tmpLastRealEstate = results[j];
-          }
-        else {
-          let tmp = {
-            ...tmpLastRealEstate["$extras"],
-            name: tmpLastRealEstate["$extras"]["re_name"],
-            status: tmpLastRealEstate["$extras"]["name"],
-          };
+        delete tmp["project_name"];
+        delete tmp["project_description"];
+        delete tmp["re_name"];
+        delete tmp["re_id"];
 
-          delete tmp["re_name"];
-          data.push(tmp);
-        }
+        data.push(tmp);
+      });
 
-        j++;
-      }
+      // for (let i = 0; i < results.length; i++) {
+      //   if (j !== results.length)
+      //     if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
+      //       if (typeof results[j]["$extras"]["project_name"] === "string")
+      //         results[j]["$extras"]["project_name"] = [
+      //           {
+      //             id: tmpLastRealEstate["$attributes"]["project_id"],
+      //             name: tmpLastRealEstate["$extras"]["project_name"],
+      //           },
+      //           {
+      //             id: results[j]["$attributes"]["project_id"],
+      //             name: results[j]["$extras"]["project_name"],
+      //           },
+      //         ];
+      //       else
+      //         results[j]["$extras"]["project_name"].push(
+      //           results[j]["$extras"]["project_name"]
+      //         );
+      //       if (j !== results.length) tmpLastRealEstate = results[j];
+      //     } else {
+      //       let tmp = {
+      //         ...tmpLastRealEstate["$extras"],
+      //         name: tmpLastRealEstate["$extras"]["re_name"],
+      //         status: tmpLastRealEstate["$extras"]["name"],
+      //       };
+      //       delete tmp["re_name"];
+
+      //       data.push(tmp);
+      //       if (j !== results.length) tmpLastRealEstate = results[j];
+      //     }
+      //   else {
+      //     let tmp = {
+      //       ...tmpLastRealEstate["$extras"],
+      //       name: tmpLastRealEstate["$extras"]["re_name"],
+      //       status: tmpLastRealEstate["$extras"]["name"],
+      //     };
+
+      //     delete tmp["re_name"];
+      //     data.push(tmp);
+      //   }
+
+      //   j++;
+      // }
 
       try {
         realEstates = await RealEstate.query().where("status", 1);
