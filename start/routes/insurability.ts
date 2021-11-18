@@ -14,7 +14,10 @@ Route.group(() => {
       if (ctx.request.qs().id)
         return new InsurabilitiesController().getOne(ctx);
 
-      return new InsurabilitiesController().getAll(ctx);
+      if (ctx.request.qs().like)
+        return new InsurabilitiesController().showAllPagination(ctx);
+
+      // return new InsurabilitiesController().showAll(ctx);
     });
 
     // POST

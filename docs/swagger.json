@@ -1,0 +1,67 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SABI | Sistema para la Administración de Bienes Inmuebles",
+    "version": "0.3.0",
+    "description": "Documentación para el servicio Core de SABI | Sistema para la Administración de Bienes Inmuebles"
+  },
+  "paths": {
+    "/v1/projects": {
+      "post": {
+        "tags": ["Proyectos"],
+        "summary": "Crear un Proyecto",
+        "parameters": [
+          {
+            "name": "Valores",
+            "description": "Valores para crear un Proyecto",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "Puente de la Madre Laura",
+                  "required": true
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Construcción vial en xxxx con yyyy, llamado honorificamente a Madre Laura",
+                  "required": true
+                },
+                "dependency": {
+                  "type": "string",
+                  "example": "SECRETARIA DE INFRAESTRUCTURA FISICA",
+                  "required": true
+                },
+                "subdependency": {
+                  "type": "string",
+                  "example": "SUBS. CONSTRUCCIÓN Y MANTENIMIENTO",
+                  "required": true
+                },
+                "management_center": {
+                  "type": "number",
+                  "example": 74100000,
+                  "required": true
+                },
+                "cost_center": {
+                  "type": "number",
+                  "example": 74103000,
+                  "required": true
+                }
+              }
+            }
+          }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Response",
+            "example": { "message": "Hello Guess" }
+          }
+        }
+      }
+    }
+  },
+  "components": {},
+  "tags": []
+}

@@ -50,6 +50,38 @@ export const changeStatus = async (
   }
 };
 
+export const capitalize = (str) => {
+  if (typeof str === "string") {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase()));
+  } else {
+    return "";
+  }
+};
+
+export const createSAPID = (
+  activeCode: string,
+  consecutive: number,
+  activeType: string
+) => {
+  activeType = activeType.replace(/mejora/gi, "MJ").replace(/lote/gi, "L");
+  return `${activeCode}${numberWithZeros(String(consecutive), 4)}${activeType}`;
+};
+
+export const numberWithZeros = (numAsString: string, cantZeros: number) => {
+  let tmpCode: string = "";
+
+  cantZeros = cantZeros - numAsString.length;
+  for (let i = 0; i < cantZeros; i++) {
+    tmpCode += "0";
+    tmpCode += numAsString;
+  }
+
+  return tmpCode;
+};
+
 // private decodeJWT() {
 //   try {
 //     let decode = jwt.verify(this.token, "your-256-bit-secret");

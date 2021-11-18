@@ -20,6 +20,8 @@ export default class CreateRealEstateValidator {
     total_percentage: schema.number(),
     materials: schema.string.optional({ trim: true }),
 
+    active_type: schema.string({ trim: true }),
+
     zone: schema.string({ trim: true }),
     address: schema.object
       .optional()

@@ -92,6 +92,7 @@ export default class AuditTrail {
    */
   public registry() {}
 
+  // El código que considero más clean que he creado, pero este update me ha sacado canas... [12021181]
   public update(updatedBy: string, updatedValues: any, model: any) {
     this.updatedBy = updatedBy;
     this.updatedOn = moment().valueOf();
@@ -109,6 +110,8 @@ export default class AuditTrail {
       new: updatedValues,
     };
 
+    this.updatedValues = { ..._updatedValues };
+
     if (tmpData.audit_trail?.updated_values)
       if (!tmpData.audit_trail.updated_values.oldest) {
         delete tmpData.audit_trail;
@@ -116,6 +119,6 @@ export default class AuditTrail {
         _updatedValues.oldest = { ...tmpData };
       } else _updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
 
-    this.updatedValues = _updatedValues;
+    this.updatedValues = { ..._updatedValues };
   }
 }

@@ -7,14 +7,14 @@ Route.group(() => {
       const { default: ProjectsController } = await import(
         "App/Controllers/Http/ProjectsController"
       );
-      return new ProjectsController().getList(ctx);
+      return new ProjectsController().showAllWithPagination(ctx);
     });
 
     Route.get("/", async (ctx) => {
       const { default: ProjectsController } = await import(
         "App/Controllers/Http/ProjectsController"
       );
-      return new ProjectsController().getOne(ctx);
+      return new ProjectsController().show(ctx);
     });
 
     // POST

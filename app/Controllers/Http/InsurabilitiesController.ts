@@ -38,8 +38,8 @@ export default class InsurabilitiesController {
   }
 
   // GET
-  public async getAll(ctx: HttpContextContract) {
-    const { /*q,*/ page, pageSize } = ctx.request.qs();
+  public async showAllPagination({ response, request }: HttpContextContract) {
+    const { /*q,*/ page, pageSize } = request.qs();
     let /*results,*/ tmpPage: number, tmpPageSize: number;
 
     if (!pageSize) tmpPageSize = 10;
@@ -75,7 +75,7 @@ export default class InsurabilitiesController {
         if (tmp.status === "Vigente") data.push(tmp);
       });
 
-      return ctx.response.status(200).json({
+      return response.status(200).json({
         message: "All Insurabilities",
         results: data,
 
@@ -91,7 +91,7 @@ export default class InsurabilitiesController {
       });
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }

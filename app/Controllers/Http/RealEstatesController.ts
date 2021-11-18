@@ -1,4 +1,5 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 import { sum } from "App/Utils/functions";
@@ -9,6 +10,7 @@ import {
 } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
+import { createSAPID } from "./../../Utils/functions/index";
 
 export default class RealEstatesController {
   // GET
@@ -41,7 +43,9 @@ export default class RealEstatesController {
           .from("real_estates_projects as a")
           .innerJoin("projects as p", "a.project_id", "p.id")
           .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+          .innerJoin("status as s", "re.status", "s.id")
           .select("p.name as project_name")
+          .select("re.name as re_name")
           .select("*")
           .where("re.status", 1)
           .orderBy("re.id", "desc")
@@ -65,6 +69,8 @@ export default class RealEstatesController {
 
       let tmpLastRealEstate: RealEstate = results[0],
         j = 1;
+      console.log(results);
+
       for (let i = 0; i < results.length; i++) {
         if (j !== results.length)
           if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
@@ -85,11 +91,26 @@ export default class RealEstatesController {
               );
             if (j !== results.length) tmpLastRealEstate = results[j];
           } else {
-            console.log(tmpLastRealEstate["$extras"]);
-            data.push(tmpLastRealEstate["$extras"]);
+            let tmp = {
+              ...tmpLastRealEstate["$extras"],
+              name: tmpLastRealEstate["$extras"]["re_name"],
+              status: tmpLastRealEstate["$extras"]["name"],
+            };
+            delete tmp["re_name"];
+
+            data.push(tmp);
             if (j !== results.length) tmpLastRealEstate = results[j];
           }
-        else data.push(tmpLastRealEstate["$extras"]);
+        else {
+          let tmp = {
+            ...tmpLastRealEstate["$extras"],
+            name: tmpLastRealEstate["$extras"]["re_name"],
+            status: tmpLastRealEstate["$extras"]["name"],
+          };
+
+          delete tmp["re_name"];
+          data.push(tmp);
+        }
 
         j++;
       }
@@ -170,6 +191,8 @@ export default class RealEstatesController {
    */
   public async getOne(ctx: HttpContextContract) {
     const { id } = ctx.request.qs();
+    console.log(id);
+
     let results;
 
     try {
@@ -177,9 +200,13 @@ export default class RealEstatesController {
         .from("real_estates_projects as a")
         .innerJoin("projects as p", "a.project_id", "p.id")
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+        .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
         .select("p.name as project_name")
+        .select("re.id as re_id")
         .select("*")
         .where("re.id", id);
+      console.log(results);
+
       // .orderBy("re.id", "desc")
       // .limit(tmpPageSize)
       // .offset(count);
@@ -188,21 +215,16 @@ export default class RealEstatesController {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
-    console.log(
-      results[0]["$extras"][
-        "tipology;accounting_account;destination_type;registry_number;na"
-      ]
-    );
 
-    console.log(results[0]["$extras"]);
-    if (
-      results[0]["$extras"][
-        "tipology;accounting_account;destination_type;registry_number;na"
-      ] === null
-    )
-      delete results[0]["$extras"][
-        "tipology;accounting_account;destination_type;registry_number;na"
-      ];
+    // Esto no sé de donde sale. Se elimina ya que es innecesario :)
+    // if (
+    //   results[0]["$extras"][
+    //     "tipology;accounting_account;destination_type;registry_number;na"
+    //   ] === null
+    // )
+    //   delete results[0]["$extras"][
+    //     "tipology;accounting_account;destination_type;registry_number;na"
+    //   ];
 
     let data: any[] = [];
 
@@ -211,6 +233,8 @@ export default class RealEstatesController {
     for (let i = 0; i < results.length; i++) {
       if (j !== results.length)
         if (tmpLastRealEstate["$extras"].id === results[j]["$extras"].id) {
+          console.log(tmpLastRealEstate["$extras"]);
+
           if (typeof results[j]["$extras"]["project_name"] === "string")
             results[j]["$extras"]["projects_name"] = [
               {
@@ -243,18 +267,24 @@ export default class RealEstatesController {
       else {
         let tmp = {
           ...tmpLastRealEstate["$extras"],
-          projects: {
-            id: tmpLastRealEstate["$original"]["project_id"],
-            name: tmpLastRealEstate["$extras"]["project_name"],
-          },
+          id: tmpLastRealEstate["$extras"]["re_id"],
+          projects: [
+            {
+              id: tmpLastRealEstate["$original"]["project_id"],
+              name: tmpLastRealEstate["$extras"]["project_name"],
+            },
+          ],
         };
         delete tmp["project_name"];
+        delete tmp["re_id"];
 
         data.push(tmp);
       }
 
       j++;
     }
+
+    console.log(data);
 
     data[0]["supports_documents"] =
       data[0]["supports_documents"] === null
@@ -269,15 +299,48 @@ export default class RealEstatesController {
    * create
    */
   public async create(ctx: HttpContextContract) {
-    const payload: any = await ctx.request.validate(CreateRealEstate);
+    const { response, request } = ctx;
+    const payload: any = await request.validate(CreateRealEstate);
+    let project: Project | any;
 
     const auditTrail: AuditTrail = new AuditTrail();
 
     try {
       let dataRealEstate: IRealEstateAttributes = { ...payload };
+      if (payload.projects_id) {
+        try {
+          // project = await Project.findOrFail(payload.projects_id[0]);
+          const { default: ProjectsController } = await import(
+            "App/Controllers/Http/ProjectsController"
+          );
+
+          if (typeof dataRealEstate.projects_id !== "undefined") {
+            project = await new ProjectsController().show(
+              ctx,
+              dataRealEstate.projects_id[0]
+            );
+
+            if (typeof project !== "undefined")
+              dataRealEstate["cost_center_id"] = project.cost_center_id;
+            console.log(project);
+          }
+        } catch (error) {
+          console.error(error);
+          return response.status(402).json({
+            message:
+              "El Proyecto al que quiere relacionar no existe, crearlo antes de asignar.",
+          });
+        }
+      }
+
       delete dataRealEstate.projects_id;
       dataRealEstate.status = 1;
       dataRealEstate.audit_trail = auditTrail.getAsJson();
+      dataRealEstate["sap_id"] = createSAPID(
+        project.fixed_assets,
+        (await RealEstate.all()).length,
+        dataRealEstate.active_type
+      );
 
       const realEstate = await RealEstate.create({
         ...dataRealEstate,
@@ -285,16 +348,17 @@ export default class RealEstatesController {
 
       if (payload.projects_id)
         await this.createRelation(payload.projects_id, realEstate);
-      else await this.createRelation([1], realEstate);
+      else await this.createRelation([0], realEstate);
 
-      return ctx.response.status(200).json({
+      return response.status(200).json({
         message: "Bien Inmueble creado correctamente.",
-        results: realEstate,
+        results: { ...realEstate["$attributes"], project: project },
       });
     } catch (error) {
       console.error(error);
-      return ctx.response.status(500).json({
-        message: "A ocurrido un error inesperado al crear el Bien Inmueble.",
+      return response.status(500).json({
+        message:
+          "A ocurrido un error inesperado al crear el Bien Inmueble.\nRevisar Terminal.",
         error,
       });
     }
@@ -323,15 +387,15 @@ export default class RealEstatesController {
   /**
    * update
    */
-  public async update(ctx: HttpContextContract, alt?: any) {
+  public async update({ response, request }: HttpContextContract, alt?: any) {
     let newData, _id;
 
     if (alt) {
       newData = alt["data"];
       _id = String(alt["id"]);
     } else {
-      newData = ctx.request.body();
-      const { id } = ctx.request.qs();
+      newData = request.body();
+      const { id } = request.qs();
       _id = id;
     }
     console.log(newData.projects);
@@ -352,7 +416,7 @@ export default class RealEstatesController {
           new: newData,
         };
 
-        let tmpData: IRealEstateAttributes = realEstate;
+        let tmpData: any = realEstate;
         if (tmpData.audit_trail?.updated_values)
           if (!tmpData.audit_trail.updated_values.oldest)
             updatedValues.oldest = {
@@ -380,7 +444,7 @@ export default class RealEstatesController {
             .save();
           console.log(realEstateUpdated);
 
-          return ctx.response.status(200).json({
+          return response.status(200).json({
             message: "Updated successfully!",
             results: {
               ...realEstateUpdated["$attributes"],
@@ -392,19 +456,19 @@ export default class RealEstatesController {
           if (alt) {
             return {
               error: true,
-              response: ctx.response
+              response: response
                 .status(500)
                 .json({ message: "Error al actualizar: Servidor", error }),
             };
           }
-          return ctx.response
+          return response
             .status(500)
             .json({ message: "Error al actualizar: Servidor", error });
         }
       }
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }

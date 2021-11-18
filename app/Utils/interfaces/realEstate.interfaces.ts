@@ -23,6 +23,10 @@ export interface IRealEstateAttributes {
   supports_documents?: string;
   projects_id?: number[];
 
+  active_type: string;
+
+  cost_center_id: number;
+
   status?: number;
   audit_trail?: IAuditTrail;
 }

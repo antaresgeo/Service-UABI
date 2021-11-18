@@ -5,23 +5,28 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 
 // FUNCTIONS
-import { sum } from "App/Utils/functions";
+import { sum, capitalize } from "App/Utils/functions";
 
 // INTERFACES
-import { IProjectAttributes } from "App/Utils/interfaces";
+import { IPayloadProject, IProjectAttributes } from "App/Utils/interfaces";
 
 // MODELS
 // import RealEstate from "App/Models/RealEstate";
 import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
+import CreateProjectValidator from "App/Validators/CreateProjectValidator";
+import CostCenter from "App/Models/CostCenter";
 
 export default class ProjectsController {
   // GET
   /**
    * index
    */
-  public async getList(ctx: HttpContextContract) {
-    const { filters, page, pageSize } = ctx.request.qs();
+  public async showAllWithPagination({
+    request,
+    response,
+  }: HttpContextContract) {
+    const { q, page, pageSize } = request.qs();
     let results: Project[] | null = null,
       data: any[] = [],
       tmpPage: number,
@@ -36,18 +41,20 @@ export default class ProjectsController {
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
+    console.log(q);
+
     try {
-      if (filters) {
-        if (typeof filters.q === "string")
+      if (q) {
+        if (typeof q === "string")
           results = await Project.query()
             .from("projects as p")
             .innerJoin("status as s", "p.status", "s.id")
-            .select("*")
             .select("p.name as project_name")
             .select("p.id as project_id")
             .select("s.name as status_name")
+            .select("*")
             .where("status", 1)
-            .whereRaw(`'name' LIKE '%${filters.q}%'`)
+            .whereRaw(`'name' LIKE '%${q}%'`)
             .orderBy("p.id", "desc")
             .limit(tmpPageSize)
             .offset(count);
@@ -55,10 +62,11 @@ export default class ProjectsController {
         results = await Project.query()
           .from("projects as p")
           .innerJoin("status as s", "p.status", "s.id")
-          .select("*")
+          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
           .select("p.name as project_name")
           .select("p.id as project_id")
           .select("s.name as status_name")
+          .select("*")
           .where("status", 1)
           .orderBy("p.id", "desc")
           .limit(tmpPageSize)
@@ -66,22 +74,29 @@ export default class ProjectsController {
       }
 
       results = results === null ? [] : results;
-      console.log(results);
 
       results.map((realEstate) => {
-        data.push({
+        let tmpNewData: any = {
           ...realEstate["$original"],
           id: realEstate["$extras"]["project_id"],
-          name: realEstate["$extras"]["project_name"],
+          name: capitalize(realEstate["$extras"]["project_name"]),
           status: realEstate["$extras"]["status_name"],
-        });
+          dependency: realEstate["$extras"]["dependency"],
+          subdependency: realEstate["$extras"]["subdependency"],
+          management_center: realEstate["$extras"]["management_center"],
+          cost_center: realEstate["$extras"]["cost_center"],
+          fixed_assets: realEstate["$extras"]["fixed_assets"],
+        };
+
+        delete tmpNewData.cost_center_id;
+        data.push(tmpNewData);
       });
 
       try {
         projects = await Project.query().where("status", 1);
       } catch (error) {
         console.error(error);
-        return ctx.response.status(500).json({
+        return response.status(500).json({
           message: "Error al traer la lista de todos los Bienes Inmuebles.",
         });
       }
@@ -101,7 +116,7 @@ export default class ProjectsController {
       const lastElement = data.pop();
       const res = [lastElement, ...data];
 
-      return ctx.response.json({
+      return response.json({
         message: "List of all Real Estates",
         results: res,
         page: tmpPage,
@@ -112,7 +127,7 @@ export default class ProjectsController {
       });
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Request to Projects failed!" });
     }
@@ -121,45 +136,122 @@ export default class ProjectsController {
   /**
    * index
    */
-  public async getOne(ctx: HttpContextContract) {
-    const { id } = ctx.request.qs();
-    let project: Project | null;
+  public async show({ response, request }: HttpContextContract, id?: number) {
+    let results: Project[] | {}, _id: number;
+
+    if (id) _id = id;
+    else _id = request.qs().id;
 
     try {
-      project = await Project.find(id);
+      results = await Project.query()
+        .from("projects as p")
+        .innerJoin("status as s", "p.status", "s.id")
+        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+        .select("p.name as project_name")
+        .select("p.id as project_id")
+        .select("s.name as status_name")
+        .select("*")
+        .where("p.id", _id);
     } catch (error) {
       console.error(error);
-      return ctx.response.status(500).json({ message: "Project error" });
+      return response.status(500).json({ message: "Project error" });
     }
 
-    const data = project === null ? {} : project;
+    results = results === null ? {} : results[0];
 
-    return ctx.response.json({ message: "Project", results: data });
+    let tmpNewData: any = {
+      ...results["$original"],
+      id: results["$extras"]["project_id"],
+      name: capitalize(results["$extras"]["project_name"]),
+      status: results["$extras"]["status_name"],
+      dependency: results["$extras"]["dependency"],
+      subdependency: results["$extras"]["subdependency"],
+      management_center: results["$extras"]["management_center"],
+      cost_center: results["$extras"]["cost_center"],
+      fixed_assets: results["$extras"]["fixed_assets"],
+    };
+
+    if (id) return tmpNewData;
+
+    return response.json({ message: "Project", results: tmpNewData });
   }
 
   // POST
   /**
-   * create
+   * @swagger
+   * /v1/projects:
+   *   post:
+   *     tags:
+   *       - Proyectos
+   *     summary: Crear un Proyecto
+   *     parameters:
+   *       - name: Valores
+   *         description: Valores para crear un Proyecto
+   *         in: body
+   *         required: true
+   *         schema:
+   *            properties:
+   *              name:
+   *                type: string
+   *                example: 'Puente de la Madre Laura'
+   *                required: true
+   *              description:
+   *                type: string
+   *                example: 'Construcción vial en xxxx con yyyy, llamado honorificamente a Madre Laura'
+   *                required: true
+   *              dependency:
+   *                type: string
+   *                example: 'SECRETARIA DE INFRAESTRUCTURA FISICA'
+   *                required: true
+   *              subdependency:
+   *                type: string
+   *                example: 'SUBS. CONSTRUCCIÓN Y MANTENIMIENTO'
+   *                required: true
+   *              management_center:
+   *                type: number
+   *                example: 74100000
+   *                required: true
+   *              cost_center:
+   *                type: number
+   *                example: 74103000
+   *                required: true
+   *     produces:
+   *        - application/json
+   *     responses:
+   *       200:
+   *         description: Response
+   *         example:
+   *           message: Hello Guess
    */
-  public async create(ctx: HttpContextContract) {
-    const {
-      name,
-      description,
-      dependency,
-      subdependency,
-      management_center,
-      cost_center,
-    } = ctx.request.body();
+  public async create({ request, response }: HttpContextContract) {
+    const payloadProject: IPayloadProject = await request.validate(
+      CreateProjectValidator
+    );
+
+    let dataToCreate: IProjectAttributes, costCenterID: CostCenter[];
+
+    try {
+      costCenterID = await CostCenter.query()
+        .select("id")
+        .where("dependency", payloadProject.dependency)
+        .where("subdependency", payloadProject.subdependency)
+        .where("management_center", payloadProject.management_center)
+        .where("cost_center", payloadProject.cost_center);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).json({
+        message: "Error obteniendo el ID del Centro de Costos",
+        error,
+      });
+    }
 
     const auditTrail: AuditTrail = new AuditTrail();
 
-    const dataToCreate: IProjectAttributes = {
-      name: name.toUpperCase(),
-      description,
-      dependency: dependency.toUpperCase(),
-      subdependency: subdependency.toUpperCase(),
-      management_center,
-      cost_center,
+    dataToCreate = {
+      name: payloadProject.name.toUpperCase(),
+      description: payloadProject.description,
+
+      cost_center_id: costCenterID[0]["id"],
 
       status: 1,
       audit_trail: auditTrail.getAsJson(),
@@ -170,13 +262,13 @@ export default class ProjectsController {
         ...dataToCreate,
       });
 
-      return ctx.response.status(200).json({
+      return response.status(200).json({
         message: "Proyecto creado satisfactoriamente.",
         results: project,
       });
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Hubo un error al crear el Proyecto." });
     }
@@ -186,41 +278,77 @@ export default class ProjectsController {
   /**
    * update
    */
-  public async update(ctx: HttpContextContract) {
-    const newData = ctx.request.body();
-    const { id } = ctx.request.qs();
+  public async update({ request, response }: HttpContextContract) {
+    const newData = request.body();
+    const { id } = request.qs();
+    let costCenterID;
 
     try {
       if (typeof id === "string") {
         const project = await Project.findOrFail(id);
+        costCenterID;
 
+        let dataUpdated: IProjectAttributes = {
+          name: newData["name"].toUpperCase().trim(),
+          description: newData["description"].trim(),
+          cost_center_id: project.cost_center_id,
+        };
+
+        if (
+          newData["dependency"] &&
+          newData["subdependency"] &&
+          newData["management_center"] &&
+          newData["cost_center"]
+        )
+          try {
+            costCenterID = await CostCenter.query()
+              .select("id")
+              .where("dependency", newData["dependency"])
+              .where("subdependency", newData["subdependency"])
+              .where("management_center", newData["management_center"])
+              .where("cost_center", newData["cost_center"]);
+
+            dataUpdated["cost_center_id"] = costCenterID[0]["id"];
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message: "Error obteniendo el ID del Centro de Costos",
+              error,
+            });
+          }
+
+        // Update of Audit Trail | Actualización del Registro de Auditoría
         const auditTrail = new AuditTrail(undefined, project.audit_trail);
-        auditTrail.update("Administrador", newData, project);
+
+        auditTrail.update("Administrador", { ...dataUpdated }, project);
+        console.log(auditTrail.getAsJson());
+        dataUpdated["audit_trail"] = auditTrail.getAsJson();
+        console.log(dataUpdated);
 
         // Updating data
         try {
           await project
             .merge({
-              ...newData,
-              name: newData.name.toUpperCase(),
-              audit_trail: auditTrail.getAsJson(),
+              ...dataUpdated,
             })
             .save();
 
-          return ctx.response.status(200).json({
-            message: `Proyecto ${project.name} actualizado satisfactoriamente`,
+          return response.status(200).json({
+            message: `Proyecto ${capitalize(
+              project.name
+            )} actualizado satisfactoriamente`,
             results: project,
           });
         } catch (error) {
           console.error(error);
-          return ctx.response
+          return response
             .status(500)
             .json({ message: "Error al actualizar: Servidor", error });
         }
       }
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }
@@ -249,15 +377,16 @@ export default class ProjectsController {
    * delete
    */
   public async delete(ctx: HttpContextContract) {
-    const { id } = ctx.request.qs();
+    const { request, response } = ctx;
+    const { id } = request.qs();
 
     if (!id)
-      return ctx.response
+      return response
         .status(400)
         .json({ message: "Colocar el ID del proyecto a inactivar." });
 
     if (id === "0")
-      return ctx.response
+      return response
         .status(400)
         .json({ message: "Este proyecto no puede ser inactivado." });
 
@@ -283,7 +412,7 @@ export default class ProjectsController {
         // realEstate = await RealEstate.find(id);
       } catch (error) {
         console.error(error);
-        return ctx.response.status(500).json({ message: "Real Estate error" });
+        return response.status(500).json({ message: "Real Estate error" });
       }
 
       // try {
@@ -292,14 +421,14 @@ export default class ProjectsController {
       //     .orderBy("id", "desc");
       // } catch (error) {
       //   console.error(error);
-      //   return ctx.response
+      //   return response
       //     .status(500)
       //     .json({ message: "Request to Real Estates failed!" });
       // }
       const data = results === null ? [] : results;
 
       if (data === []) {
-        return ctx.response.status(200).json({
+        return response.status(200).json({
           message: `Proyecto ${
             res["results"].status === 1 ? "activado" : "inactivado"
           }.`,
@@ -320,14 +449,14 @@ export default class ProjectsController {
 
           realEstatesController.changeStatus(realEstate.id, 2);
         });
-        return ctx.response.status(200).json({
+        return response.status(200).json({
           message: `Proyecto ${
             res["results"].status === 1 ? "activado" : "inactivado"
           }.\n\n${data.length} bienes inmuebles desasociados.`,
         });
       }
     } else {
-      return ctx.response.status(500).json({
+      return response.status(500).json({
         message: "Error al inactivar el proyecto.",
         error: res["results"],
       });

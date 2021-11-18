@@ -4,15 +4,8 @@ DROP table if EXISTS acquisitions cascade;
 DROP table if EXISTS real_estates_projects cascade;
 DROP table if EXISTS real_estates cascade;
 DROP table if EXISTS projects cascade;
-DROP table if EXISTS status;
-
--- CREATE TYPE bug_status AS ENUM ('new', 'open', 'closed');
-
--- CREATE TABLE bug (
---     id serial,
---     description text,
---     status bug_status
--- );
+DROP table if EXISTS cost_centers cascade;
+DROP table if EXISTS status cascade;
 
 -- GENERAL TABLES
 CREATE TABLE IF NOT EXISTS status (
@@ -20,17 +13,14 @@ CREATE TABLE IF NOT EXISTS status (
 	name VARCHAR(25) UNIQUE
 );
 
--- CREATE TABLE IF NOT EXISTS audit_trail (
--- 	id SERIAL PRIMARY KEY,
-
--- 	name VARCHAR(25) UNIQUE
--- );
-
--- CREATE TABLE IF NOT EXISTS registers (
--- 	id SERIAL PRIMARY KEY,
--- 	date BIGINT NOT NULL,
--- 	action VARCHAR()
--- )
+CREATE TABLE IF NOT EXISTS cost_centers (
+	id INT PRIMARY KEY,
+	dependency varchar(200) NOT NULL,
+	subdependency varchar(200) NOT NULL,
+	management_center int NOT NULL,
+	cost_center int NOT NULL,
+	fixed_assets varchar(3) NOT NULL
+);
 
 CREATE table if not EXISTS projects (
 	id SERIAL PRIMARY KEY,
@@ -38,54 +28,21 @@ CREATE table if not EXISTS projects (
 	name varchar(200) NOT NULL,
 	description varchar(1000) NOT NULL,
 
-	dependency varchar(200) NOT NULL,
-	subdependency varchar(200) NOT NULL,
-	management_center int NOT NULL,
-	cost_center int NOT NULL,
+	cost_center_id int NOT NULL,
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL,
 
 	CONSTRAINT fk_project_status
       FOREIGN KEY(status) 
-	  REFERENCES status(id)
+	  REFERENCES status(id),
+	CONSTRAINT fk_project_dependency
+      FOREIGN KEY(cost_center_id) 
+	  REFERENCES cost_centers(id)
 );
 
-CREATE table if not EXISTS real_estates (
-	id SERIAL PRIMARY KEY,
-	sap_id varchar(100) UNIQUE,
-	
-	tipology varchar (50) NOT NULL,
-	accounting_account varchar(200) NOT NULL,
-	
-	destination_type varchar(200) NOT NULL,
-	registry_number varchar(200) NOT NULL,
-	name varchar(200) NOT NULL,
-	description varchar(1000) NOT NULL,
-	patrimonial_value double precision NOT NULL,
-	reconstruction_value double precision NOT NULL,
-	total_area double PRECISION NOT NULL,
-	total_percentage INT NOT NULL,
-	materials text,
-	
-	zone varchar(10) NOT NULL,
-	address json NOT NULL,
-	
-	supports_documents text,
-	
-	status int NOT NULL,
-	audit_trail json NOT NULL
-);
 
-create table if not EXISTS real_estates_projects (
-	project_id int,
-	real_estate_id int,
-	PRIMARY KEY (project_id, real_estate_id),
-	FOREIGN KEY (project_id)
-		REFERENCES projects(id),
-	FOREIGN KEY (real_estate_id)
-		REFERENCES real_estates(id)
-);
+
 
 CREATE table if not EXISTS acquisitions (
 	id SERIAL PRIMARY key,
@@ -109,10 +66,7 @@ CREATE table if not EXISTS acquisitions (
 	real_estate_id int NOT NULL,
 		
 	status int NOT NULL,
-	audit_trail json NOT NULL,
-	CONSTRAINT fk_real_estate
-      FOREIGN KEY(real_estate_id) 
-	  REFERENCES real_estates(id)
+	audit_trail json NOT NULL	
 );
 
 -- INSURABILITIES
@@ -132,13 +86,12 @@ CREATE table if not EXISTS insurabilities (
 	insurance_value double PRECISION NOT NULL,
 	insurance_document_id varchar(200) NOT NULL,
 
-	real_estate_id int,
-		
 	status int NOT NULL,
 	audit_trail json NOT NULL,
-	CONSTRAINT fk_real_estate_ins
-      FOREIGN KEY(real_estate_id) 
-	  REFERENCES real_estates(id)
+
+	CONSTRAINT fk_policy_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
 );
 
 CREATE table if not EXISTS insurance_brokers (
@@ -167,8 +120,753 @@ CREATE table if not EXISTS insurance_companies (
 	audit_trail json NOT NULL
 );
 
+
+CREATE table if not EXISTS real_estates (
+	id SERIAL PRIMARY KEY,
+	sap_id varchar(100) UNIQUE,
+	
+	tipology varchar (50) NOT NULL,
+	accounting_account varchar(200) NOT NULL,
+	
+	destination_type varchar(200) NOT NULL,
+	registry_number varchar(200) NOT NULL,
+	name varchar(200) NOT NULL,
+	description varchar(1000) NOT NULL,
+	patrimonial_value double precision NOT NULL,
+	reconstruction_value double precision NOT NULL,
+	total_area double PRECISION NOT NULL,
+	total_percentage INT NOT NULL,
+	materials text,
+	
+	zone varchar(10) NOT NULL,
+	address json NOT NULL,
+	
+	supports_documents text,
+
+	cost_center_id int,
+	policy_id int,
+	active_type varchar(100),
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_re_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_policy
+      FOREIGN KEY(policy_id) 
+	  REFERENCES insurabilities(id),
+	CONSTRAINT fk_re_dependency
+      FOREIGN KEY(cost_center_id) 
+	  REFERENCES cost_centers(id)
+);
+
+create table if not EXISTS real_estates_projects (
+	project_id int,
+	real_estate_id int,
+	PRIMARY KEY (project_id, real_estate_id),
+	FOREIGN KEY (project_id)
+		REFERENCES projects(id),
+	FOREIGN KEY (real_estate_id)
+		REFERENCES real_estates(id)
+);
+
 -- INSERTS
-INSERT INTO status VALUES (0, 'Inactivo'), (1, 'Activo'), (2, 'Finalizado'), (3, 'Vigente'), (4, 'Vencido');
+INSERT 
+	INTO status 
+	VALUES (
+		0, 'Inactivo'
+	), (
+		1, 'Activo'
+	), (
+		2, 'Vigente'
+	), (
+		3, 'Vencido'
+	), (
+		4, 'Englobado'
+	), (
+		5, 'Desenglobado'
+	), (
+		6, 'Englobado Parcial'
+	), (
+		7, 'Desenglobado Parcial'
+	);
+
+INSERT
+	INTO cost_centers
+	VALUES (
+		1,
+		'ALCALDÍA',
+		'ALCALDÍA',
+		70000000,
+		70001000,
+		'AM'
+	), (
+		2,
+		'ALCALDÍA',
+		'GERENCIA DE PROYECTOS ESTRATÉGICOS',
+		70000000,
+		70002000,
+		'GP'
+	), (
+		3,
+		'ALCALDÍA',
+		'GERENCIA ÉTNICA',
+		70000000,
+		70003000,
+		'GE'
+	), (
+		4,
+		'ALCALDÍA',
+		'GERENCIA DE DIVERSIDADES SEXUALES E IDENTIDADES DE GENERO',
+		70000000,
+		70004000,
+		'GD'
+	), (
+		5,
+		'SECRETARIA PRIVADA',
+		'SECRETARIA PRIVADA',
+		70100000,
+		70101000,
+		'SP'
+	), (
+		6,
+		'SECRETARIA DE COMUNICACIONES',
+		'SECRETARIA DE COMUNICACIONES',
+		70200000,
+		70201000,
+		'SC'
+	), (
+		7,
+		'SECRETARIA DE COMUNICACIONES',
+		'SUBS. COMUNICACIÓN ESTRATÉGICA',
+		70200000,
+		70202000,
+		'SC'
+	), (
+		8,
+		'SECRETARIA DE EVALUACION Y CONTROL',
+		'SECRETARIA DE EVALUACION Y CONTROL',
+		70300000,
+		70301000,
+		'SEC'
+	), (
+		9,
+		'SECRETARIA DE EVALUACION Y CONTROL',
+		'SUBS. DE EVALUACION Y SEGUIMIENTO',
+		70300000,
+		70302000,
+		'SEC'
+	), (
+		10,
+		'SECRETARIA DE EVALUACION Y CONTROL',
+		'SUBS. DE ASESORIA Y ACOMPAÑAMIENTO',
+		70300000,
+		70303000,
+		'SEC'
+	), (
+		11,
+		'SECRETARIA DE GOBIERNO Y GESTION DEL GABINETE',
+		'SECRETARIA DE GOBIERNO Y GESTION DEL GABINETE',
+		73100000,
+		73101000,
+		'GOZ'
+	), (
+		12,
+		'GERENCIA DE CORREGIMIENTOS',
+		'GERENCIA DE CORREGIMIENTOS',
+		76000000,
+		76002000,
+		'GCG'
+	), (
+		13,
+		'GERENCIA DEL CENTRO',
+		'GERENCIA DEL CENTRO',
+		76000000,
+		76003000,
+		'GC'
+	), (
+		14,
+		'GERENCIA DE PROYECTOS ESTRATÉGICOS',
+		'GERENCIA DE PROYECTOS ESTRATÉGICOS',
+		76000000,
+		76000000,
+		'GP'
+	), (
+		15,
+		'SECRETARIA DE HACIENDA',
+		'SECRETARIA DE HACIENDA',
+		70400000,
+		70401000,
+		'SH'
+	), (
+		16,
+		'SECRETARIA DE HACIENDA',
+		'SUBS. DE INGRESOS',
+		70400000,
+		70402000,
+		'SH'
+	), (
+		17,
+		'SECRETARIA DE HACIENDA',
+		'SUBS. DE TESORERIA',
+		70400000,
+		70403000,
+		'SH'
+	), (
+		18,
+		'SECRETARIA DE HACIENDA',
+		'SUBS. PRESUPUESTO Y GESTIÓN FINANCIERA',
+		70400000,
+		70404000,
+		'SH'
+	), (
+		19,
+		'SECRETARIA GENERAL',
+		'SECRETARIA GENERAL',
+		70500000,
+		70501000,
+		'GEZ'
+	), (
+		20,
+		'SECRETARIA GENERAL',
+		'SUBS. DE PREVENCI. DEL DAÑO ANTIJURIDICO',
+		70500000,
+		70502000,
+		'GEZ'
+	), (
+		21,
+		'SECRETARIA GENERAL',
+		'SUBS. DE DEFENSA Y PROTECC. DE LO PUBLIC',
+		70500000,
+		70503000,
+		'GEZ'
+	), (
+		22,
+		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
+		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
+		70600000,
+		70601000,
+		'GHS'
+	), (
+		23,
+		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
+		'SUBS. GESTIÓN HUMANA',
+		70600000,
+		70602000,
+		'GHS'
+	), (
+		24,
+		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
+		'SUBS. SERVICIO A LA CIUDADANÍA',
+		70600000,
+		70603000,
+		'GHS'
+	), (
+		25,
+		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
+		'SUBS. DESARROLLO INSTITUCIONAL',
+		70600000,
+		70604000,
+		'GHS'
+	), (
+		26,
+		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
+		'TECNOLOGÍA Y GESTIÓN DE LA INFORMACIÓN',
+		70600000,
+		70605000,
+		'GHS'
+	), (
+		27,
+		'SECRETARIA SUMINISTROS Y SERVICIOS',
+		'SECRETARIA SUMINISTROS Y SERVICIOS',
+		70700000,
+		70701000,
+		'SZ'
+	), (
+		28,
+		'SECRETARIA SUMINISTROS Y SERVICIOS',
+		'SUBS. GESTIÓN DE BIENES',
+		70700000,
+		70702000,
+		'SZ'
+	), (
+		29,
+		'SECRETARIA SUMINISTROS Y SERVICIOS',
+		'SUBS. SELECCIÓN Y GESTIÓN DE PROVEEDORES',
+		70700000,
+		70703000,
+		'SZ'
+	), (
+		30,
+		'SECRETARIA SUMINISTROS Y SERVICIOS',
+		'SUBS. PLANEACIÓN Y EVALUACIÓN',
+		70700000,
+		70704000,
+		'SZ'
+	), (
+		31,
+		'SECRETARIA SUMINISTROS Y SERVICIOS',
+		'SUBS. EJECUCIÓN DE LA CONTRATACIÓN',
+		70700000,
+		70705000,
+		'SZ'
+	), (
+		32,
+		'SECRETARIA DE EDUCACION',
+		'SECRETARIA DE EDUCACION',
+		71100000,
+		71101000,
+		'EDZ'
+	), (
+		33,
+		'SECRETARIA DE EDUCACION',
+		'SUBS. ADMINISTRATIVA Y FINANCIERA ',
+		71100000,
+		71102000,
+		'EDZ'
+	), (
+		34,
+		'SECRETARIA DE EDUCACION',
+		'SUBS. DE PLANEACION EDUCATIVA',
+		71100000,
+		71103000,
+		'EDZ'
+	), (
+		35,
+		'SECRETARIA DE EDUCACION',
+		'SUBS. PRESTACIÓN DEL SERVICIO EDUCATIVO',
+		71100000,
+		71104000,
+		'EDZ'
+	), (
+		36,
+		'SECRETARIA DE EDUCACION',
+		'UNIDAD ADMINISTRATIVA ESPECIAL SIN PJ BUEN COMIENZO',
+		71100000,
+		71105000,
+		'EDZ'
+	), (
+		37,
+		'SECRETARIA DE PARTICIPACION CIUDADANA',
+		'SECRETARIA DE PARTICIPACION CIUDADANA',
+		71200000,
+		71201000,
+		'DZ'
+	), (
+		38,
+		'SECRETARIA DE PARTICIPACION CIUDADANA',
+		'SUBS. DE ORGANIZACIÓN SOCIAL',
+		71200000,
+		71202000,
+		'DZ'
+	), (
+		39,
+		'SECRETARIA DE PARTICIPACION CIUDADANA',
+		'SUBS. DE FORMACION Y PARTI. CIUDADANA',
+		71200000,
+		71203000,
+		'DZ'
+	), (
+		40,
+		'SECRETARIA DE PARTICIPACION CIUDADANA',
+		'SUBS. DE PLANEACION LOCAL Y PPTO PARTICI',
+		71200000,
+		71204000,
+		'DZ'
+	), (
+		41,
+		'SECRETARIA DE CULTURA CIUDADANA',
+		'SECRETARIA DE CULTURA CIUDADANA',
+		71300000,
+		71301000,
+		'CUZ'
+	), (
+		42,
+		'SECRETARIA DE CULTURA CIUDADANA',
+		'SUBS. DE CIUDADANIA CULTURAL',
+		71300000,
+		71302000,
+		'CUZ'
+	), (
+		43,
+		'SECRETARIA DE CULTURA CIUDADANA',
+		'SUBS. DE ARTE Y CULTURA',
+		71300000,
+		71303000,
+		'CUZ'
+	), (
+		44,
+		'SECRETARIA DE CULTURA CIUDADANA',
+		'SUBS. DE LECTURA, BIBLIOTECAS Y PATRIMONIO',
+		71300000,
+		71304000,
+		'CUZ'
+	), (
+		45,
+		'SECRETARIA DE SALUD',
+		'SECRETARIA DE SALUD',
+		72100000,
+		72101000,
+		'FLZ'
+	), (
+		46,
+		'SECRETARIA DE SALUD',
+		'SUBS. GESTION DE SERVICIOS DE SALUD',
+		72100000,
+		72102000,
+		'FLZ'
+	), (
+		47,
+		'SECRETARIA DE SALUD',
+		'SUBS. DE SALUD PUBLICA',
+		72100000,
+		72103000,
+		'FLZ'
+	), (
+		48,
+		'SECRETARIA DE SALUD',
+		'SUBS. ADMINISTRATIVA Y FINACIERA',
+		72100000,
+		72104000,
+		'FLZ'
+	), (
+		49,
+		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
+		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
+		72200000,
+		72201000,
+		'IZ'
+	), (
+		50,
+		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
+		'SUBS. DE GRUPOS POBLACIONALES',
+		72200000,
+		72202000,
+		'IZ'
+	), (
+		51,
+		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
+		'SUBS. TÉCNICA DE INCLUSIÓN SOCIAL',
+		72200000,
+		72203000,
+		'IZ'
+	), (
+		52,
+		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
+		'SUBS. DE DERECHOS HUMANOS',
+		72200000,
+		72204000,
+		'IZ'
+	), (
+		53,
+		'SECRETARÍA DE LAS MUJERES',
+		'SECRETARÍA DE LAS MUJERES',
+		72300000,
+		72301000,
+		'SMZ'
+	), (
+		54,
+		'SECRETARÍA DE LAS MUJERES',
+		'SUBSECRETARÍA DE DERECHOS',
+		72300000,
+		72302000,
+		'SMZ'
+	), (
+		55,
+		'SECRETARÍA DE LAS MUJERES',
+		'SUBSECRETARIA DE TRANSVERSALIZACION',
+		72300000,
+		72303000,
+		'SMZ'
+	), (
+		56,
+		'SECRETARIA DE LA JUVENTUD',
+		'SECRETARIA DE LA JUVENTUD',
+		72400000,
+		72401000,
+		'SJ'
+	), (
+		57,
+		'SECRETARÍA DE LA NO VIOLENCIA',
+		'SECRETARÍA DE LA NO VIOLENCIA',
+		72500000,
+		72501000,
+		'SNV'
+	), (
+		58,
+		'SECRETARÍA DE LA NO VIOLENCIA',
+		'SUBSECRETARÍA DE JUSTICIA RESTAURATIVA',
+		72500000,
+		72502000,
+		'SNV'
+	), (
+		59,
+		'SECRETARÍA DE LA NO VIOLENCIA',
+		'SUBSECRETARÍA DE CONSTRUCCIÓN DE PAZ TERRITORIAL',
+		72500000,
+		72503000,
+		'SNV'
+	), (
+		60,
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		73200000,
+		73201000,
+		'SSC'
+	), (
+		61,
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		'SUBSECRETARIA PLANEACION DE LA SEGURIDAD',
+		73200000,
+		73202000,
+		'SSC'
+	), (
+		62,
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		'SUBSECRETARIA OPERATIVA DE LA SEGURIDAD',
+		73200000,
+		73203000,
+		'SSC'
+	), (
+		63,
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		'FONDO TERRITORIAL DE SEGURIDAD Y CONVIVENCIA CIUDADANA-FONSET',
+		73200000,
+		73204000,
+		'SSC'
+	), (
+		64,
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		'SUBS. DE GOBIERNO LOCAL Y CONVIVENCIA',
+		73200000,
+		73205000,
+		'SSC'
+	), (
+		65,
+		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
+		'SUBS. ESPACIO PÚBLICO',
+		73200000,
+		73206000,
+		'SSC'
+	), (
+		66,
+		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
+		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
+		73300000,
+		73301000,
+		'DAG'
+	), (
+		67,
+		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
+		'SUBS. CONOCIMIENTO Y GESTIÓN DEL RIESGO',
+		73300000,
+		73302000,
+		'DAG'
+	), (
+		68,
+		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
+		'SUBD. DE MANEJO DE DESASTRES',
+		73300000,
+		73303000,
+		'DAG'
+	), (
+		69,
+		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
+		'FONDO MUNICIPAL GESTIÓN DEL RIESGO',
+		73300000,
+		73304000,
+		'DAG'
+	), (
+		70,
+		'SECRETARIA DE INFRAESTRUCTURA FISICA',
+		'SECRETARIA DE INFRAESTRUCTURA FISICA',
+		74100000,
+		74101000,
+		'OZ'
+	), (
+		71,
+		'SECRETARIA DE INFRAESTRUCTURA FISICA',
+		'SUBS. PLANEACIÓN DE LA INFRAESTRUCTURA PÚBLICA',
+		74100000,
+		74102000,
+		'OZ'
+	), (
+		72,
+		'SECRETARIA DE INFRAESTRUCTURA FISICA',
+		'SUBS. CONSTRUCCIÓN Y MANTENIMIENTO',
+		74100000,
+		74103000,
+		'OZ'
+	), (
+		73,
+		'SECRETARIA DEL MEDIO AMBIENTE',
+		'SECRETARIA DEL MEDIO AMBIENTE',
+		74200000,
+		74201000,
+		'MZ'
+	), (
+		74,
+		'SECRETARIA DEL MEDIO AMBIENTE',
+		'SUB. DE GESTION AMBIENTAL',
+		74200000,
+		74202000,
+		'MZ'
+	), (
+		75,
+		'SECRETARIA DEL MEDIO AMBIENTE',
+		'SUBS. RECURSOS NATURALES RENOVABLES',
+		74200000,
+		74203000,
+		'MZ'
+	), (
+		76,
+		'SECRETARIA DEL MEDIO AMBIENTE',
+		'SUBS. PROTECCIÓN Y BIENESTAR ANIMAL',
+		74200000,
+		74204000,
+		'MZ'
+	), (
+		77,
+		'SECRETARIA DE MOVILIDAD',
+		'SECRETARIA DE MOVILIDAD',
+		74300000,
+		74301000,
+		'TZ'
+	), (
+		78,
+		'SECRETARIA DE MOVILIDAD',
+		'SUBS. DE SEGURIDAD VIAL Y CONTROL',
+		74300000,
+		74302000,
+		'TZ'
+	), (
+		79,
+		'SECRETARIA DE MOVILIDAD',
+		'SUBS. LEGAL',
+		74300000,
+		74303000,
+		'TZ'
+	), (
+		80,
+		'SECRETARIA DE MOVILIDAD',
+		'SUBSECRETARÍA TÉCNICA',
+		74300000,
+		74304000,
+		'TZ'
+	), (
+		81,
+		'SECRETARIA DE MOVILIDAD',
+		'GERENCIA MOVILIDAD HUMANA',
+		74300000,
+		74305000,
+		'TZ'
+	), (
+		82,
+		'SECRETARIA DE DESARROLLO ECONOMICO',
+		'SECRETARIA DE DESARROLLO ECONOMICO',
+		75100000,
+		75101000,
+		'ZDE'
+	), (
+		83,
+		'SECRETARIA DE DESARROLLO ECONOMICO',
+		'SUBS. DE DESARROLLO RURAL',
+		75100000,
+		75102000,
+		'ZDE'
+	), (
+		84,
+		'SECRETARIA DE DESARROLLO ECONOMICO',
+		'SUBS. DE CREACION Y FORTALE. EMPRESARIAL',
+		75100000,
+		75103000,
+		'ZDE'
+	), (
+		85,
+		'SECRETARIA DE DESARROLLO ECONOMICO',
+		'SUBS. DE TURISMO',
+		75100000,
+		75104000,
+		'ZDE'
+	), (
+		86,
+		'SECRETARÍA DE INNOVACIÓN DIGITAL',
+		'SECRETARÍA DE INNOVACIÓN DIGITAL',
+		75200000,
+		75201000,
+		'ID'
+	), (
+		87,
+		'SECRETARÍA DE INNOVACIÓN DIGITAL',
+		'SUBSECRETARÍA SERVICIOS DE TECNOLOGÍAS DE LA INFORMACIÓN',
+		75200000,
+		75202000,
+		'ID'
+	), (
+		88,
+		'SECRETARÍA DE INNOVACIÓN DIGITAL',
+		'SUBSECRETARÍA CIUDAD INTELIGENTE',
+		75200000,
+		75203000,
+		'ID'
+	), (
+		89,
+		'DPTO. ADMINISTRATIVO DE PLANEACION',
+		'DPTO. ADMINISTRATIVO DE PLANEACION',
+		76100000,
+		76101000,
+		'DAP'
+	), (
+		90,
+		'DPTO. ADMINISTRATIVO DE PLANEACION',
+		'SUBD. DE PLANEACION SOCIAL Y ECONOMICA',
+		76100000,
+		76101000,
+		'DAP'
+	), (
+		91,
+		'DPTO. ADMINISTRATIVO DE PLANEACION',
+		'SUBD. DE  PROSPECTIVA, INFORMACION Y  EVALUACION  ESTRATEGICA',
+		76100000,
+		76101000,
+		'DAP'
+	), (
+		92,
+		'DPTO. ADMINISTRATIVO DE PLANEACION',
+		'SUBD.  PLANEACION TERRITORIAL Y ESTRATRATEGICA DE  CIUDAD',
+		76100000,
+		76101000,
+		'DAP'
+	), (
+		93,
+		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
+		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
+		76200000,
+		76201000,
+		'GCT'
+	), (
+		94,
+		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
+		'SUBSECRETARÍA DE CONTROL URBANÍSTICO',
+		76200000,
+		76202000,
+		'GCT'
+	), (
+		95,
+		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
+		'SUBSECRETARÍA DE CATASTRO',
+		76200000,
+		76203000,
+		'GCT'
+	), (
+		96,
+		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
+		'SUBSECRETARÍA DE SERVICIOS PÚBLICOS',
+		76200000,
+		76204000,
+		'GCT'
+	);
 
 insert 
 	into projects 
@@ -176,10 +874,7 @@ insert
 		0,
 		'SIN PROYECTO', 
 		'Proyecto para los bienes inmuebles que se encuentran sin proyecto.', 
-		'ALCALDÍA',
-		'ALCALDÍA', 
-		70000000,
-		70001000,
 		1,
-		'{"created_by":"Administrator","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
+		1,
+		'{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
 	);

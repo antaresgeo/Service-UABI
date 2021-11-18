@@ -40,6 +40,11 @@ export default class RealEstate extends BaseModel {
   public supports_documents: string | undefined;
 
   @column()
+  public active_type: string;
+  @column()
+  public cost_center_id: number;
+
+  @column()
   public status: number;
   @column()
   public audit_trail: IAuditTrail;
