@@ -83,7 +83,7 @@ export default class RealEstatesController {
             name: re["$extras"]["project_name"],
           },
           status: re["$extras"]["name"],
-          name: re["re_name"],
+          name: re["$extras"]["re_name"],
           id: re["$extras"]["re_id"],
           materials: re["$extras"]["materials"].split(","),
         };
