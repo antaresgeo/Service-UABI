@@ -182,8 +182,11 @@ export default class RealEstatesController {
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
         .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
         .innerJoin("status as s", "re.status", "s.id")
-        .select("p.name as project_name")
-        .select("re.id as re_id")
+        .select([
+          "p.name as project_name",
+          "re.id as re_id",
+          "re.name as re_name",
+        ])
         .select("*")
         .where("re.id", id);
       console.log(results[0]);
