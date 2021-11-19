@@ -3,11 +3,7 @@ import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 import { sum } from "App/Utils/functions";
-import {
-  IAuditTrail,
-  IRealEstateAttributes,
-  IUpdatedValues,
-} from "App/Utils/interfaces";
+import { IRealEstateAttributes } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 import { createSAPID } from "./../../Utils/functions/index";
@@ -329,39 +325,15 @@ export default class RealEstatesController {
       _id = id;
     }
 
-    let projects = newData.projects;
-    delete newData.projects;
+    let project = newData.project;
+    delete newData.project;
 
     try {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
 
-        let updatedValues: IUpdatedValues = {
-          lastest: {
-            name: realEstate.name,
-            description: realEstate.description,
-            status: realEstate.status,
-          },
-          new: newData,
-        };
-
-        let tmpData: any = realEstate;
-        if (tmpData.audit_trail?.updated_values)
-          if (!tmpData.audit_trail.updated_values.oldest)
-            updatedValues.oldest = {
-              name: realEstate.name,
-              description: realEstate.description,
-              status: realEstate.status,
-            };
-          else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
-
-        let auditTrail: IAuditTrail = {
-          created_by: tmpData.audit_trail?.created_by,
-          created_on: tmpData.audit_trail?.created_on,
-          updated_by: "Administrador",
-          updated_on: new Date().getTime(),
-          updated_values: updatedValues,
-        };
+        const auditTrail = new AuditTrail(undefined, realEstate.audit_trail);
+        auditTrail.update("Administrador", newData, realEstate);
 
         // Updating data
         try {
@@ -377,7 +349,7 @@ export default class RealEstatesController {
             message: "Updated successfully!",
             results: {
               ...realEstateUpdated["$attributes"],
-              projects,
+              project,
             },
           });
         } catch (error) {
