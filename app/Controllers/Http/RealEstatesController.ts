@@ -340,7 +340,7 @@ export default class RealEstatesController {
           const realEstateUpdated = await realEstate
             .merge({
               ...newData,
-              audit_trail: auditTrail,
+              audit_trail: auditTrail.getAsJson(),
             })
             .save();
           console.log(realEstateUpdated);
