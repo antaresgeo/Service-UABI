@@ -8,6 +8,8 @@ export default class Acquisition extends BaseModel {
   @column()
   public acquisition_type: string;
   @column()
+  public acquisition_date: number;
+  @column()
   public active_type: string;
   @column()
   public title_type: string;
