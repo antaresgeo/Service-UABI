@@ -8,7 +8,7 @@ export default class CreateRealEstateValidator {
     projects_id: schema.array.optional().members(schema.number()),
 
     tipology: schema.string({ trim: true }),
-    accounting_account: schema.string({ trim: true }),
+    accounting_account: schema.number(),
 
     destination_type: schema.string({ trim: true }),
     registry_number: schema.string({ trim: true }),
