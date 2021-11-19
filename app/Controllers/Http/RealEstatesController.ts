@@ -358,7 +358,7 @@ export default class RealEstatesController {
         let auditTrail: IAuditTrail = {
           created_by: tmpData.audit_trail?.created_by,
           created_on: tmpData.audit_trail?.created_on,
-          updated_by: "UABI",
+          updated_by: "Administrador",
           updated_on: new Date().getTime(),
           updated_values: updatedValues,
         };

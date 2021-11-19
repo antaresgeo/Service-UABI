@@ -45,6 +45,9 @@ export default class RealEstate extends BaseModel {
   public cost_center_id: number;
 
   @column()
+  public policy_id: number;
+
+  @column()
   public status: number;
   @column()
   public audit_trail: IAuditTrail;
