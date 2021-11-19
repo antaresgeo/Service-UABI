@@ -184,15 +184,15 @@ export default class RealEstatesController {
     let project: any = {};
 
     project = {
-      ...results[0]["$extras"],
+      ...results["$extras"],
       project: {
-        id: results[0]["$original"]["project_id"],
-        name: results[0]["$extras"]["project_name"],
+        id: results["$original"]["project_id"],
+        name: results["$extras"]["project_name"],
       },
-      id: results[0]["$extras"]["re_id"],
-      status: results[0]["$extras"]["name"],
-      name: results[0]["$extras"]["re_name"],
-      materials: results[0]["$extras"]["materials"].split(","),
+      id: results["$extras"]["re_id"],
+      status: results["$extras"]["name"],
+      name: results["$extras"]["re_name"],
+      materials: results["$extras"]["materials"].split(","),
     };
 
     delete project["project_name"];
