@@ -1,16 +1,18 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Acquisition from "App/Models/Acquisition";
 import AuditTrail from "./../../Utils/classes/AuditTrail";
+import CreateAcquisitionValidator from "./../../Validators/CreateAcquisitionValidator";
+import { IAdquisitionAttributes } from "./../../Utils/interfaces/adquisitions.interfaces";
 
 export default class AdquisitionsController {
   /**
    * create Acquisition
    */
-  public async create(ctx: HttpContextContract) {
-    let dataAdquisition = ctx.request.body(),
+  public async create({ request, response }: HttpContextContract) {
+    let dataAdquisition = await request.validate(CreateAcquisitionValidator),
       newAdquisition;
 
-    let data = { ...dataAdquisition };
+    let data: IAdquisitionAttributes = { ...dataAdquisition };
 
     try {
       // Creation: Data of audit trail
@@ -26,12 +28,12 @@ export default class AdquisitionsController {
       //     .json({ message: "¡Error al crear el bien inmueble!" });
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }
 
-    return ctx.response.status(200).json({
+    return response.status(200).json({
       message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
       results: newAdquisition,
     });
@@ -168,69 +170,6 @@ export default class AdquisitionsController {
     }
   }
 }
-// export const update = async (ctx.request: ctx.requestuest, ctx.response: ctx.responseponse) => {
-// 	const newData: IRealEstateAttributes = ctx.request.body;
-// 	const { id } = ctx.request.query;
-
-// 	try {
-// 		if (typeof id === 'string') {
-// 			const data: any = await getRealEstate(id);
-
-// 			let updatedValues: IUpdatedValues = {
-// 				lastest: {
-// 					registry_number: data.dataValues.registry_number,
-// 					active_type: data.dataValues.active_type,
-// 					name: data.dataValues.name,
-// 					description: data.dataValues.description,
-// 					addctx.responses: data.dataValues.addctx.responses,
-// 					destination: data.dataValues.destination,
-// 					acquisition_type: data.dataValues.acquisition_type,
-// 					act_number: data.dataValues.act_number,
-// 					acquisition_date: data.dataValues.acquisition_date,
-// 					notary: data.dataValues.notary,
-// 					notary_addctx.responses: data.dataValues.notary_addctx.responses,
-// 					patrimonial_value: data.dataValues.patrimonial_value,
-// 					commertial_value: data.dataValues.commertial_value,
-// 					area: data.dataValues.area,
-// 					acquired_percentage: data.dataValues.acquired_percentage,
-// 					society: data.dataValues.society,
-// 					account: data.dataValues.account,
-// 					property_type: data.dataValues.property_type,
-// 					cbml: data.dataValues.cbml,
-// 					project_id: data.dataValues.project_id,
-// 				},
-// 				new: newData,
-// 			};
-
-// 			let tmpData: IRealEstateAttributes = data.dataValues;
-// 			if (tmpData.audit_trail?.updated_values)
-// 				if (!tmpData.audit_trail.updated_values.oldest)
-// 					updatedValues.oldest =
-// 						data.dataValues.audit_trail.updated_values.lastest;
-// 				else updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
-
-// 			let auditTrail: IAuditTrail = {
-// 				created_by: tmpData.audit_trail?.created_by,
-// 				created_on: tmpData.audit_trail?.created_on,
-// 				updated_by: 'UABI',
-// 				updated_on: String(new Date().getTime()),
-// 				updated_values: updatedValues,
-// 			};
-
-// 			// newData.audit_trail = auditTrail;
-
-// 			let query = await updateRealEstate(
-// 				{ ...newData, audit_trail: auditTrail },
-// 				id
-// 			);
-
-// 			ctx.response.status(200).json({ message: 'Updated successfully!', results: data: query });
-// 		}
-// 	} catch (error) {
-// 		console.error(error);
-// 		ctx.response.status(500).json({ message: 'Error interno: Servidor', error });
-// 	}
-// };
 
 // {
 // 	acquisition_type,

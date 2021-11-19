@@ -4,7 +4,6 @@ export interface IAdquisitionAttributes {
   id?: number;
   acquisition_type: string;
   acquisition_date: number;
-  active_type: string;
   title_type: string;
   title_type_document_id?: string;
   act_number: string;
