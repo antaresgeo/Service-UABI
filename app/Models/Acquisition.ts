@@ -37,6 +37,9 @@ export default class Acquisition extends BaseModel {
   public real_estate_id: number;
 
   @column()
+  public policy_id: number;
+
+  @column()
   public status: number;
 
   @column()
