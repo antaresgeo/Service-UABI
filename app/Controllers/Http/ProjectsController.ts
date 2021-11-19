@@ -41,8 +41,6 @@ export default class ProjectsController {
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
-    console.log(q);
-
     try {
       if (q) {
         if (typeof q === "string")
@@ -102,14 +100,11 @@ export default class ProjectsController {
       }
 
       count = results.length;
-      console.log(results["$extras"]);
 
       let next_page: number | null =
         tmpPage * tmpPageSize < projects.length
           ? sum(parseInt(tmpPage + ""), 1)
           : null;
-      console.log(tmpPage);
-      console.log(tmpPage - 1);
 
       let previous_page: number | null = tmpPage - 1 > 0 ? tmpPage - 1 : null;
 
@@ -321,9 +316,7 @@ export default class ProjectsController {
         const auditTrail = new AuditTrail(undefined, project.audit_trail);
 
         auditTrail.update("Administrador", { ...dataUpdated }, project);
-        console.log(auditTrail.getAsJson());
         dataUpdated["audit_trail"] = auditTrail.getAsJson();
-        console.log(dataUpdated);
 
         // Updating data
         try {
@@ -391,7 +384,6 @@ export default class ProjectsController {
         .json({ message: "Este proyecto no puede ser inactivado." });
 
     const res = await this.changeStatus(id);
-    console.log(res);
 
     if (res["success"] === true) {
       const IDProject = res["results"]["$attributes"]["id"];

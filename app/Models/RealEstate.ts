@@ -10,7 +10,7 @@ export default class RealEstate extends BaseModel {
   @column()
   public tipology: string;
   @column()
-  public accounting_account: string;
+  public accounting_account: number;
 
   @column()
   public destination_type: string;

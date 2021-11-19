@@ -14,12 +14,9 @@ export default class RealEstatesController {
    * index
    */
   public async getList(ctx: HttpContextContract) {
-    const { q, page, pageSize, allStates } = ctx.request.qs();
-    let results,
-      tmpPage: number,
-      tmpPageSize: number,
-      realEstates,
-      tmpAllStates: boolean;
+    const { q, page, pageSize /*allStates*/ } = ctx.request.qs();
+    let results, tmpPage: number, tmpPageSize: number, realEstates;
+    // tmpAllStates: boolean;
 
     if (!pageSize) tmpPageSize = 10;
     else tmpPageSize = pageSize;
@@ -27,9 +24,8 @@ export default class RealEstatesController {
     if (!page) tmpPage = 1;
     else tmpPage = page;
 
-    if (!allStates) tmpAllStates = false;
-    else tmpAllStates = allStates;
-    console.log(tmpAllStates);
+    // if (!allStates) tmpAllStates = false;
+    // else tmpAllStates = allStates;
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
@@ -63,8 +59,6 @@ export default class RealEstatesController {
       results = results === null ? [] : results;
 
       let data: any[] = [];
-
-      console.log(results);
 
       results.map((re) => {
         let tmp = {
@@ -141,8 +135,6 @@ export default class RealEstatesController {
         .select("*")
         .where("a.project_id", parseInt(id))
         .orderBy("a.project_id", "desc");
-
-      console.log(list);
     } catch (error) {
       console.error(error);
       return ctx.response
@@ -167,7 +159,6 @@ export default class RealEstatesController {
    */
   public async getOne(ctx: HttpContextContract) {
     const { id } = ctx.request.qs();
-    console.log(id);
 
     let results;
 
@@ -185,7 +176,6 @@ export default class RealEstatesController {
         ])
         .select("*")
         .where("re.id", id);
-      console.log(results[0]);
     } catch (error) {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
@@ -209,8 +199,6 @@ export default class RealEstatesController {
     delete project["project_description"];
     delete project["re_name"];
     delete project["re_id"];
-
-    console.log(project);
 
     project["supports_documents"] =
       project["supports_documents"] === null
@@ -248,7 +236,6 @@ export default class RealEstatesController {
 
             if (typeof project !== "undefined")
               dataRealEstate["cost_center_id"] = project.cost_center_id;
-            console.log(project);
           }
         } catch (error) {
           console.error(error);
@@ -343,7 +330,6 @@ export default class RealEstatesController {
               audit_trail: auditTrail.getAsJson(),
             })
             .save();
-          console.log(realEstateUpdated);
 
           return response.status(200).json({
             message: "Updated successfully!",
@@ -420,7 +406,6 @@ export default class RealEstatesController {
         IDProject
       );
 
-      console.log(realEstatesProjects);
       try {
         realEstatesProjects.map((tmp) => {
           tmp.delete();
