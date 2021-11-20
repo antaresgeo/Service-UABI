@@ -62,7 +62,6 @@ export default class RealEstatesController {
           .select("*")
           .where("re.status", 1)
           .where("re.registry_number", "LIKE", "%" + q + "%")
-
           .orderBy("re.id", "desc")
           .limit(tmpPageSize)
           .offset(count);
@@ -135,6 +134,7 @@ export default class RealEstatesController {
         .innerJoin("projects as p", "a.project_id", "p.id")
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
         .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+        .innerJoin("status as s", "re.status", "s.id")
         .select([
           "p.name as project_name",
           "p.description as project_description",
@@ -142,21 +142,46 @@ export default class RealEstatesController {
           "cc.subdependency as re_subdependency",
           "cc.management_center as re_management_center",
           "cc.cost_center as re_cost_center",
+          "re.name as re_name",
+          "re.id as re_id",
         ])
         .select("*")
         .where("a.project_id", parseInt(id))
-        .orderBy("a.project_id", "desc");
+        .orderBy("re.id", "desc");
     } catch (error) {
       console.error(error);
       return ctx.response
         .status(500)
         .json({ message: "Request to Real Estates failed!" });
     }
+    let results = list === null ? [] : list;
+
     const data: any[] = [];
 
-    list.map((re) => {
-      data.push(re["$extras"]);
+    results.map((re) => {
+      let tmp = {
+        ...re["$extras"],
+        project: {
+          id: re["project_id"],
+          name: re["$extras"]["project_name"],
+        },
+        id: re["$extras"]["re_id"],
+        status: re["$extras"]["name"],
+        name: re["$extras"]["re_name"],
+        materials: re["$extras"]["materials"].split(","),
+      };
+
+      delete tmp["project_name"];
+      delete tmp["project_description"];
+      delete tmp["re_name"];
+      delete tmp["re_id"];
+
+      data.push(tmp);
     });
+
+    // list.map((re) => {
+    //   data.push(re["$extras"]);
+    // });
 
     return ctx.response.json({
       message: "List of all Real Estates",
