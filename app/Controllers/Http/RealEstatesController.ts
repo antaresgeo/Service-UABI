@@ -13,8 +13,8 @@ export default class RealEstatesController {
   /**
    * index
    */
-  public async getList(ctx: HttpContextContract) {
-    const { q, page, pageSize /*allStates*/ } = ctx.request.qs();
+  public async getList({ response, request }: HttpContextContract) {
+    const { q, page, pageSize /*allStates*/ } = request.qs();
     let results, tmpPage: number, tmpPageSize: number, realEstates;
     // tmpAllStates: boolean;
 
@@ -50,9 +50,20 @@ export default class RealEstatesController {
       } else {
         results = await RealEstatesProject.query()
           .from("real_estates_projects as a")
-          .where("status", 1)
-          .where("registry_number", q)
-          .orderBy("id", "desc")
+          .innerJoin("projects as p", "a.project_id", "p.id")
+          .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+          .innerJoin("status as s", "re.status", "s.id")
+          .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+          .select([
+            "p.name as project_name",
+            "re.name as re_name",
+            "re.id as re_id",
+          ])
+          .select("*")
+          .where("re.status", 1)
+          .where("re.registry_number", "LIKE", "%" + q + "%")
+
+          .orderBy("re.id", "desc")
           .limit(tmpPageSize)
           .offset(count);
       }
@@ -85,12 +96,12 @@ export default class RealEstatesController {
         realEstates = await RealEstate.query().where("status", 1);
       } catch (error) {
         console.error(error);
-        return ctx.response.status(500).json({
+        return response.status(500).json({
           message: "Error al traer la lista de todos los Bienes Inmuebles.",
         });
       }
 
-      return ctx.response.json({
+      return response.json({
         message: "List of all Real Estates",
         results: data,
         page: tmpPage,
@@ -105,7 +116,7 @@ export default class RealEstatesController {
       });
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Error al traer la lista de los Bienes Inmuebles." });
     }
