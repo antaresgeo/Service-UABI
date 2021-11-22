@@ -2,11 +2,12 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { sum } from "App/Utils/functions";
+import { sum } from "App/Utils/Functions";
 import { IRealEstateAttributes } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
-import { createSAPID } from "./../../Utils/functions/index";
+import { createSAPID } from "../../Utils/Functions/index";
+import CostCenter from "App/Models/CostCenter";
 
 export default class RealEstatesController {
   // GET
@@ -338,6 +339,7 @@ export default class RealEstatesController {
    */
   public async update({ response, request }: HttpContextContract, alt?: any) {
     let newData, _id;
+    let costCenterID;
 
     if (alt) {
       newData = alt["data"];
@@ -357,6 +359,36 @@ export default class RealEstatesController {
 
         const auditTrail = new AuditTrail(undefined, realEstate.audit_trail);
         auditTrail.update("Administrador", newData, realEstate);
+
+        let dataUpdated: IRealEstateAttributes = {
+          name: newData["name"].toUpperCase().trim(),
+          description: newData["description"].trim(),
+          cost_center_id: project.cost_center_id,
+          tipology_id: 0,
+        };
+
+        if (
+          newData["dependency"] &&
+          newData["subdependency"] &&
+          newData["management_center"] &&
+          newData["cost_center"]
+        )
+          try {
+            costCenterID = await CostCenter.query()
+              .select("id")
+              .where("dependency", newData["dependency"])
+              .where("subdependency", newData["subdependency"])
+              .where("management_center", newData["management_center"])
+              .where("cost_center", newData["cost_center"]);
+
+            dataUpdated["cost_center_id"] = costCenterID[0]["id"];
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message: "Error obteniendo el ID del Centro de Costos",
+              error,
+            });
+          }
 
         // Updating data
         try {

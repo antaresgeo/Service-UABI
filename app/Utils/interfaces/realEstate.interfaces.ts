@@ -4,8 +4,7 @@ export interface IRealEstateAttributes {
   id?: number;
   sap_id?: string;
 
-  tipology: string;
-  accounting_account: number;
+  tipology_id: number;
 
   destination_type: string;
   registry_number: string;

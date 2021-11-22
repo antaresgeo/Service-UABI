@@ -1,7 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { sum, validateDate } from "App/Utils/functions";
+import { sum, validateDate } from "App/Utils/Functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 
 export default class InsurabilitiesController {

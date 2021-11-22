@@ -5,7 +5,7 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 
 // FUNCTIONS
-import { sum, capitalize } from "App/Utils/functions";
+import { sum, capitalize, getCostCenterID } from "App/Utils/Functions";
 
 // INTERFACES
 import { IPayloadProject, IProjectAttributes } from "App/Utils/interfaces";
@@ -31,6 +31,7 @@ export default class ProjectsController {
       data: any[] = [],
       tmpPage: number,
       tmpPageSize: number,
+      tmpQ: string,
       projects;
 
     if (!pageSize) tmpPageSize = 10;
@@ -39,37 +40,23 @@ export default class ProjectsController {
     if (!page) tmpPage = 1;
     else tmpPage = parseInt(page);
 
+    if (!q) tmpQ = "";
+    else tmpQ = q.toUpperCase().trim();
+
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
     try {
-      if (q) {
-        if (typeof q === "string")
-          results = await Project.query()
-            .from("projects as p")
-            .innerJoin("status as s", "p.status", "s.id")
-            .select("p.name as project_name")
-            .select("p.id as project_id")
-            .select("s.name as status_name")
-            .select("*")
-            .where("status", 1)
-            .whereRaw(`'name' LIKE '%${q}%'`)
-            .orderBy("p.id", "desc")
-            .limit(tmpPageSize)
-            .offset(count);
-      } else {
-        results = await Project.query()
-          .from("projects as p")
-          .innerJoin("status as s", "p.status", "s.id")
-          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
-          .select("p.name as project_name")
-          .select("p.id as project_id")
-          .select("s.name as status_name")
-          .select("*")
-          .where("status", 1)
-          .orderBy("p.id", "desc")
-          .limit(tmpPageSize)
-          .offset(count);
-      }
+      results = await Project.query()
+        .from("projects as p")
+        .innerJoin("status as s", "p.status", "s.id")
+        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+        .select(["p.id as project_id", "*"])
+        .where("status", 1)
+        .where("name", "LIKE", `%${tmpQ}%`)
+        .orderBy("p.id", "desc")
+        .limit(tmpPageSize)
+        .offset(count);
 
       results = results === null ? [] : results;
 
@@ -77,7 +64,8 @@ export default class ProjectsController {
         let tmpNewData: any = {
           ...realEstate["$original"],
           id: realEstate["$extras"]["project_id"],
-          name: capitalize(realEstate["$extras"]["project_name"]),
+
+          name: capitalize(realEstate["$original"]["name"]),
           status: realEstate["$extras"]["status_name"],
           dependency: realEstate["$extras"]["dependency"],
           subdependency: realEstate["$extras"]["subdependency"],
@@ -90,6 +78,7 @@ export default class ProjectsController {
         data.push(tmpNewData);
       });
 
+      // Total Results
       try {
         projects = await Project.query().where("status", 1);
       } catch (error) {
@@ -98,27 +87,31 @@ export default class ProjectsController {
           message: "Error al traer la lista de todos los Bienes Inmuebles.",
         });
       }
+      const total_results = projects.length;
 
+      // Count
       count = results.length;
 
+      // Next Page
       let next_page: number | null =
         tmpPage * tmpPageSize < projects.length
           ? sum(parseInt(tmpPage + ""), 1)
           : null;
 
+      // Previous Page
       let previous_page: number | null = tmpPage - 1 > 0 ? tmpPage - 1 : null;
 
       const lastElement = data.pop();
       const res = [lastElement, ...data];
 
       return response.json({
-        message: "List of all Real Estates",
+        message: "Lista de Proyectos",
         results: res,
         page: tmpPage,
-        count: results.length,
+        count,
         next_page,
         previous_page,
-        total_results: projects.length,
+        total_results,
       });
     } catch (error) {
       console.error(error);
@@ -126,6 +119,31 @@ export default class ProjectsController {
         .status(500)
         .json({ message: "Request to Projects failed!" });
     }
+  }
+
+  /**
+   * showAll
+   */
+  public async showAll({ response }: HttpContextContract) {
+    let projects: Project[];
+
+    try {
+      projects = await Project.query()
+        .select(["id", "name"])
+        .where("status", 1)
+        .orderBy("id", "desc");
+    } catch (error) {
+      console.error(error);
+      return response.status(500).json({
+        message: "Error al traer la lista de todos los Bienes Inmuebles.",
+      });
+    }
+
+    return response.json({
+      message: "Lista de Proyectos",
+      results: projects,
+      total: projects.length,
+    });
   }
 
   /**
@@ -142,22 +160,22 @@ export default class ProjectsController {
         .from("projects as p")
         .innerJoin("status as s", "p.status", "s.id")
         .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
-        .select("p.name as project_name")
-        .select("p.id as project_id")
-        .select("s.name as status_name")
-        .select("*")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+        .select(["p.id as project_id", "*"])
+        .where("status", 1)
         .where("p.id", _id);
     } catch (error) {
       console.error(error);
       return response.status(500).json({ message: "Project error" });
     }
+    console.log(results);
 
     results = results === null ? {} : results[0];
 
     let tmpNewData: any = {
       ...results["$original"],
       id: results["$extras"]["project_id"],
-      name: capitalize(results["$extras"]["project_name"]),
+      name: capitalize(results["$original"]["name"]),
       status: results["$extras"]["status_name"],
       dependency: results["$extras"]["dependency"],
       subdependency: results["$extras"]["subdependency"],
@@ -227,11 +245,13 @@ export default class ProjectsController {
 
     try {
       costCenterID = await CostCenter.query()
-        .select("id")
-        .where("dependency", payloadProject.dependency)
-        .where("subdependency", payloadProject.subdependency)
-        .where("management_center", payloadProject.management_center)
-        .where("cost_center", payloadProject.cost_center);
+        .from("cost_centers as cc")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+        .select("cc.id")
+        .where("d.dependency", payloadProject.dependency)
+        .where("cc.subdependency", payloadProject.subdependency)
+        .where("d.management_center", payloadProject.management_center)
+        .where("cc.cost_center", payloadProject.cost_center);
     } catch (error) {
       console.error(error);
       return response.status(500).json({
@@ -289,28 +309,18 @@ export default class ProjectsController {
           cost_center_id: project.cost_center_id,
         };
 
-        if (
-          newData["dependency"] &&
-          newData["subdependency"] &&
-          newData["management_center"] &&
+        const { status, result } = await getCostCenterID(
+          newData["dependency"],
+          newData["subdependency"],
+          newData["management_center"],
           newData["cost_center"]
-        )
-          try {
-            costCenterID = await CostCenter.query()
-              .select("id")
-              .where("dependency", newData["dependency"])
-              .where("subdependency", newData["subdependency"])
-              .where("management_center", newData["management_center"])
-              .where("cost_center", newData["cost_center"]);
+        );
 
-            dataUpdated["cost_center_id"] = costCenterID[0]["id"];
-          } catch (error) {
-            console.error(error);
-            return response.status(500).json({
-              message: "Error obteniendo el ID del Centro de Costos",
-              error,
-            });
-          }
+        if (status === 200) dataUpdated["cost_center_id"] = parseInt(result);
+        else
+          return response.status(status).json({
+            message: result,
+          });
 
         // Update of Audit Trail | Actualización del Registro de Auditoría
         const auditTrail = new AuditTrail(undefined, project.audit_trail);

@@ -1,3 +1,4 @@
+import CostCenter from "App/Models/CostCenter";
 import moment from "moment";
 import AuditTrail from "../classes/AuditTrail";
 
@@ -80,6 +81,32 @@ export const numberWithZeros = (numAsString: string, cantZeros: number) => {
   }
 
   return tmpCode;
+};
+
+export const getCostCenterID = async (
+  dependency: string,
+  subdependency: string,
+  management_center: number,
+  cost_center: number
+) => {
+  try {
+    const costCenterID = await CostCenter.query()
+      .from("cost_centers as cc")
+      .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+      .select("cc.id")
+      .where("d.dependency", dependency)
+      .where("cc.subdependency", subdependency)
+      .where("d.management_center", management_center)
+      .where("cc.cost_center", cost_center);
+
+    return { status: 200, result: String(costCenterID[0]["id"]) };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      result: "Error obteniendo el ID del Centro de Costos",
+    };
+  }
 };
 
 // private decodeJWT() {
