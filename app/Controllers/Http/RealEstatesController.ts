@@ -2,11 +2,11 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { sum } from "App/Utils/Functions";
+import { sum } from "App/Utils/functions";
 import { IRealEstateAttributes } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
-import { createSAPID } from "../../Utils/Functions/index";
+import { createSAPID } from "../../Utils/functions/index";
 // import CostCenter from "App/Models/CostCenter";
 
 export default class RealEstatesController {

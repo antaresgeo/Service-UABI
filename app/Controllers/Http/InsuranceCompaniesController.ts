@@ -6,7 +6,7 @@ import {
 } from "App/Utils/interfaces/insurances.interfaces";
 import CreateInsuranceCompanyValidator from "./../../Validators/CreateInsuranceCompanyValidator";
 import InsuranceCompany from "./../../Models/InsuranceCompany";
-import { changeStatus, sum } from "App/Utils/Functions";
+import { changeStatus, sum } from "App/Utils/functions";
 
 export default class InsuranceCompaniesController {
   public async index({}: HttpContextContract) {}

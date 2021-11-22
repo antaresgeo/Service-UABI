@@ -5,7 +5,7 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 
 // FUNCTIONS
-import { sum, capitalize, getCostCenterID } from "App/Utils/Functions";
+import { sum, capitalize, getCostCenterID } from "App/Utils/functions";
 
 // INTERFACES
 import { IPayloadProject, IProjectAttributes } from "App/Utils/interfaces";
