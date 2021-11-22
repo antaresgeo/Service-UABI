@@ -1,28 +1,135 @@
-DROP table if EXISTS insurance_brokers cascade;
-DROP table if EXISTS insurabilities cascade;
-DROP table if EXISTS acquisitions cascade;
-DROP table if EXISTS real_estates_projects cascade;
-DROP table if EXISTS real_estates cascade;
-DROP table if EXISTS projects cascade;
-DROP table if EXISTS cost_centers cascade;
-DROP table if EXISTS status cascade;
+DROP TABLE if EXISTS real_estates_projects cascade;
+DROP TABLE if EXISTS real_estates cascade;
+DROP TABLE if EXISTS acquisitions cascade;
+DROP TABLE if EXISTS projects cascade;
+DROP TABLE if EXISTS policies_insurance_companies cascade;
+DROP TABLE if EXISTS insurance_companies cascade;
+DROP TABLE if EXISTS insurance_brokers cascade;
+DROP TABLE if EXISTS insurabilities cascade;
+DROP TABLE if EXISTS tipologies cascade;
+DROP TABLE if EXISTS cost_centers cascade;
+DROP TABLE if EXISTS dependencies cascade;
+DROP TABLE if EXISTS status cascade;
 
 -- GENERAL TABLES
 CREATE TABLE IF NOT EXISTS status (
-	id INT PRIMARY KEY,
-	name VARCHAR(25) UNIQUE
+	id SERIAL PRIMARY KEY,
+	status_name VARCHAR(25) UNIQUE
+);
+
+-- DEPENDENCIES AND SUBDEPENDENCIES WITH CORRESPONDING VALUES
+CREATE TABLE IF NOT EXISTS dependencies (
+	id bigint PRIMARY KEY,
+
+	dependency varchar(200) NOT NULL,
+	management_center int NOT NULL,
+	fixed_assets varchar(3) NOT NULL,
+	last_consecutive bigint
 );
 
 CREATE TABLE IF NOT EXISTS cost_centers (
-	id INT PRIMARY KEY,
-	dependency varchar(200) NOT NULL,
+	id bigint PRIMARY KEY,
+
+	dependency_id bigint NOT NULL,
+	
 	subdependency varchar(200) NOT NULL,
-	management_center int NOT NULL,
-	cost_center int NOT NULL,
-	fixed_assets varchar(3) NOT NULL
+	cost_center bigint NOT NULL,
+
+	CONSTRAINT fk_dependency_subdependency
+      FOREIGN KEY(dependency_id) 
+	  REFERENCES dependencies(id)
 );
 
-CREATE table if not EXISTS projects (
+-- TIPOLOGY AND ACCOUNTING ACCOUNT
+CREATE TABLE IF NOT EXISTS tipologies (
+	id SERIAL PRIMARY KEY,
+
+	tipology varchar(50) NOT NULL,
+	accounting_account varchar(200) NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_tipology_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
+);
+
+-- INSURABILITIES
+CREATE TABLE if not EXISTS insurance_brokers (
+	id SERIAL PRIMARY KEY,
+	
+	name varchar(100) NOT NULL,
+	nit int NOT NULL,
+	location_id varchar(10) NOT NULL,
+	phone varchar(20) NOT NULL,
+
+	contact_information json NOT NULL,
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL
+);
+
+CREATE TABLE if not EXISTS insurabilities (
+	id SERIAL PRIMARY key,
+	
+	policy_type varchar(50) NOT NULL,
+	
+	vigency_start bigint NOT NULL,
+	vigency_end bigint NOT NULL,
+	
+	insurance_broker_id int NOT NULL,
+	type_assurance varchar(100) NOT NULL,
+	
+	insurance_value double PRECISION NOT NULL,
+	insurance_document_id varchar(200) NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_policy_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_policy_insurance_broker
+      FOREIGN KEY(insurance_broker_id) 
+	  REFERENCES insurance_brokers(id)
+);
+
+CREATE TABLE if not EXISTS insurance_companies (
+	id SERIAL PRIMARY KEY,
+	
+	name varchar(100) NOT NULL,
+	nit int NOT NULL,
+	location_id varchar(10) NOT NULL,
+	phone varchar(20) NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS policies_insurance_companies (
+	id SERIAL PRIMARY KEY,
+
+	policy_id int NOT NULL,
+	insurance_company_id int NOT NULL,
+	percentage_insured int NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_policy_insurance_company_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_policy
+      FOREIGN KEY(policy_id) 
+	  REFERENCES insurabilities(id),
+	CONSTRAINT fk_insurance_company
+      FOREIGN KEY(insurance_company_id) 
+	  REFERENCES insurance_companies(id)
+);
+
+-- ACQUISITIONS (Projects, Real Estates and Acquisitions) - Por revisar
+CREATE TABLE if not EXISTS projects (
 	id SERIAL PRIMARY KEY,
 	
 	name varchar(200) NOT NULL,
@@ -41,14 +148,10 @@ CREATE table if not EXISTS projects (
 	  REFERENCES cost_centers(id)
 );
 
-
-
-
-CREATE table if not EXISTS acquisitions (
+CREATE TABLE if not EXISTS acquisitions (
 	id SERIAL PRIMARY key,
 	
 	acquisition_type varchar(50) NOT NULL,
-	active_type varchar(100) NOT NULL,
 	title_type varchar(50) NOT NULL,
 	title_type_document_id varchar(200),
 	act_number varchar(100) NOT NULL,
@@ -66,67 +169,18 @@ CREATE table if not EXISTS acquisitions (
 	real_estate_id int NOT NULL,
 		
 	status int NOT NULL,
-	audit_trail json NOT NULL	
-);
-
--- INSURABILITIES
-CREATE table if not EXISTS insurabilities (
-	id SERIAL PRIMARY key,
-	
-	registry_number int NOT NULL,
-	policy_type varchar(50) NOT NULL,
-	
-	vigency_start bigint NOT NULL,
-	vigency_end bigint NOT NULL,
-	
-	insurance_broker varchar(100) NOT NULL,
-	insurance_companies varchar(1000) NOT NULL,
-	type_assurance varchar(100) NOT NULL,
-	
-	insurance_value double PRECISION NOT NULL,
-	insurance_document_id varchar(200) NOT NULL,
-
-	status int NOT NULL,
 	audit_trail json NOT NULL,
 
-	CONSTRAINT fk_policy_status
+	CONSTRAINT fk_acquisition_status
       FOREIGN KEY(status) 
 	  REFERENCES status(id)
 );
 
-CREATE table if not EXISTS insurance_brokers (
+CREATE TABLE if not EXISTS real_estates (
 	id SERIAL PRIMARY KEY,
+	sap_id varchar(30) UNIQUE,
 	
-	name varchar(100) NOT NULL,
-	nit int NOT NULL,
-	location_id varchar(10) NOT NULL,
-	phone varchar(20) NOT NULL,
-
-	contact_information json NOT NULL,
-	
-	status int NOT NULL,
-	audit_trail json NOT NULL
-);
-
-CREATE table if not EXISTS insurance_companies (
-	id SERIAL PRIMARY KEY,
-	
-	name varchar(100) NOT NULL,
-	nit int NOT NULL,
-	location_id varchar(10) NOT NULL,
-	phone varchar(20) NOT NULL,
-
-	status int NOT NULL,
-	audit_trail json NOT NULL
-);
-
-
-CREATE table if not EXISTS real_estates (
-	id SERIAL PRIMARY KEY,
-	sap_id varchar(100) UNIQUE,
-	
-	tipology varchar (50) NOT NULL,
-	accounting_account varchar(200) NOT NULL,
+	tipology_id int NOT NULL,
 	
 	destination_type varchar(200) NOT NULL,
 	registry_number varchar(200) NOT NULL,
@@ -145,7 +199,7 @@ CREATE table if not EXISTS real_estates (
 
 	cost_center_id int,
 	policy_id int,
-	active_type varchar(100),
+	active_type varchar(200),
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL,
@@ -158,10 +212,13 @@ CREATE table if not EXISTS real_estates (
 	  REFERENCES insurabilities(id),
 	CONSTRAINT fk_re_dependency
       FOREIGN KEY(cost_center_id) 
-	  REFERENCES cost_centers(id)
+	  REFERENCES cost_centers(id),
+	CONSTRAINT fk_tipology
+      FOREIGN KEY(tipology_id) 
+	  REFERENCES tipologies(id)
 );
 
-create table if not EXISTS real_estates_projects (
+create TABLE if not EXISTS real_estates_projects (
 	project_id int,
 	real_estate_id int,
 	PRIMARY KEY (project_id, real_estate_id),
@@ -172,6 +229,7 @@ create table if not EXISTS real_estates_projects (
 );
 
 -- INSERTS
+-- Status
 INSERT 
 	INTO status 
 	VALUES (
@@ -192,683 +250,146 @@ INSERT
 		7, 'Desenglobado Parcial'
 	);
 
+-- Dependencies
+INSERT
+	INTO dependencies
+	VALUES 
+		(1, 'ALCALDÍA', 70000000, 'AM', 0),
+		(2, 'ALCALDÍA', 70000000, 'GP', 0),
+		(3, 'ALCALDÍA', 70000000, 'GE', 0),
+		(4, 'ALCALDÍA', 70000000, 'GD', 0),
+		(5, 'SECRETARIA PRIVADA', 70100000, 'SP', 0), 
+		(6, 'SECRETARIA DE COMUNICACIONES', 70200000, 'SC', 0), 
+		(7, 'SECRETARIA DE EVALUACION Y CONTROL', 70300000, 'SEC', 0), 
+		(8, 'SECRETARIA DE GOBIERNO Y GESTION DEL GABINETE', 73100000, 'GOZ', 0), 
+		(9, 'GERENCIA DE CORREGIMIENTOS', 76000000, 'GCG', 0), 
+		(10, 'GERENCIA DEL CENTRO', 76000000, 'GC', 0), 
+		(11, 'GERENCIA DE PROYECTOS ESTRATÉGICOS', 76000000, 'GP', 0), 
+		(12, 'SECRETARIA DE HACIENDA', 70400000, 'SH', 0),
+		(13, 'SECRETARIA GENERAL', 70500000, 'GEZ', 0), 
+		(14, 'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA', 70600000, 'GHS', 0), 
+		(15, 'SECRETARIA SUMINISTROS Y SERVICIOS', 70700000, 'SZ', 0),
+		(16, 'SECRETARIA DE EDUCACION', 71100000, 'EDZ', 0),
+		(17, 'SECRETARIA DE PARTICIPACION CIUDADANA', 71200000, 'DZ', 0),
+		(18, 'SECRETARIA DE CULTURA CIUDADANA', 71300000, 'CUZ', 0),
+		(19, 'SECRETARIA DE SALUD', 72100000, 'FLZ', 0),
+		(20, 'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS', 72200000, 'IZ', 0),
+		(21, 'SECRETARÍA DE LAS MUJERES', 72300000, 'SMZ', 0),
+		(22, 'SECRETARIA DE LA JUVENTUD', 72400000, 'SJ', 0),
+		(23, 'SECRETARÍA DE LA NO VIOLENCIA', 72500000, 'SNV', 0),
+		(24, 'SECRETARIA DE SEGURIDAD Y CONVIVENCIA', 73200000, 'SSC', 0),
+		(25, 'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES', 73300000, 'DAG', 0),
+		(26, 'SECRETARIA DE INFRAESTRUCTURA FISICA', 74100000, 'OZ', 0),
+		(27, 'SECRETARIA DEL MEDIO AMBIENTE', 74200000, 'MZ', 0),
+		(28, 'SECRETARIA DE MOVILIDAD', 74300000, 'TZ', 0),
+		(29, 'SECRETARIA DE DESARROLLO ECONOMICO', 75100000, 'ZDE', 0),
+		(30, 'SECRETARÍA DE INNOVACIÓN DIGITAL', 75200000, 'ID', 0),
+		(31, 'DPTO. ADMINISTRATIVO DE PLANEACION', 76100000, 'DAP', 0),
+		(32, 'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL', 76200000, 'GCT', 0);
+
+-- Subdependencies
 INSERT
 	INTO cost_centers
-	VALUES (
-		1,
-		'ALCALDÍA',
-		'ALCALDÍA',
-		70000000,
-		70001000,
-		'AM'
-	), (
-		2,
-		'ALCALDÍA',
-		'GERENCIA DE PROYECTOS ESTRATÉGICOS',
-		70000000,
-		70002000,
-		'GP'
-	), (
-		3,
-		'ALCALDÍA',
-		'GERENCIA ÉTNICA',
-		70000000,
-		70003000,
-		'GE'
-	), (
-		4,
-		'ALCALDÍA',
-		'GERENCIA DE DIVERSIDADES SEXUALES E IDENTIDADES DE GENERO',
-		70000000,
-		70004000,
-		'GD'
-	), (
-		5,
-		'SECRETARIA PRIVADA',
-		'SECRETARIA PRIVADA',
-		70100000,
-		70101000,
-		'SP'
-	), (
-		6,
-		'SECRETARIA DE COMUNICACIONES',
-		'SECRETARIA DE COMUNICACIONES',
-		70200000,
-		70201000,
-		'SC'
-	), (
-		7,
-		'SECRETARIA DE COMUNICACIONES',
-		'SUBS. COMUNICACIÓN ESTRATÉGICA',
-		70200000,
-		70202000,
-		'SC'
-	), (
-		8,
-		'SECRETARIA DE EVALUACION Y CONTROL',
-		'SECRETARIA DE EVALUACION Y CONTROL',
-		70300000,
-		70301000,
-		'SEC'
-	), (
-		9,
-		'SECRETARIA DE EVALUACION Y CONTROL',
-		'SUBS. DE EVALUACION Y SEGUIMIENTO',
-		70300000,
-		70302000,
-		'SEC'
-	), (
-		10,
-		'SECRETARIA DE EVALUACION Y CONTROL',
-		'SUBS. DE ASESORIA Y ACOMPAÑAMIENTO',
-		70300000,
-		70303000,
-		'SEC'
-	), (
-		11,
-		'SECRETARIA DE GOBIERNO Y GESTION DEL GABINETE',
-		'SECRETARIA DE GOBIERNO Y GESTION DEL GABINETE',
-		73100000,
-		73101000,
-		'GOZ'
-	), (
-		12,
-		'GERENCIA DE CORREGIMIENTOS',
-		'GERENCIA DE CORREGIMIENTOS',
-		76000000,
-		76002000,
-		'GCG'
-	), (
-		13,
-		'GERENCIA DEL CENTRO',
-		'GERENCIA DEL CENTRO',
-		76000000,
-		76003000,
-		'GC'
-	), (
-		14,
-		'GERENCIA DE PROYECTOS ESTRATÉGICOS',
-		'GERENCIA DE PROYECTOS ESTRATÉGICOS',
-		76000000,
-		76000000,
-		'GP'
-	), (
-		15,
-		'SECRETARIA DE HACIENDA',
-		'SECRETARIA DE HACIENDA',
-		70400000,
-		70401000,
-		'SH'
-	), (
-		16,
-		'SECRETARIA DE HACIENDA',
-		'SUBS. DE INGRESOS',
-		70400000,
-		70402000,
-		'SH'
-	), (
-		17,
-		'SECRETARIA DE HACIENDA',
-		'SUBS. DE TESORERIA',
-		70400000,
-		70403000,
-		'SH'
-	), (
-		18,
-		'SECRETARIA DE HACIENDA',
-		'SUBS. PRESUPUESTO Y GESTIÓN FINANCIERA',
-		70400000,
-		70404000,
-		'SH'
-	), (
-		19,
-		'SECRETARIA GENERAL',
-		'SECRETARIA GENERAL',
-		70500000,
-		70501000,
-		'GEZ'
-	), (
-		20,
-		'SECRETARIA GENERAL',
-		'SUBS. DE PREVENCI. DEL DAÑO ANTIJURIDICO',
-		70500000,
-		70502000,
-		'GEZ'
-	), (
-		21,
-		'SECRETARIA GENERAL',
-		'SUBS. DE DEFENSA Y PROTECC. DE LO PUBLIC',
-		70500000,
-		70503000,
-		'GEZ'
-	), (
-		22,
-		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
-		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
-		70600000,
-		70601000,
-		'GHS'
-	), (
-		23,
-		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
-		'SUBS. GESTIÓN HUMANA',
-		70600000,
-		70602000,
-		'GHS'
-	), (
-		24,
-		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
-		'SUBS. SERVICIO A LA CIUDADANÍA',
-		70600000,
-		70603000,
-		'GHS'
-	), (
-		25,
-		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
-		'SUBS. DESARROLLO INSTITUCIONAL',
-		70600000,
-		70604000,
-		'GHS'
-	), (
-		26,
-		'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA',
-		'TECNOLOGÍA Y GESTIÓN DE LA INFORMACIÓN',
-		70600000,
-		70605000,
-		'GHS'
-	), (
-		27,
-		'SECRETARIA SUMINISTROS Y SERVICIOS',
-		'SECRETARIA SUMINISTROS Y SERVICIOS',
-		70700000,
-		70701000,
-		'SZ'
-	), (
-		28,
-		'SECRETARIA SUMINISTROS Y SERVICIOS',
-		'SUBS. GESTIÓN DE BIENES',
-		70700000,
-		70702000,
-		'SZ'
-	), (
-		29,
-		'SECRETARIA SUMINISTROS Y SERVICIOS',
-		'SUBS. SELECCIÓN Y GESTIÓN DE PROVEEDORES',
-		70700000,
-		70703000,
-		'SZ'
-	), (
-		30,
-		'SECRETARIA SUMINISTROS Y SERVICIOS',
-		'SUBS. PLANEACIÓN Y EVALUACIÓN',
-		70700000,
-		70704000,
-		'SZ'
-	), (
-		31,
-		'SECRETARIA SUMINISTROS Y SERVICIOS',
-		'SUBS. EJECUCIÓN DE LA CONTRATACIÓN',
-		70700000,
-		70705000,
-		'SZ'
-	), (
-		32,
-		'SECRETARIA DE EDUCACION',
-		'SECRETARIA DE EDUCACION',
-		71100000,
-		71101000,
-		'EDZ'
-	), (
-		33,
-		'SECRETARIA DE EDUCACION',
-		'SUBS. ADMINISTRATIVA Y FINANCIERA ',
-		71100000,
-		71102000,
-		'EDZ'
-	), (
-		34,
-		'SECRETARIA DE EDUCACION',
-		'SUBS. DE PLANEACION EDUCATIVA',
-		71100000,
-		71103000,
-		'EDZ'
-	), (
-		35,
-		'SECRETARIA DE EDUCACION',
-		'SUBS. PRESTACIÓN DEL SERVICIO EDUCATIVO',
-		71100000,
-		71104000,
-		'EDZ'
-	), (
-		36,
-		'SECRETARIA DE EDUCACION',
-		'UNIDAD ADMINISTRATIVA ESPECIAL SIN PJ BUEN COMIENZO',
-		71100000,
-		71105000,
-		'EDZ'
-	), (
-		37,
-		'SECRETARIA DE PARTICIPACION CIUDADANA',
-		'SECRETARIA DE PARTICIPACION CIUDADANA',
-		71200000,
-		71201000,
-		'DZ'
-	), (
-		38,
-		'SECRETARIA DE PARTICIPACION CIUDADANA',
-		'SUBS. DE ORGANIZACIÓN SOCIAL',
-		71200000,
-		71202000,
-		'DZ'
-	), (
-		39,
-		'SECRETARIA DE PARTICIPACION CIUDADANA',
-		'SUBS. DE FORMACION Y PARTI. CIUDADANA',
-		71200000,
-		71203000,
-		'DZ'
-	), (
-		40,
-		'SECRETARIA DE PARTICIPACION CIUDADANA',
-		'SUBS. DE PLANEACION LOCAL Y PPTO PARTICI',
-		71200000,
-		71204000,
-		'DZ'
-	), (
-		41,
-		'SECRETARIA DE CULTURA CIUDADANA',
-		'SECRETARIA DE CULTURA CIUDADANA',
-		71300000,
-		71301000,
-		'CUZ'
-	), (
-		42,
-		'SECRETARIA DE CULTURA CIUDADANA',
-		'SUBS. DE CIUDADANIA CULTURAL',
-		71300000,
-		71302000,
-		'CUZ'
-	), (
-		43,
-		'SECRETARIA DE CULTURA CIUDADANA',
-		'SUBS. DE ARTE Y CULTURA',
-		71300000,
-		71303000,
-		'CUZ'
-	), (
-		44,
-		'SECRETARIA DE CULTURA CIUDADANA',
-		'SUBS. DE LECTURA, BIBLIOTECAS Y PATRIMONIO',
-		71300000,
-		71304000,
-		'CUZ'
-	), (
-		45,
-		'SECRETARIA DE SALUD',
-		'SECRETARIA DE SALUD',
-		72100000,
-		72101000,
-		'FLZ'
-	), (
-		46,
-		'SECRETARIA DE SALUD',
-		'SUBS. GESTION DE SERVICIOS DE SALUD',
-		72100000,
-		72102000,
-		'FLZ'
-	), (
-		47,
-		'SECRETARIA DE SALUD',
-		'SUBS. DE SALUD PUBLICA',
-		72100000,
-		72103000,
-		'FLZ'
-	), (
-		48,
-		'SECRETARIA DE SALUD',
-		'SUBS. ADMINISTRATIVA Y FINACIERA',
-		72100000,
-		72104000,
-		'FLZ'
-	), (
-		49,
-		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
-		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
-		72200000,
-		72201000,
-		'IZ'
-	), (
-		50,
-		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
-		'SUBS. DE GRUPOS POBLACIONALES',
-		72200000,
-		72202000,
-		'IZ'
-	), (
-		51,
-		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
-		'SUBS. TÉCNICA DE INCLUSIÓN SOCIAL',
-		72200000,
-		72203000,
-		'IZ'
-	), (
-		52,
-		'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS',
-		'SUBS. DE DERECHOS HUMANOS',
-		72200000,
-		72204000,
-		'IZ'
-	), (
-		53,
-		'SECRETARÍA DE LAS MUJERES',
-		'SECRETARÍA DE LAS MUJERES',
-		72300000,
-		72301000,
-		'SMZ'
-	), (
-		54,
-		'SECRETARÍA DE LAS MUJERES',
-		'SUBSECRETARÍA DE DERECHOS',
-		72300000,
-		72302000,
-		'SMZ'
-	), (
-		55,
-		'SECRETARÍA DE LAS MUJERES',
-		'SUBSECRETARIA DE TRANSVERSALIZACION',
-		72300000,
-		72303000,
-		'SMZ'
-	), (
-		56,
-		'SECRETARIA DE LA JUVENTUD',
-		'SECRETARIA DE LA JUVENTUD',
-		72400000,
-		72401000,
-		'SJ'
-	), (
-		57,
-		'SECRETARÍA DE LA NO VIOLENCIA',
-		'SECRETARÍA DE LA NO VIOLENCIA',
-		72500000,
-		72501000,
-		'SNV'
-	), (
-		58,
-		'SECRETARÍA DE LA NO VIOLENCIA',
-		'SUBSECRETARÍA DE JUSTICIA RESTAURATIVA',
-		72500000,
-		72502000,
-		'SNV'
-	), (
-		59,
-		'SECRETARÍA DE LA NO VIOLENCIA',
-		'SUBSECRETARÍA DE CONSTRUCCIÓN DE PAZ TERRITORIAL',
-		72500000,
-		72503000,
-		'SNV'
-	), (
-		60,
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		73200000,
-		73201000,
-		'SSC'
-	), (
-		61,
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		'SUBSECRETARIA PLANEACION DE LA SEGURIDAD',
-		73200000,
-		73202000,
-		'SSC'
-	), (
-		62,
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		'SUBSECRETARIA OPERATIVA DE LA SEGURIDAD',
-		73200000,
-		73203000,
-		'SSC'
-	), (
-		63,
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		'FONDO TERRITORIAL DE SEGURIDAD Y CONVIVENCIA CIUDADANA-FONSET',
-		73200000,
-		73204000,
-		'SSC'
-	), (
-		64,
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		'SUBS. DE GOBIERNO LOCAL Y CONVIVENCIA',
-		73200000,
-		73205000,
-		'SSC'
-	), (
-		65,
-		'SECRETARIA DE SEGURIDAD Y CONVIVENCIA',
-		'SUBS. ESPACIO PÚBLICO',
-		73200000,
-		73206000,
-		'SSC'
-	), (
-		66,
-		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
-		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
-		73300000,
-		73301000,
-		'DAG'
-	), (
-		67,
-		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
-		'SUBS. CONOCIMIENTO Y GESTIÓN DEL RIESGO',
-		73300000,
-		73302000,
-		'DAG'
-	), (
-		68,
-		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
-		'SUBD. DE MANEJO DE DESASTRES',
-		73300000,
-		73303000,
-		'DAG'
-	), (
-		69,
-		'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES',
-		'FONDO MUNICIPAL GESTIÓN DEL RIESGO',
-		73300000,
-		73304000,
-		'DAG'
-	), (
-		70,
-		'SECRETARIA DE INFRAESTRUCTURA FISICA',
-		'SECRETARIA DE INFRAESTRUCTURA FISICA',
-		74100000,
-		74101000,
-		'OZ'
-	), (
-		71,
-		'SECRETARIA DE INFRAESTRUCTURA FISICA',
-		'SUBS. PLANEACIÓN DE LA INFRAESTRUCTURA PÚBLICA',
-		74100000,
-		74102000,
-		'OZ'
-	), (
-		72,
-		'SECRETARIA DE INFRAESTRUCTURA FISICA',
-		'SUBS. CONSTRUCCIÓN Y MANTENIMIENTO',
-		74100000,
-		74103000,
-		'OZ'
-	), (
-		73,
-		'SECRETARIA DEL MEDIO AMBIENTE',
-		'SECRETARIA DEL MEDIO AMBIENTE',
-		74200000,
-		74201000,
-		'MZ'
-	), (
-		74,
-		'SECRETARIA DEL MEDIO AMBIENTE',
-		'SUB. DE GESTION AMBIENTAL',
-		74200000,
-		74202000,
-		'MZ'
-	), (
-		75,
-		'SECRETARIA DEL MEDIO AMBIENTE',
-		'SUBS. RECURSOS NATURALES RENOVABLES',
-		74200000,
-		74203000,
-		'MZ'
-	), (
-		76,
-		'SECRETARIA DEL MEDIO AMBIENTE',
-		'SUBS. PROTECCIÓN Y BIENESTAR ANIMAL',
-		74200000,
-		74204000,
-		'MZ'
-	), (
-		77,
-		'SECRETARIA DE MOVILIDAD',
-		'SECRETARIA DE MOVILIDAD',
-		74300000,
-		74301000,
-		'TZ'
-	), (
-		78,
-		'SECRETARIA DE MOVILIDAD',
-		'SUBS. DE SEGURIDAD VIAL Y CONTROL',
-		74300000,
-		74302000,
-		'TZ'
-	), (
-		79,
-		'SECRETARIA DE MOVILIDAD',
-		'SUBS. LEGAL',
-		74300000,
-		74303000,
-		'TZ'
-	), (
-		80,
-		'SECRETARIA DE MOVILIDAD',
-		'SUBSECRETARÍA TÉCNICA',
-		74300000,
-		74304000,
-		'TZ'
-	), (
-		81,
-		'SECRETARIA DE MOVILIDAD',
-		'GERENCIA MOVILIDAD HUMANA',
-		74300000,
-		74305000,
-		'TZ'
-	), (
-		82,
-		'SECRETARIA DE DESARROLLO ECONOMICO',
-		'SECRETARIA DE DESARROLLO ECONOMICO',
-		75100000,
-		75101000,
-		'ZDE'
-	), (
-		83,
-		'SECRETARIA DE DESARROLLO ECONOMICO',
-		'SUBS. DE DESARROLLO RURAL',
-		75100000,
-		75102000,
-		'ZDE'
-	), (
-		84,
-		'SECRETARIA DE DESARROLLO ECONOMICO',
-		'SUBS. DE CREACION Y FORTALE. EMPRESARIAL',
-		75100000,
-		75103000,
-		'ZDE'
-	), (
-		85,
-		'SECRETARIA DE DESARROLLO ECONOMICO',
-		'SUBS. DE TURISMO',
-		75100000,
-		75104000,
-		'ZDE'
-	), (
-		86,
-		'SECRETARÍA DE INNOVACIÓN DIGITAL',
-		'SECRETARÍA DE INNOVACIÓN DIGITAL',
-		75200000,
-		75201000,
-		'ID'
-	), (
-		87,
-		'SECRETARÍA DE INNOVACIÓN DIGITAL',
-		'SUBSECRETARÍA SERVICIOS DE TECNOLOGÍAS DE LA INFORMACIÓN',
-		75200000,
-		75202000,
-		'ID'
-	), (
-		88,
-		'SECRETARÍA DE INNOVACIÓN DIGITAL',
-		'SUBSECRETARÍA CIUDAD INTELIGENTE',
-		75200000,
-		75203000,
-		'ID'
-	), (
-		89,
-		'DPTO. ADMINISTRATIVO DE PLANEACION',
-		'DPTO. ADMINISTRATIVO DE PLANEACION',
-		76100000,
-		76101000,
-		'DAP'
-	), (
-		90,
-		'DPTO. ADMINISTRATIVO DE PLANEACION',
-		'SUBD. DE PLANEACION SOCIAL Y ECONOMICA',
-		76100000,
-		76101000,
-		'DAP'
-	), (
-		91,
-		'DPTO. ADMINISTRATIVO DE PLANEACION',
-		'SUBD. DE  PROSPECTIVA, INFORMACION Y  EVALUACION  ESTRATEGICA',
-		76100000,
-		76101000,
-		'DAP'
-	), (
-		92,
-		'DPTO. ADMINISTRATIVO DE PLANEACION',
-		'SUBD.  PLANEACION TERRITORIAL Y ESTRATRATEGICA DE  CIUDAD',
-		76100000,
-		76101000,
-		'DAP'
-	), (
-		93,
-		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
-		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
-		76200000,
-		76201000,
-		'GCT'
-	), (
-		94,
-		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
-		'SUBSECRETARÍA DE CONTROL URBANÍSTICO',
-		76200000,
-		76202000,
-		'GCT'
-	), (
-		95,
-		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
-		'SUBSECRETARÍA DE CATASTRO',
-		76200000,
-		76203000,
-		'GCT'
-	), (
-		96,
-		'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL',
-		'SUBSECRETARÍA DE SERVICIOS PÚBLICOS',
-		76200000,
-		76204000,
-		'GCT'
-	);
+	VALUES 
+		(1, 1, 'ALCALDÍA', 70001000), 
+		(2, 2, 'GERENCIA DE PROYECTOS ESTRATÉGICOS', 70002000), 
+		(3, 3, 'GERENCIA ÉTNICA', 70003000), 
+		(4, 4, 'GERENCIA DE DIVERSIDADES SEXUALES E IDENTIDADES DE GENERO', 70004000), 
+		(5, 5, 'SECRETARIA PRIVADA', 70101000), 
+		(6, 6, 'SECRETARIA DE COMUNICACIONES', 70201000), 
+		(7, 6, 'SUBS. COMUNICACIÓN ESTRATÉGICA', 70202000), 
+		(8, 7, 'SECRETARIA DE EVALUACION Y CONTROL', 70301000), 
+		(9, 7, 'SUBS. DE EVALUACION Y SEGUIMIENTO', 70302000), 
+		(10, 7, 'SUBS. DE ASESORIA Y ACOMPAÑAMIENTO', 70303000), 
+		(11, 8, 'SECRETARIA DE GOBIERNO Y GESTION DEL GABINETE', 73101000), 
+		(12, 9, 'GERENCIA DE CORREGIMIENTOS', 76002000), 
+		(13, 10, 'GERENCIA DEL CENTRO', 76003000), 
+		(14, 11, 'GERENCIA DE PROYECTOS ESTRATÉGICOS', 76000000), 
+		(15, 12, 'SECRETARIA DE HACIENDA', 70401000), 
+		(16, 12, 'SUBS. DE INGRESOS', 70402000), 
+		(17, 12, 'SUBS. DE TESORERIA', 70403000), 
+		(18, 12, 'SUBS. PRESUPUESTO Y GESTIÓN FINANCIERA', 70404000), 
+		(19, 13, 'SECRETARIA GENERAL', 70501000), 
+		(20, 13, 'SUBS. DE PREVENCI. DEL DAÑO ANTIJURIDICO', 70502000), 
+		(21, 13, 'SUBS. DE DEFENSA Y PROTECC. DE LO PUBLIC', 70503000), 
+		(22, 14, 'SECRETARIA GESTIÓN HUMANA Y SERVICIO A LA CIUDADANÍA', 70601000), 
+		(23, 14, 'SUBS. GESTIÓN HUMANA', 70602000), 
+		(24, 14, 'SUBS. SERVICIO A LA CIUDADANÍA', 70603000), 
+		(25, 14, 'SUBS. DESARROLLO INSTITUCIONAL', 70604000), 
+		(26, 14, 'TECNOLOGÍA Y GESTIÓN DE LA INFORMACIÓN', 70605000), 
+		(27, 15, 'SECRETARIA SUMINISTROS Y SERVICIOS', 70701000), 
+		(28, 15, 'SUBS. GESTIÓN DE BIENES', 70702000), 
+		(29, 15, 'SUBS. SELECCIÓN Y GESTIÓN DE PROVEEDORES', 70703000), 
+		(30, 15, 'SUBS. PLANEACIÓN Y EVALUACIÓN', 70704000), 
+		(31, 15, 'SUBS. EJECUCIÓN DE LA CONTRATACIÓN', 70705000), 
+		(32, 16, 'SECRETARIA DE EDUCACION', 71101000), 
+		(33, 16, 'SUBS. ADMINISTRATIVA Y FINANCIERA ', 71102000), 
+		(34, 16, 'SUBS. DE PLANEACION EDUCATIVA', 71103000), 
+		(35, 16, 'SUBS. PRESTACIÓN DEL SERVICIO EDUCATIVO', 71104000), 
+		(36, 16, 'UNIDAD ADMINISTRATIVA ESPECIAL SIN PJ BUEN COMIENZO', 71105000), 
+		(37, 17, 'SECRETARIA DE PARTICIPACION CIUDADANA', 71201000), 
+		(38, 17, 'SUBS. DE ORGANIZACIÓN SOCIAL', 71202000), 
+		(39, 17, 'SUBS. DE FORMACION Y PARTI. CIUDADANA', 71203000), 
+		(40, 17, 'SUBS. DE PLANEACION LOCAL Y PPTO PARTICI', 71204000), 
+		(41, 18, 'SECRETARIA DE CULTURA CIUDADANA', 71301000), 
+		(42, 18, 'SUBS. DE CIUDADANIA CULTURAL', 71302000), 
+		(43, 18, 'SUBS. DE ARTE Y CULTURA', 71303000), 
+		(44, 18, 'SUBS. DE LECTURA, BIBLIOTECAS Y PATRIMONIO', 71304000), 
+		(45, 19, 'SECRETARIA DE SALUD', 72101000), 
+		(46, 19, 'SUBS. GESTION DE SERVICIOS DE SALUD', 72102000), 
+		(47, 19, 'SUBS. DE SALUD PUBLICA', 72103000), 
+		(48, 19, 'SUBS. ADMINISTRATIVA Y FINACIERA', 72104000), 
+		(49, 20, 'SECRETARIA DE INCLUSION SOCIAL,  FAMILIA Y DERECHOS HUMANOS', 72201000), 
+		(50, 20, 'SUBS. DE GRUPOS POBLACIONALES', 72202000), 
+		(51, 20, 'SUBS. TÉCNICA DE INCLUSIÓN SOCIAL', 72203000), 
+		(52, 20, 'SUBS. DE DERECHOS HUMANOS', 72204000), 
+		(53, 21, 'SECRETARÍA DE LAS MUJERES', 72301000), 
+		(54, 21, 'SUBSECRETARÍA DE DERECHOS', 72302000), 
+		(55, 21, 'SUBSECRETARIA DE TRANSVERSALIZACION', 72303000), 
+		(56, 22, 'SECRETARIA DE LA JUVENTUD', 72401000), 
+		(57, 23, 'SECRETARÍA DE LA NO VIOLENCIA', 72501000), 
+		(58, 23, 'SUBSECRETARÍA DE JUSTICIA RESTAURATIVA', 72502000), 
+		(59, 23, 'SUBSECRETARÍA DE CONSTRUCCIÓN DE PAZ TERRITORIAL', 72503000), 
+		(60, 24, 'SECRETARIA DE SEGURIDAD Y CONVIVENCIA', 73201000), 
+		(61, 24, 'SUBSECRETARIA PLANEACION DE LA SEGURIDAD', 73202000), 
+		(62, 24, 'SUBSECRETARIA OPERATIVA DE LA SEGURIDAD', 73203000), 
+		(63, 24, 'FONDO TERRITORIAL DE SEGURIDAD Y CONVIVENCIA CIUDADANA-FONSET', 73204000), 
+		(64, 24, 'SUBS. DE GOBIERNO LOCAL Y CONVIVENCIA', 73205000), 
+		(65, 24, 'SUBS. ESPACIO PÚBLICO', 73206000), 
+		(66, 25, 'DPTO ADMINISTRATIVO DE  GESTIÓN DEL RIESGO DE DESASTRES', 73301000), 
+		(67, 25, 'SUBS. CONOCIMIENTO Y GESTIÓN DEL RIESGO', 73302000), 
+		(68, 25, 'SUBD. DE MANEJO DE DESASTRES', 73303000), 
+		(69, 25, 'FONDO MUNICIPAL GESTIÓN DEL RIESGO', 73304000), 
+		(70, 26, 'SECRETARIA DE INFRAESTRUCTURA FISICA', 74101000), 
+		(71, 26, 'SUBS. PLANEACIÓN DE LA INFRAESTRUCTURA PÚBLICA', 74102000), 
+		(72, 26, 'SUBS. CONSTRUCCIÓN Y MANTENIMIENTO', 74103000), 
+		(73, 27, 'SECRETARIA DEL MEDIO AMBIENTE', 74201000), 
+		(74, 27, 'SUB. DE GESTION AMBIENTAL', 74202000), 
+		(75, 27, 'SUBS. RECURSOS NATURALES RENOVABLES', 74203000), 
+		(76, 27, 'SUBS. PROTECCIÓN Y BIENESTAR ANIMAL', 74204000), 
+		(77, 28, 'SECRETARIA DE MOVILIDAD', 74301000), 
+		(78, 28, 'SUBS. DE SEGURIDAD VIAL Y CONTROL', 74302000), 
+		(79, 28, 'SUBS. LEGAL', 74303000), 
+		(80, 28, 'SUBSECRETARÍA TÉCNICA', 74304000), 
+		(81, 28, 'GERENCIA MOVILIDAD HUMANA', 74305000), 
+		(82, 29, 'SECRETARIA DE DESARROLLO ECONOMICO', 75101000), 
+		(83, 29, 'SUBS. DE DESARROLLO RURAL', 75102000), 
+		(84, 29, 'SUBS. DE CREACION Y FORTALE. EMPRESARIAL', 75103000), 
+		(85, 29, 'SUBS. DE TURISMO', 75104000), 
+		(86, 30, 'SECRETARÍA DE INNOVACIÓN DIGITAL', 75201000), 
+		(87, 30, 'SUBSECRETARÍA SERVICIOS DE TECNOLOGÍAS DE LA INFORMACIÓN', 75202000), 
+		(88, 30, 'SUBSECRETARÍA CIUDAD INTELIGENTE', 75203000), 
+		(89, 31, 'DPTO. ADMINISTRATIVO DE PLANEACION', 76101000), 
+		(90, 31, 'SUBD. DE PLANEACION SOCIAL Y ECONOMICA', 76101000), 
+		(91, 31, 'SUBD. DE  PROSPECTIVA, INFORMACION Y  EVALUACION  ESTRATEGICA', 76101000), 
+		(92, 31, 'SUBD.  PLANEACION TERRITORIAL Y ESTRATRATEGICA DE  CIUDAD', 76101000), 
+		(93, 32, 'SECRETARÍA GESTIÓN Y CONTROL TERRITORIAL', 76201000), 
+		(94, 32, 'SUBSECRETARÍA DE CONTROL URBANÍSTICO', 76202000), 
+		(95, 32, 'SUBSECRETARÍA DE CATASTRO', 76203000), 
+		(96, 32, 'SUBSECRETARÍA DE SERVICIOS PÚBLICOS', 76204000);
 
-insert 
+-- Project
+INSERT 
 	into projects 
 	values (
 		0,
@@ -878,3 +399,125 @@ insert
 		1,
 		'{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
 	);
+
+-- Tipologies
+INSERT
+	INTO tipologies
+	VALUES
+		(DEFAULT, 'PROPIEDADES, PLANTA Y EQUIPO', 16, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'TERRENOS', 1605, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Urbanos', 160501, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Rurales', 160502, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos con destinación ambiental', 160503, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos pendientes de legalizar', 160504, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Propiedad de Terceros', 160505, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos con uso futuro indeterminado', 160506, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'CONSTRUCCIONES EN CURSO', 1615, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificaciones', 161501, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Redes, líneas y cables', 161505, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'PROPIEDADES, PLANTA Y EQUIPO NO EXPLOTADOS', 1637, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos', 163701, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificaciones', 163703, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'EDIFICACIONES', 1640, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificios y casas', 164001, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Oficinas', 164002, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Locales', 164004, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Cafeterías y casinos', 164008, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Colegios y escuelas', 164009, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Clínicas y hospitales', 164010, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Clubes', 164011, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Invernaderos', 164014, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Casetas y campamentos', 164015, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Parqueaderos y garajes', 164017, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bodegas', 164018, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Instalaciones deportivas y recreacionales', 164019, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Estanques', 164020, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Presas', 164022, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Aeropuertos', 164026, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificaciones pendientes de legalizar', 164027, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificaciones de propiedad de terceros', 164028, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otras edificaciones', 164090, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'REDES, LÍNEAS Y CABLES', 1650, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Redes de distribución', 165002, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red de Recoleccción de Aguas', 165003, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BIENES DE USO PÚBLICO EN CONSTRUCCIÓN', 1705, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera', 170501, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red Carret Vehi Cons', 17050101, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red Carret Peat Cons', 17050102, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Puentes vehic. Const', 17050105, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Puent Peaton. en Con', 17050106, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Plazas públicas', 170504, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Parques recreacionales', 170505, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BBUPc Parq  Z Verdes', 17050501, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BBUPc Parq  Recreac.', 17050502, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Parques arqueológicos', 170506, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bibliotecas', 170510, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red aeroportuaria', 170515, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos', 170516, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos de vias', 17051601, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Plazas Publicas', 17051602, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Parques Recreacionales', 17051603, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros bienes de uso público en construcción', 170590, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BIENES DE USO PÚBLICO EN CONSTRUCCIÓN-CONCESIONES', 1706, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera', 170601, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red aeroportuaria', 170605, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos', 170606, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros bienes de uso público en construcción-concesiones', 170690, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BIENES DE USO PÚBLICO EN SERVICIO', 1710, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera', 171001, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera vehicu', 17100101, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera peaton', 17100102, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos', 171014, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Vias y Puentes', 17101401, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera rural', 17100104, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Puentes vehiculares', 17100105, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Puentes peatonales', 17100106, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terminales', 17100107, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Parqueaderos pbcos', 17101405, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bss Uso Púb Parquead', 17100120, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Plazas públicas', 171004, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Plazas Publicas en S', 17100401, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Plazas', 17101404, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Parques recreacionales', 171005, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Parques', 17101402, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Parques Recreacional', 17100502, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos Zonas Verdes', 17101403, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red aeroportuaria', 171009, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bibliotecas', 171010, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Museos', 171013, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros bienes de uso público en servicio', 171090, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BIENES DE USO PÚBLICO EN SERVICIO-CONCESIONES', 1711, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red carretera', 171101, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Red aeroportuaria', 171105, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos', 171106, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros bienes de uso público en servicio-concesiones', 171190, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BIENES HISTÓRICOS Y CULTURALES', 1715, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Monumentos', 171501, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos  Bienes His', 17150101, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Museos', 171502, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Obras de arte', 171503, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bienes  arqueológicos ', 171504, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Restauraciones', 171508, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Libros y publicaciones', 171509, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros bienes históricos y culturales', 171590, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'PROPIEDADES DE INVERSIÓN', 1951, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Terrenos', 195101, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificaciones', 195102, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Locales en arrendami', 19510226, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Oficinas', 19510240, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Edificios', 19510250, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'BIENES ENTREGADOS A TERCEROS', 8347, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bs Com Edificaciones Establ. Pbcos y Empresas del Estado', 83470421, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bs Com Terre Urbanos Establ. Pbcos y Empresas del Estado', 83470430, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'PATRIMONIO', 3, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'PATRIMONIO DE LAS ENTIDADES DE GOBIERNO', 31, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'IMPACTOS POR TRANSICIÓN AL NUEVO MARCO DE REGULACIÓN', 3145, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Inventarios', 314505, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Propiedades, planta y equipo', 314506, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Activos intangibles', 314507, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Propiedades de inversión', 3145080, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bienes de uso público', 314510, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Bienes históricos y culturales', 314511, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros activos', 314512, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
+		(DEFAULT, 'Otros impactos por transición', 314590, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}');
+

@@ -7,7 +7,11 @@ Route.group(() => {
       const { default: ProjectsController } = await import(
         "App/Controllers/Http/ProjectsController"
       );
-      return new ProjectsController().showAllWithPagination(ctx);
+
+      if (ctx.request.qs().with === "pagination")
+        return new ProjectsController().showAllWithPagination(ctx);
+
+      return new ProjectsController().showAll(ctx);
     });
 
     Route.get("/", async (ctx) => {
