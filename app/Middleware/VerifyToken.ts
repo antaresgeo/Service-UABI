@@ -11,9 +11,7 @@ export default class VerifyToken {
     let payload;
     const token = request.headers()["authorization"]?.replace("Bearer ", "");
 
-    console.log(token);
     if (token) payload = decodeJWT(token);
-    console.log(payload);
 
     if (payload === undefined)
       return response.unauthorized({

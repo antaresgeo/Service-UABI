@@ -178,7 +178,6 @@ export default class ProjectsController {
       console.error(error);
       return response.status(500).json({ message: "Project error" });
     }
-    console.log(results);
 
     results = results === null ? {} : results[0];
 

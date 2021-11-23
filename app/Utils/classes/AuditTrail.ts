@@ -31,7 +31,6 @@ export default class AuditTrail {
 
     if (typeof detailsUser !== "undefined") {
       self.dataUser = detailsUser;
-      console.log(self.dataUser);
 
       self.createdBy = `${self.dataUser.names.firstName} ${self.dataUser.surnames.firstSurname}`;
       self.createdOn = moment().valueOf();
