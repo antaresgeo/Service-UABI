@@ -2,12 +2,21 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { sum } from "App/Utils/functions";
-import { IRealEstateAttributes } from "App/Utils/interfaces";
+import {
+  getCostCenterID,
+  getTipologyID,
+  getToken,
+  sum,
+} from "App/Utils/functions";
+import {
+  IPayloadRealEstate,
+  IRealEstateAttributes,
+} from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 import { createSAPID } from "../../Utils/functions/index";
-// import CostCenter from "App/Models/CostCenter";
+import Dependency from "App/Models/Dependency";
+import { getAddressById } from "App/Services";
 
 export default class RealEstatesController {
   // GET
@@ -15,18 +24,14 @@ export default class RealEstatesController {
    * index
    */
   public async getList({ response, request }: HttpContextContract) {
-    const { q, page, pageSize /*allStates*/ } = request.qs();
+    const { q, page, pageSize } = request.qs();
     let results, tmpPage: number, tmpPageSize: number, realEstates;
-    // tmpAllStates: boolean;
 
     if (!pageSize) tmpPageSize = 10;
     else tmpPageSize = pageSize;
 
     if (!page) tmpPage = 1;
     else tmpPage = page;
-
-    // if (!allStates) tmpAllStates = false;
-    // else tmpAllStates = allStates;
 
     let count: number = tmpPage * tmpPageSize - tmpPageSize;
 
@@ -205,18 +210,24 @@ export default class RealEstatesController {
         .innerJoin("projects as p", "a.project_id", "p.id")
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
         .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
         .innerJoin("status as s", "re.status", "s.id")
         .select([
           "p.name as project_name",
           "re.id as re_id",
           "re.name as re_name",
+          "*",
         ])
-        .select("*")
         .where("re.id", id);
     } catch (error) {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
+
+    // Get Info Address
+    const address: any = await getAddressById(
+      Number(results[0]["$extras"]["address"])
+    );
 
     let project: any = {};
 
@@ -230,6 +241,7 @@ export default class RealEstatesController {
       status: results[0]["$extras"]["name"],
       name: results[0]["$extras"]["re_name"],
       materials: results[0]["$extras"]["materials"].split(","),
+      address: { ...address },
     };
 
     delete project["project_name"];
@@ -251,13 +263,55 @@ export default class RealEstatesController {
    */
   public async create(ctx: HttpContextContract) {
     const { response, request } = ctx;
-    const payload: any = await request.validate(CreateRealEstate);
+    const token: string = getToken(request.headers());
+    const payload: IPayloadRealEstate = await request.validate(
+      CreateRealEstate
+    );
     let project: Project | any;
+    let costCenterId: any;
 
-    const auditTrail: AuditTrail = new AuditTrail();
+    // Get Id of Dependency and its values
+    if (
+      payload["dependency"] &&
+      payload["subdependency"] &&
+      payload["management_center"] &&
+      payload["cost_center"]
+    ) {
+      costCenterId = await getCostCenterID(
+        payload["dependency"],
+        payload["subdependency"],
+        payload["management_center"],
+        payload["cost_center"]
+      );
+
+      if (costCenterId.status === 500)
+        return response
+          .status(costCenterId.status)
+          .json({ message: costCenterId.results.id });
+    }
+
+    // Get Id of Tipology and its values
+    const tipologyId = await getTipologyID(
+      payload["tipology"],
+      payload["accounting_account"]
+    );
+
+    if (tipologyId.status === 500)
+      return response
+        .status(tipologyId.status)
+        .json({ message: tipologyId.result });
+
+    const auditTrail: AuditTrail = new AuditTrail(token);
+    await auditTrail.init();
 
     try {
-      let dataRealEstate: IRealEstateAttributes = { ...payload };
+      let dataRealEstate: IRealEstateAttributes = {
+        ...payload,
+        tipology_id: parseInt(tipologyId.result),
+      };
+      delete dataRealEstate["tipology"];
+      delete dataRealEstate["accounting_account"];
+
       if (payload.projects_id) {
         try {
           // project = await Project.findOrFail(payload.projects_id[0]);
@@ -273,6 +327,23 @@ export default class RealEstatesController {
 
             if (typeof project !== "undefined")
               dataRealEstate["cost_center_id"] = project.cost_center_id;
+            let sapIds: string[] = [];
+            dataRealEstate.active_type.split(",").map((activeType) => {
+              sapIds.push(
+                createSAPID(
+                  project.fixed_assets,
+                  Number(project.last_consecutive),
+                  activeType.trim()
+                )
+              );
+            });
+            const tipology = await Dependency.find(project.dependency_id);
+            tipology
+              ?.merge({
+                last_consecutive: sum(Number(project.last_consecutive), 1),
+              })
+              .save();
+            dataRealEstate["sap_id"] = sapIds.join(", ");
           }
         } catch (error) {
           console.error(error);
@@ -281,16 +352,25 @@ export default class RealEstatesController {
               "El Proyecto al que quiere relacionar no existe, crearlo antes de asignar.",
           });
         }
+      } else {
+        dataRealEstate.cost_center_id = costCenterId.results.id;
+        let sapIds: string[] = [];
+        dataRealEstate.active_type.split(",").map((activeType) => {
+          sapIds.push(
+            createSAPID(
+              costCenterId.results.fixed_assets,
+              costCenterId.results.last_consecutive,
+              activeType
+            )
+          );
+        });
+        dataRealEstate["sap_id"] = sapIds.join(", ");
       }
 
       delete dataRealEstate.projects_id;
-      dataRealEstate.status = 1;
       dataRealEstate.audit_trail = auditTrail.getAsJson();
-      dataRealEstate["sap_id"] = createSAPID(
-        project.fixed_assets,
-        (await RealEstate.all()).length,
-        dataRealEstate.active_type
-      );
+
+      dataRealEstate.status = 1;
 
       const realEstate = await RealEstate.create({
         ...dataRealEstate,
@@ -357,7 +437,7 @@ export default class RealEstatesController {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
 
-        const auditTrail = new AuditTrail(undefined, realEstate.audit_trail);
+        const auditTrail = new AuditTrail("undefined", realEstate.audit_trail);
         auditTrail.update("Administrador", newData, realEstate);
 
         // let dataUpdated: IRealEstateAttributes = {

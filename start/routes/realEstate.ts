@@ -52,4 +52,6 @@ Route.group(() => {
       return new RealEstatesController().delete(ctx);
     });
   }).prefix("/real-estates");
-}).prefix("v1");
+})
+  .prefix("v1")
+  .middleware(["logRegistered", "verifyToken"]);

@@ -27,6 +27,14 @@ export interface IDataUser {
   name: string;
 }
 
+export interface IResponseData {
+  message: string;
+  results?: any;
+  error?: any;
+  total?: number;
+}
+
 export * from "./project.interfaces";
 export * from "./realEstate.interfaces";
 export * from "./adquisitions.interfaces";
+export * from "./detailsUser";

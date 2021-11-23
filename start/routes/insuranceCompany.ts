@@ -54,4 +54,6 @@ Route.group(() => {
       return new InsuranceCompaniesController().inactivate(ctx);
     });
   }).prefix("/insurance-companies");
-}).prefix("v1");
+})
+  .prefix("v1")
+  .middleware(["logRegistered", "verifyToken"]);

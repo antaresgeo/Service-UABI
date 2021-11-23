@@ -1,36 +1,43 @@
 // import jwt from "jsonwebtoken";
+import DetailsUser from "App/Models/DetailsUser";
 import moment from "moment";
-import { IDataUser, IUpdatedValues } from "../interfaces";
+import { getDataUser } from "../functions";
+import { IUpdatedValues } from "../interfaces";
 
 export default class AuditTrail {
-  private token: string | null;
-  private dataUser: IDataUser;
+  private dataUser: DetailsUser;
+  protected token: string;
   protected createdBy: string;
   protected createdOn: number;
   protected updatedBy: string | null;
   protected updatedOn: number | null;
   protected updatedValues: IUpdatedValues | null;
 
-  constructor(token?: string, auditTrail?: any) {
-    this.token = token ? token : null;
+  constructor(token: string, auditTrail?: any) {
+    this.token = token;
 
-    this.dataUser = { id: 1, name: "Administrador" };
-    if (this.token !== null) {
-      //   const decodedJWT = this.decodeJWT();
-      //   this.createdBy = decodedJWT.auditTrail.createdBy;
-    }
     if (auditTrail) {
       this.createdBy = auditTrail.created_by;
       this.createdOn = auditTrail.created_on;
       this.updatedBy = auditTrail.updated_by;
       this.updatedOn = auditTrail.updated_on;
       this.updatedValues = auditTrail.updated_values;
-    } else {
-      this.createdBy = this.dataUser.name;
-      this.createdOn = moment().valueOf();
-      this.updatedBy = null;
-      this.updatedOn = null;
-      this.updatedValues = null;
+    }
+  }
+
+  async init() {
+    const self = this;
+    const detailsUser = await getDataUser(self.token);
+
+    if (typeof detailsUser !== "undefined") {
+      self.dataUser = detailsUser;
+      console.log(self.dataUser);
+
+      self.createdBy = `${self.dataUser.names.firstName} ${self.dataUser.surnames.firstSurname}`;
+      self.createdOn = moment().valueOf();
+      self.updatedBy = null;
+      self.updatedOn = null;
+      self.updatedValues = null;
     }
   }
 
@@ -92,7 +99,6 @@ export default class AuditTrail {
    */
   public registry() {}
 
-  // El código que considero más clean que he creado, pero este update me ha sacado canas... [12021181]
   public update(updatedBy: string, updatedValues: any, model: any) {
     this.updatedBy = updatedBy;
     this.updatedOn = moment().valueOf();
@@ -110,8 +116,6 @@ export default class AuditTrail {
       new: updatedValues,
     };
 
-    this.updatedValues = { ..._updatedValues };
-
     if (tmpData.audit_trail?.updated_values)
       if (!tmpData.audit_trail.updated_values.oldest) {
         delete tmpData.audit_trail;
@@ -119,6 +123,6 @@ export default class AuditTrail {
         _updatedValues.oldest = { ...tmpData };
       } else _updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
 
-    this.updatedValues = { ..._updatedValues };
+    this.updatedValues = _updatedValues;
   }
 }

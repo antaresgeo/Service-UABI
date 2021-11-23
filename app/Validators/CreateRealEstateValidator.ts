@@ -8,7 +8,7 @@ export default class CreateRealEstateValidator {
     projects_id: schema.array.optional().members(schema.number()),
 
     tipology: schema.string({ trim: true }),
-    accounting_account: schema.number(),
+    accounting_account: schema.string(),
 
     destination_type: schema.string({ trim: true }),
     registry_number: schema.string({ trim: true }),
@@ -22,24 +22,16 @@ export default class CreateRealEstateValidator {
 
     active_type: schema.string({ trim: true }),
 
+    dependency: schema.string.optional({ trim: true }),
+    subdependency: schema.string.optional({ trim: true }),
+    management_center: schema.number.optional(),
+    cost_center: schema.number.optional(),
+
     zone: schema.string({ trim: true }),
-    address: schema.object
-      .optional()
-      .members({ name: schema.string({ trim: true }) }),
+    address: schema.number(),
 
     supports_documents: schema.string.optional({ trim: true }),
   });
 
-  /**
-   * Custom messages for validation failures. You can make use of dot notation `(.)`
-   * for targeting nested fields and array expressions `(*)` for targeting all
-   * children of an array. For example:
-   *
-   * {
-   *   'profile.username.required': 'Username is required',
-   *   'scores.*.number': 'Define scores as valid numbers'
-   * }
-   *
-   */
   public messages = {};
 }

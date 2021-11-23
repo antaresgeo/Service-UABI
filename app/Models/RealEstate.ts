@@ -8,9 +8,7 @@ export default class RealEstate extends BaseModel {
   public sap_id: string | undefined;
 
   @column()
-  public tipology: string;
-  @column()
-  public accounting_account: number;
+  public tipology_id: number;
 
   @column()
   public destination_type: string;
@@ -34,7 +32,7 @@ export default class RealEstate extends BaseModel {
   @column()
   public zone: string;
   @column()
-  public address: any | undefined;
+  public address: number;
 
   @column()
   public supports_documents: string | undefined;

@@ -45,4 +45,6 @@ Route.group(() => {
       return new ProjectsController().delete(ctx);
     });
   }).prefix("/projects");
-}).prefix("v1");
+})
+  .prefix("v1")
+  .middleware(["logRegistered", "verifyToken"]);

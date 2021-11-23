@@ -5,7 +5,14 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 
 // FUNCTIONS
-import { sum, capitalize, getCostCenterID } from "App/Utils/functions";
+import {
+  sum,
+  capitalize,
+  getCostCenterID,
+  getToken,
+  // getToken,
+  // getDataUser,
+} from "App/Utils/functions";
 
 // INTERFACES
 import { IPayloadProject, IProjectAttributes } from "App/Utils/interfaces";
@@ -33,6 +40,9 @@ export default class ProjectsController {
       tmpPageSize: number,
       tmpQ: string,
       projects;
+
+    // const token: string = getToken(request.headers());
+    // await getDataUser(token);
 
     if (!pageSize) tmpPageSize = 10;
     else tmpPageSize = pageSize;
@@ -181,7 +191,9 @@ export default class ProjectsController {
       subdependency: results["$extras"]["subdependency"],
       management_center: results["$extras"]["management_center"],
       cost_center: results["$extras"]["cost_center"],
+      last_consecutive: results["$extras"]["last_consecutive"],
       fixed_assets: results["$extras"]["fixed_assets"],
+      dependency_id: results["$extras"]["dependency_id"],
     };
 
     if (id) return tmpNewData;
@@ -237,6 +249,8 @@ export default class ProjectsController {
    *           message: Hello Guess
    */
   public async create({ request, response }: HttpContextContract) {
+    let token: string = getToken(request.headers());
+
     const payloadProject: IPayloadProject = await request.validate(
       CreateProjectValidator
     );
@@ -260,7 +274,8 @@ export default class ProjectsController {
       });
     }
 
-    const auditTrail: AuditTrail = new AuditTrail();
+    const auditTrail: AuditTrail = new AuditTrail(token);
+    await auditTrail.init();
 
     dataToCreate = {
       name: payloadProject.name.toUpperCase(),
@@ -294,6 +309,12 @@ export default class ProjectsController {
    * update
    */
   public async update({ request, response }: HttpContextContract) {
+    let tmpToken: string = "";
+
+    if (request.headers().authorization) {
+      let tmp = request.headers().authorization?.split("Bearer ").pop()?.trim();
+      if (typeof tmp !== "undefined") tmpToken = tmp;
+    }
     const newData = request.body();
     const { id } = request.qs();
     let costCenterID;
@@ -309,21 +330,22 @@ export default class ProjectsController {
           cost_center_id: project.cost_center_id,
         };
 
-        const { status, result } = await getCostCenterID(
+        const { status, results } = await getCostCenterID(
           newData["dependency"],
           newData["subdependency"],
           newData["management_center"],
           newData["cost_center"]
         );
 
-        if (status === 200) dataUpdated["cost_center_id"] = parseInt(result);
+        if (status === 200)
+          dataUpdated["cost_center_id"] = parseInt(results?.id);
         else
           return response.status(status).json({
-            message: result,
+            message: results,
           });
 
         // Update of Audit Trail | Actualización del Registro de Auditoría
-        const auditTrail = new AuditTrail(undefined, project.audit_trail);
+        const auditTrail = new AuditTrail(tmpToken, project.audit_trail);
 
         auditTrail.update("Administrador", { ...dataUpdated }, project);
         dataUpdated["audit_trail"] = auditTrail.getAsJson();

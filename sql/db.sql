@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS cost_centers (
 CREATE TABLE IF NOT EXISTS tipologies (
 	id SERIAL PRIMARY KEY,
 
-	tipology varchar(50) NOT NULL,
+	tipology varchar(200) NOT NULL,
 	accounting_account varchar(200) NOT NULL,
 
 	status int NOT NULL,
@@ -193,7 +193,7 @@ CREATE TABLE if not EXISTS real_estates (
 	materials text,
 	
 	zone varchar(10) NOT NULL,
-	address json NOT NULL,
+	address bigint NOT NULL,
 	
 	supports_documents text,
 

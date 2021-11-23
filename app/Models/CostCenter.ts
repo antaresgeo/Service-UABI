@@ -5,13 +5,9 @@ export default class CostCenter extends BaseModel {
   public id: number;
 
   @column()
-  public dependency: string;
+  public dependency_id: number;
   @column()
   public subdependency: string;
   @column()
-  public management_center: number;
-  @column()
   public cost_center: number;
-  @column()
-  public fixed_assets: string;
 }

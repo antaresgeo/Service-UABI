@@ -1,6 +1,11 @@
 import CostCenter from "App/Models/CostCenter";
+import Env from "@ioc:Adonis/Core/Env";
+import axios from "axios";
+
 import moment from "moment";
 import AuditTrail from "../classes/AuditTrail";
+import { decodeJWT } from "./jwt";
+import Tipology from "./../../Models/Tipology";
 
 export const sum = (num1: number, num2: number): number => {
   return num1 + num2;
@@ -19,12 +24,13 @@ type Action = "inactivate" | "terminate" | "activate";
 export const changeStatus = async (
   model: any,
   id: string | number,
-  action: Action
+  action: Action,
+  token: string
 ) => {
   try {
     const data = await model.findOrFail(id);
 
-    const auditTrail = new AuditTrail(undefined, data.audit_trail);
+    const auditTrail = new AuditTrail(token, data.audit_trail);
 
     if (action === "inactivate") {
       if (data.status != 0) data.status = 0;
@@ -64,23 +70,13 @@ export const capitalize = (str) => {
 
 export const createSAPID = (
   activeCode: string,
-  consecutive: number,
+  lastConsecutive: number,
   activeType: string
 ) => {
   activeType = activeType.replace(/mejora/gi, "MJ").replace(/lote/gi, "L");
-  return `${activeCode}${numberWithZeros(String(consecutive), 4)}${activeType}`;
-};
-
-export const numberWithZeros = (numAsString: string, cantZeros: number) => {
-  let tmpCode: string = "";
-
-  cantZeros = cantZeros - numAsString.length;
-  for (let i = 0; i < cantZeros; i++) {
-    tmpCode += "0";
-    tmpCode += numAsString;
-  }
-
-  return tmpCode;
+  return `${activeCode}${String(sum(lastConsecutive, 1))
+    .padStart(4, "0")
+    .trim()}${activeType}`;
 };
 
 export const getCostCenterID = async (
@@ -93,13 +89,20 @@ export const getCostCenterID = async (
     const costCenterID = await CostCenter.query()
       .from("cost_centers as cc")
       .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-      .select("cc.id")
+      .select(["cc.id", "d.fixed_assets"])
       .where("d.dependency", dependency)
       .where("cc.subdependency", subdependency)
       .where("d.management_center", management_center)
       .where("cc.cost_center", cost_center);
 
-    return { status: 200, result: String(costCenterID[0]["id"]) };
+    return {
+      status: 200,
+      results: {
+        id: String(costCenterID[0]["id"]),
+        last_consecutive: costCenterID[0]["last_consecutive"],
+        fixed_assets: String(costCenterID[0]["fixed_assets"]),
+      },
+    };
   } catch (error) {
     console.error(error);
     return {
@@ -109,12 +112,53 @@ export const getCostCenterID = async (
   }
 };
 
-// private decodeJWT() {
-//   try {
-//     let decode = jwt.verify(this.token, "your-256-bit-secret");
-//     console.log(decode);
-//     return decode;
-//   } catch (error) {
-//     console.error(error);
-//   }
-// }
+export const getTipologyID = async (
+  tipology: string,
+  accounting_account: string
+) => {
+  try {
+    const tipologyID = await Tipology.query()
+      .select("id")
+      .where("tipology", tipology)
+      .where("accounting_account", accounting_account);
+
+    return { status: 200, result: String(tipologyID[0]["id"]) };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      result: "Error obteniendo el ID de la Tipología",
+    };
+  }
+};
+
+export const getDataUser = async (token: string) => {
+  const { id } = decodeJWT(token);
+
+  // Consulting
+  try {
+    // User.findOrFail(payload.id);
+    const axiosResponse = await axios.get(
+      `${Env.get("URI_SERVICE_AUTH")}${Env.get("API_AUTH_VERSION")}/users`,
+      {
+        params: { id },
+      }
+    );
+    return axiosResponse.data.results.detailsUser;
+  } catch (error) {
+    console.error(error);
+    // return response.unauthorized({
+    //   error: "Debe de ingresar para realizar esta acción",
+    // });
+  }
+
+  // try {
+  //   const detailsUser = await DetailsUser.query().where("user_id", id);
+
+  //   return detailsUser[0];
+  // } catch (error) {
+  //   console.error(error);
+  // }
+};
+
+export * from "./jwt";

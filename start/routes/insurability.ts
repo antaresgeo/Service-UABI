@@ -43,4 +43,6 @@ Route.group(() => {
     //   return new InsurabilitiesController().changeStatus(ctx);
     // });
   }).prefix("/insurabilities");
-}).prefix("v1");
+})
+  .prefix("v1")
+  .middleware(["logRegistered", "verifyToken"]);
