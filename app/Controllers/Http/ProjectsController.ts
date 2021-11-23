@@ -338,11 +338,11 @@ export default class ProjectsController {
         );
 
         if (status === 200)
-          dataUpdated["cost_center_id"] = parseInt(results?.id);
-        else
-          return response.status(status).json({
-            message: results,
-          });
+          if (results) dataUpdated["cost_center_id"] = parseInt(results.id);
+          else
+            return response.status(status).json({
+              message: results,
+            });
 
         // Update of Audit Trail | Actualización del Registro de Auditoría
         const auditTrail = new AuditTrail(tmpToken, project.audit_trail);
