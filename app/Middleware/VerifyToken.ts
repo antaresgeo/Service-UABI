@@ -9,7 +9,12 @@ export default class VerifyToken {
     next: () => Promise<void>
   ) {
     let payload;
-    const token = request.headers()["authorization"]?.replace("Bearer ", "");
+    console.log(request.headers()["authorization"]);
+    let token: string = "";
+    let authorization = request.headers()["authorization"];
+    if (typeof authorization !== "undefined") {
+      token = authorization.replace("Bearer ", "");
+    }
 
     if (token) payload = decodeJWT(token);
 

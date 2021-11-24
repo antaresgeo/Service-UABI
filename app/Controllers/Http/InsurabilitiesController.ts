@@ -5,6 +5,7 @@ import AuditTrail from "App/Utils/classes/AuditTrail";
 import { getToken, sum, validateDate } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
+import PoliciesInsuranceCompany from "../../Models/PoliciesInsuranceCompany";
 export default class InsurabilitiesController {
   //   POST
   /**
@@ -35,6 +36,18 @@ export default class InsurabilitiesController {
           .status(500)
           .json({ message: "¡Error al crear el bien inmueble!" });
 
+      // Create Relation between policy and Insurance Companies
+      dataInsurability.insurance_companies.map(async (ic) => {
+        await PoliciesInsuranceCompany.create({
+          policy_id: newInsurability.id,
+          insurance_company_id: ic.id,
+          percentage_insured: ic.percentage_insured,
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      });
+
+      // Update RE with Policy ID
       try {
         const { default: RealEstatesController } = await import(
           "App/Controllers/Http/RealEstatesController"
@@ -78,14 +91,29 @@ export default class InsurabilitiesController {
 
       let data: any[] = [];
       results.map(async (re) => {
-        // const realEstates = await RealEstate.query().where("policy_id", re.id);
+        const realEstates = await RealEstate.query().where("policy_id", re.id);
+        const insuranceCompanies = await PoliciesInsuranceCompany.query()
+          .from("policies_insurance_companies as pic")
+          .innerJoin(
+            "insurance_companies as ic",
+            "pic.insurance_company_id",
+            "ic.id"
+          )
+          .where("pic.policy_id", re.id);
+        console.log(insuranceCompanies);
+        let tmpInsuranceCompanies: any[] = [];
+        insuranceCompanies.map((ic) => {
+          tmpInsuranceCompanies.push({
+            ...ic["$extras"],
+            id: ic["$attributes"]["id"],
+            percentage_: ic["$attributes"]["id"],
+          });
+        });
+
         let tmp: any = {
           ...re["$attributes"],
-          // real_estate: {
-          //   name: re["$extras"]["name_real_estate"],
-          //   id: re["$attributes"].real_estate_id,
-          // },
-          // real_estates: realEstates.length,
+          real_estates: realEstates.length,
+          insurance_companies: "",
           status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
         };
 
