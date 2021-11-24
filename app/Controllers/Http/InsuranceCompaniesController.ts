@@ -18,6 +18,7 @@ export default class InsuranceCompaniesController {
       CreateInsuranceCompanyValidator
     );
     const auditTrail: AuditTrail = new AuditTrail(token);
+    await auditTrail.init();
 
     try {
       let dataInsuranceCompany: IInsuranceCompany = { ...payload };

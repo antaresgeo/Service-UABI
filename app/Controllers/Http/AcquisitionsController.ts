@@ -19,6 +19,8 @@ export default class AdquisitionsController {
     try {
       // Creation: Data of audit trail
       let auditTrail: AuditTrail = new AuditTrail(token);
+      await auditTrail.init();
+
       data.audit_trail = auditTrail.getAsJson();
       data.status = 1;
 
@@ -56,6 +58,8 @@ export default class AdquisitionsController {
       try {
         // Creation: Data of audit trail
         let auditTrail: AuditTrail = new AuditTrail(token);
+        await auditTrail.init();
+
         act.audit_trail = auditTrail.getAsJson();
         act.status = 1;
 

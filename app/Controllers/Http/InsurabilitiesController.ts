@@ -26,6 +26,8 @@ export default class InsurabilitiesController {
     try {
       // Creation: Data of audit trail
       let auditTrail: AuditTrail = new AuditTrail(token);
+      await auditTrail.init();
+
       dataToCreate.audit_trail = auditTrail.getAsJson();
       dataToCreate.status = 1;
 

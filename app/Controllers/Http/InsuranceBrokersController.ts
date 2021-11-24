@@ -18,6 +18,7 @@ export default class InsuranceBrokersController {
       CreateInsuranceBrokerValidator
     );
     const auditTrail: AuditTrail = new AuditTrail(token);
+    await auditTrail.init();
 
     try {
       let dataInsuranceBroker: IInsuranceBroker = { ...payload };
