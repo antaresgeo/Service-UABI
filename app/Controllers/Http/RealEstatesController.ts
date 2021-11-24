@@ -138,13 +138,13 @@ export default class RealEstatesController {
         .innerJoin("projects as p", "a.project_id", "p.id")
         .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
         .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+
         .innerJoin("status as s", "re.status", "s.id")
         .select([
           "p.name as project_name",
           "p.description as project_description",
-          "cc.dependency as re_dependency",
           "cc.subdependency as re_subdependency",
-          "cc.management_center as re_management_center",
           "cc.cost_center as re_cost_center",
           "re.name as re_name",
           "re.id as re_id",
@@ -171,6 +171,10 @@ export default class RealEstatesController {
         },
         id: re["$extras"]["re_id"],
         status: re["$extras"]["name"],
+        dependency: re["$extras"]["dependency"],
+        subdependency: re["$extras"]["subdependency"],
+        management_center: re["$extras"]["management_center"],
+        cost_center: re["$extras"]["cost_center"],
         name: re["$extras"]["re_name"],
         materials: re["$extras"]["materials"].split(","),
       };
