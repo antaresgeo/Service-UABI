@@ -240,10 +240,14 @@ export default class InsurabilitiesController {
    */
   public async getOne(ctx: HttpContextContract) {
     const { id } = ctx.request.qs();
-    let insurability: Insurability | null;
+    let insurability: Insurability[] | null;
 
     try {
-      insurability = await Insurability.findOrFail(id);
+      insurability = await Insurability.query()
+        .from("insurabilities as i")
+        .innerJoin("insurance_brokers as ib", "i.insurance_broker_id", "ib.id")
+        .where("i.id", id);
+      console.log(insurability);
     } catch (error) {
       console.error(error);
       return ctx.response
@@ -251,15 +255,18 @@ export default class InsurabilitiesController {
         .json({ message: `Póliza con ID: ${id} no existe.` });
     }
 
-    const data =
+    const data: any =
       insurability === null
         ? {}
         : {
-            ...insurability["$attributes"],
+            ...insurability[0]["$attributes"],
+            insurance_broker: { ...insurability[0]["$extras"] },
             status: validateDate(
-              parseInt(insurability["$attributes"]["vigency_end"])
+              parseInt(insurability[0]["$attributes"]["vigency_end"])
             ),
           };
+
+    delete data.insurance_broker_id;
 
     try {
       const insuranceCompanies = await PoliciesInsuranceCompany.query()
