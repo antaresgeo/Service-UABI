@@ -184,8 +184,6 @@ export default class InsurabilitiesController {
           status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
         };
 
-        console.log(tmp);
-
         return await tmp;
         // if (tmp.status === "Vigente") data.push(tmp);
       })
@@ -259,7 +257,10 @@ export default class InsurabilitiesController {
         ? {}
         : {
             ...insurability[0]["$attributes"],
-            insurance_broker: { ...insurability[0]["$extras"] },
+            insurance_broker: {
+              ...insurability[0]["$extras"],
+              id: insurability[0]["$attributes"]["id"],
+            },
             status: validateDate(
               parseInt(insurability[0]["$attributes"]["vigency_end"])
             ),
@@ -292,7 +293,10 @@ export default class InsurabilitiesController {
       console.error(error);
     }
 
-    return ctx.response.json({ message: "insurability", results: data });
+    return ctx.response.json({
+      message: "Información de Póliza",
+      results: data,
+    });
   }
 
   // PUT
