@@ -331,7 +331,7 @@ export default class RealEstatesController {
                 createSAPID(
                   project.fixed_assets,
                   Number(project.last_consecutive),
-                  activeType.trim()
+                  String(activeType.trim())
                 )
               );
             });
@@ -358,7 +358,7 @@ export default class RealEstatesController {
             createSAPID(
               costCenterId.results.fixed_assets,
               costCenterId.results.last_consecutive,
-              activeType
+              String(activeType)
             )
           );
         });
