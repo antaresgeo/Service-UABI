@@ -48,4 +48,4 @@ Route.group(() => {
   }).prefix("/insurabilities");
 })
   .prefix(apiVersion)
-  .middleware(["logRegistered", "verifyToken"]);
+  .middleware(["logRegistered"]);

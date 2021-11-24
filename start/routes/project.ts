@@ -50,4 +50,4 @@ Route.group(() => {
   }).prefix("/projects");
 })
   .prefix(apiVersion)
-  .middleware(["logRegistered", "verifyToken"]);
+  .middleware(["logRegistered"]);
