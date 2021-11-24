@@ -21,7 +21,7 @@ export default class InsurabilitiesController {
     };
     delete dataToCreate.real_estate_id;
     delete dataToCreate.insurance_companies;
-    delete dataToCreate.registry_number;
+    delete dataToCreate.real_estates_id;
 
     try {
       // Creation: Data of audit trail
@@ -52,10 +52,13 @@ export default class InsurabilitiesController {
         const { default: RealEstatesController } = await import(
           "App/Controllers/Http/RealEstatesController"
         );
-        return new RealEstatesController().update(ctx, {
-          id: dataInsurability.real_estate_id,
-          data: { policy_id: newInsurability.id },
-          dataToShow: newInsurability,
+
+        dataInsurability.real_estates_id.map((reId) => {
+          new RealEstatesController().update(ctx, {
+            id: reId,
+            data: { policy_id: newInsurability.id },
+            dataToShow: newInsurability,
+          });
         });
       } catch (error) {}
 
@@ -89,37 +92,43 @@ export default class InsurabilitiesController {
         .where("status", 1)
         .orderBy("id", "desc");
 
-      let data: any[] = [];
-      results.map(async (re) => {
-        const realEstates = await RealEstate.query().where("policy_id", re.id);
-        const insuranceCompanies = await PoliciesInsuranceCompany.query()
-          .from("policies_insurance_companies as pic")
-          .innerJoin(
-            "insurance_companies as ic",
-            "pic.insurance_company_id",
-            "ic.id"
-          )
-          .where("pic.policy_id", re.id);
-        console.log(insuranceCompanies);
-        let tmpInsuranceCompanies: any[] = [];
-        insuranceCompanies.map((ic) => {
-          tmpInsuranceCompanies.push({
-            ...ic["$extras"],
-            id: ic["$attributes"]["id"],
-            percentage_: ic["$attributes"]["id"],
-          });
-        });
+      // let data: any[] = [];
+      // results.map(async (re) => {
+      //   const realEstates = await RealEstate.query().where("policy_id", re.id);
+      //   const insuranceCompanies = await PoliciesInsuranceCompany.query()
+      //     .from("policies_insurance_companies as pic")
+      //     .innerJoin(
+      //       "insurance_companies as ic",
+      //       "pic.insurance_company_id",
+      //       "ic.id"
+      //     )
+      //     .where("pic.policy_id", re.id);
 
-        let tmp: any = {
-          ...re["$attributes"],
-          real_estates: realEstates.length,
-          insurance_companies: "",
-          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
-        };
+      //   let tmpInsuranceCompanies: any[] = [];
+      //   insuranceCompanies.map((ic) => {
+      //     tmpInsuranceCompanies.push({
+      //       ...ic["$extras"],
+      //       id: ic["$attributes"]["id"],
+      //       percentage_insured: ic["$attributes"]["percentage_insured"],
+      //       status: ic["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
+      //     });
+      //   });
 
-        data.push(tmp);
-        // if (tmp.status === "Vigente") data.push(tmp);
-      });
+      //   let tmp: any = {
+      //     ...re["$attributes"],
+      //     real_estates: realEstates.length,
+      //     insurance_companies: tmpInsuranceCompanies,
+      //     status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+      //   };
+
+      //   console.log(tmp);
+
+      //   // if (tmp.status === "Vigente") data.push(tmp);
+      //   data.push(tmp);
+      // });
+      // data.push(data);
+
+      const data = await this.getAllData(results);
 
       return response.status(200).json({
         message: "All Insurabilities",
@@ -141,6 +150,44 @@ export default class InsurabilitiesController {
         .status(500)
         .json({ message: "Error interno: Servidor", error });
     }
+  }
+
+  private async getAllData(results) {
+    return await Promise.all(
+      results.map(async (re) => {
+        const realEstates = await RealEstate.query().where("policy_id", re.id);
+        const insuranceCompanies = await PoliciesInsuranceCompany.query()
+          .from("policies_insurance_companies as pic")
+          .innerJoin(
+            "insurance_companies as ic",
+            "pic.insurance_company_id",
+            "ic.id"
+          )
+          .where("pic.policy_id", re.id);
+
+        let tmpInsuranceCompanies: any[] = [];
+        insuranceCompanies.map((ic) => {
+          tmpInsuranceCompanies.push({
+            ...ic["$extras"],
+            id: ic["$attributes"]["id"],
+            percentage_insured: ic["$attributes"]["percentage_insured"],
+            status: ic["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
+          });
+        });
+
+        let tmp: any = {
+          ...re["$attributes"],
+          real_estates: realEstates.length,
+          insurance_companies: tmpInsuranceCompanies,
+          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+        };
+
+        console.log(tmp);
+
+        return await tmp;
+        // if (tmp.status === "Vigente") data.push(tmp);
+      })
+    );
   }
 
   /**
