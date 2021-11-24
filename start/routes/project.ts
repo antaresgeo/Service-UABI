@@ -1,9 +1,12 @@
 import Route from "@ioc:Adonis/Core/Route";
+import Env from "@ioc:Adonis/Core/Env";
+
+const apiVersion = Env.get("API_VERSION");
 
 Route.group(() => {
   Route.group(() => {
     // GET
-    Route.get("/lists", async (ctx) => {
+    Route.get("/list", async (ctx) => {
       const { default: ProjectsController } = await import(
         "App/Controllers/Http/ProjectsController"
       );
@@ -46,5 +49,5 @@ Route.group(() => {
     });
   }).prefix("/projects");
 })
-  .prefix("v1")
+  .prefix(apiVersion)
   .middleware(["logRegistered", "verifyToken"]);

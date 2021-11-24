@@ -1,4 +1,7 @@
 import Route from "@ioc:Adonis/Core/Route";
+import Env from "@ioc:Adonis/Core/Env";
+
+const apiVersion = Env.get("API_VERSION");
 
 Route.group(() => {
   Route.group(() => {
@@ -8,13 +11,13 @@ Route.group(() => {
         "App/Controllers/Http/InsurabilitiesController"
       );
 
-      if (ctx.request.qs().real_estate_id)
+      if (ctx.request.qs().policy_id)
         return new InsurabilitiesController().getByRealEstate(ctx);
 
       if (ctx.request.qs().id)
         return new InsurabilitiesController().getOne(ctx);
 
-      if (ctx.request.qs().like)
+      if (ctx.request.qs().with)
         return new InsurabilitiesController().showAllPagination(ctx);
 
       // return new InsurabilitiesController().showAll(ctx);
@@ -44,5 +47,5 @@ Route.group(() => {
     // });
   }).prefix("/insurabilities");
 })
-  .prefix("v1")
+  .prefix(apiVersion)
   .middleware(["logRegistered", "verifyToken"]);

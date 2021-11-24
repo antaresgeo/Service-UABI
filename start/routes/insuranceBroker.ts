@@ -1,4 +1,7 @@
 import Route from "@ioc:Adonis/Core/Route";
+import Env from "@ioc:Adonis/Core/Env";
+
+const apiVersion = Env.get("API_VERSION");
 
 Route.group(() => {
   Route.group(() => {
@@ -55,5 +58,5 @@ Route.group(() => {
     });
   }).prefix("/insurance-brokers");
 })
-  .prefix("v1")
+  .prefix(apiVersion)
   .middleware(["logRegistered", "verifyToken"]);

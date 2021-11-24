@@ -1,9 +1,13 @@
 import Route from "@ioc:Adonis/Core/Route";
 
+import Env from "@ioc:Adonis/Core/Env";
+
+const apiVersion = Env.get("API_VERSION");
+
 Route.group(() => {
   Route.group(() => {
     // GET
-    Route.get("/lists", async (ctx) => {
+    Route.get("/list", async (ctx) => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
@@ -53,5 +57,5 @@ Route.group(() => {
     });
   }).prefix("/real-estates");
 })
-  .prefix("v1")
+  .prefix(apiVersion)
   .middleware(["logRegistered", "verifyToken"]);
