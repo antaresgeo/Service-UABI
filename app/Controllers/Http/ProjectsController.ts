@@ -10,6 +10,7 @@ import {
   capitalize,
   getCostCenterID,
   getToken,
+  validatePagination,
   // getToken,
   // getDataUser,
 } from "App/Utils/functions";
@@ -34,26 +35,15 @@ export default class ProjectsController {
     response,
   }: HttpContextContract) {
     const { q, page, pageSize } = request.qs();
+    const pagination = validatePagination(q, page, pageSize);
     let results: Project[] | null = null,
       data: any[] = [],
-      tmpPage: number,
-      tmpPageSize: number,
-      tmpQ: string,
       projects;
 
     // const token: string = getToken(request.headers());
     // await getDataUser(token);
-
-    if (!pageSize) tmpPageSize = 10;
-    else tmpPageSize = pageSize;
-
-    if (!page) tmpPage = 1;
-    else tmpPage = parseInt(page);
-
-    if (!q) tmpQ = "";
-    else tmpQ = q.toUpperCase().trim();
-
-    let count: number = tmpPage * tmpPageSize - tmpPageSize;
+    let count: number =
+      pagination["page"] * pagination["pageSize"] - pagination["pageSize"];
 
     try {
       results = await Project.query()
@@ -63,9 +53,9 @@ export default class ProjectsController {
         .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
         .select(["p.id as project_id", "*"])
         .where("status", 1)
-        .where("name", "LIKE", `%${tmpQ}%`)
+        .where("name", "LIKE", `%${pagination["q"]}%`)
         .orderBy("p.id", "desc")
-        .limit(tmpPageSize)
+        .limit(pagination["pageSize"])
         .offset(count);
 
       results = results === null ? [] : results;
@@ -104,12 +94,13 @@ export default class ProjectsController {
 
       // Next Page
       let next_page: number | null =
-        tmpPage * tmpPageSize < projects.length
-          ? sum(parseInt(tmpPage + ""), 1)
+        pagination["page"] * pagination["pageSize"] < projects.length
+          ? sum(parseInt(pagination["page"] + ""), 1)
           : null;
 
       // Previous Page
-      let previous_page: number | null = tmpPage - 1 > 0 ? tmpPage - 1 : null;
+      let previous_page: number | null =
+        pagination["page"] - 1 > 0 ? pagination["page"] - 1 : null;
 
       const lastElement = data.pop();
       const res = [lastElement, ...data];
@@ -117,7 +108,7 @@ export default class ProjectsController {
       return response.json({
         message: "Lista de Proyectos",
         results: res,
-        page: tmpPage,
+        page: pagination["page"],
         count,
         next_page,
         previous_page,
@@ -149,9 +140,12 @@ export default class ProjectsController {
       });
     }
 
+    const lastElement = projects.pop();
+    const res = [lastElement, ...projects];
+
     return response.json({
       message: "Lista de Proyectos",
-      results: projects,
+      results: res,
       total: projects.length,
     });
   }

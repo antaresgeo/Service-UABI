@@ -6,16 +6,18 @@ import {
 } from "App/Utils/interfaces/insurances.interfaces";
 import CreateInsuranceBrokerValidator from "./../../Validators/CreateInsuranceBrokerValidator";
 import InsuranceBroker from "./../../Models/InsuranceBroker";
-import { changeStatus, sum } from "App/Utils/functions";
+import { changeStatus, getToken, sum } from "App/Utils/functions";
 
 export default class InsuranceBrokersController {
   public async index({}: HttpContextContract) {}
 
   public async create({ request, response }: HttpContextContract) {
+    const token = getToken(request.headers());
+
     const payload: IPayloadInsuranceBroker = await request.validate(
       CreateInsuranceBrokerValidator
     );
-    const auditTrail: AuditTrail = new AuditTrail();
+    const auditTrail: AuditTrail = new AuditTrail(token);
 
     try {
       let dataInsuranceBroker: IInsuranceBroker = { ...payload };
@@ -137,6 +139,8 @@ export default class InsuranceBrokersController {
   public async edit({}: HttpContextContract) {}
 
   public async update({ response, request }: HttpContextContract, alt?: any) {
+    const token = getToken(request.headers());
+
     let newData, _id;
 
     if (alt) {
@@ -151,7 +155,7 @@ export default class InsuranceBrokersController {
     try {
       const insuranceBroker = await InsuranceBroker.findOrFail(_id);
 
-      const auditTrail = new AuditTrail(undefined, insuranceBroker.audit_trail);
+      const auditTrail = new AuditTrail(token, insuranceBroker.audit_trail);
       auditTrail.update("Administrador", newData, insuranceBroker);
 
       // Updating data
@@ -199,12 +203,15 @@ export default class InsuranceBrokersController {
    * inactivate
    */
   public async inactivate({ request, response }: HttpContextContract) {
+    const token = getToken(request.headers());
+
     const { id } = request.params();
 
     const { success, results } = await changeStatus(
       InsuranceBroker,
       id,
-      "inactivate"
+      "inactivate",
+      token
     );
 
     if (success)

@@ -3,12 +3,14 @@ import Acquisition from "App/Models/Acquisition";
 import AuditTrail from "./../../Utils/classes/AuditTrail";
 import CreateAcquisitionValidator from "./../../Validators/CreateAcquisitionValidator";
 import { IAdquisitionAttributes } from "./../../Utils/interfaces/adquisitions.interfaces";
+import { getToken } from "App/Utils/functions";
 
 export default class AdquisitionsController {
   /**
    * create Acquisition
    */
   public async create({ request, response }: HttpContextContract) {
+    const token = getToken(request.headers());
     let dataAdquisition = await request.validate(CreateAcquisitionValidator),
       newAdquisition;
 
@@ -16,7 +18,7 @@ export default class AdquisitionsController {
 
     try {
       // Creation: Data of audit trail
-      let auditTrail: AuditTrail = new AuditTrail();
+      let auditTrail: AuditTrail = new AuditTrail(token);
       data.audit_trail = auditTrail.getAsJson();
       data.status = 1;
 
@@ -43,6 +45,8 @@ export default class AdquisitionsController {
    * create Acquisition
    */
   public async createMany(ctx: HttpContextContract) {
+    const token = getToken(ctx.request.headers());
+
     let dataAdquisition = ctx.request.body();
     let newAcquisitions: any[] = [];
 
@@ -51,7 +55,7 @@ export default class AdquisitionsController {
     data.map(async (act) => {
       try {
         // Creation: Data of audit trail
-        let auditTrail: AuditTrail = new AuditTrail();
+        let auditTrail: AuditTrail = new AuditTrail(token);
         act.audit_trail = auditTrail.getAsJson();
         act.status = 1;
 

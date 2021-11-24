@@ -7,6 +7,7 @@ import {
   getTipologyID,
   getToken,
   sum,
+  validatePagination,
 } from "App/Utils/functions";
 import {
   IPayloadRealEstate,
@@ -25,18 +26,15 @@ export default class RealEstatesController {
    */
   public async getList({ response, request }: HttpContextContract) {
     const { q, page, pageSize } = request.qs();
-    let results, tmpPage: number, tmpPageSize: number, realEstates;
+    const tmpWith = request.qs().with;
+    const pagination = validatePagination(q, page, pageSize);
+    let results, realEstates;
 
-    if (!pageSize) tmpPageSize = 10;
-    else tmpPageSize = pageSize;
-
-    if (!page) tmpPage = 1;
-    else tmpPage = page;
-
-    let count: number = tmpPage * tmpPageSize - tmpPageSize;
+    let count: number =
+      pagination["page"] * pagination["pageSize"] - pagination["pageSize"];
 
     try {
-      if (!q) {
+      if (tmpWith === "pagination")
         results = await RealEstatesProject.query()
           .from("real_estates_projects as a")
           .innerJoin("projects as p", "a.project_id", "p.id")
@@ -50,10 +48,11 @@ export default class RealEstatesController {
           ])
           .select("*")
           .where("re.status", 1)
+          .where("re.registry_number", "LIKE", "%" + pagination["q"] + "%")
           .orderBy("re.id", "desc")
-          .limit(tmpPageSize)
+          .limit(pagination["pageSize"])
           .offset(count);
-      } else {
+      else
         results = await RealEstatesProject.query()
           .from("real_estates_projects as a")
           .innerJoin("projects as p", "a.project_id", "p.id")
@@ -67,11 +66,8 @@ export default class RealEstatesController {
           ])
           .select("*")
           .where("re.status", 1)
-          .where("re.registry_number", "LIKE", "%" + q + "%")
-          .orderBy("re.id", "desc")
-          .limit(tmpPageSize)
-          .offset(count);
-      }
+          .where("re.registry_number", "LIKE", "%" + pagination["q"] + "%")
+          .orderBy("re.id", "desc");
       results = results === null ? [] : results;
 
       let data: any[] = [];
@@ -109,14 +105,16 @@ export default class RealEstatesController {
       return response.json({
         message: "List of all Real Estates",
         results: data,
-        page: tmpPage,
+        page: pagination["page"],
         count: data.length,
         next_page:
-          realEstates.length - tmpPage * tmpPageSize !== 10 &&
-          realEstates.length - tmpPage * tmpPageSize > 0
-            ? sum(parseInt(tmpPage + ""), 1)
+          realEstates.length - pagination["page"] * pagination["pageSize"] !==
+            10 &&
+          realEstates.length - pagination["page"] * pagination["pageSize"] > 0
+            ? sum(parseInt(pagination["page"] + ""), 1)
             : null,
-        previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
+        previous_page:
+          pagination["page"] - 1 < 0 ? pagination["page"] - 1 : null,
         total_results: realEstates.length,
       });
     } catch (error) {
@@ -479,6 +477,13 @@ export default class RealEstatesController {
             })
             .save();
 
+          if (alt["dataToShow"])
+            return response.status(200).json({
+              message: "Updated successfully!",
+              results: {
+                ...alt["dataToShow"]["$attributes"],
+              },
+            });
           return response.status(200).json({
             message: "Updated successfully!",
             results: {

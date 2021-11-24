@@ -1,29 +1,50 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
+// import RealEstate from "App/Models/RealEstate";
 import AuditTrail from "App/Utils/classes/AuditTrail";
-import { sum, validateDate } from "App/Utils/functions";
+import { getToken, sum, validateDate } from "App/Utils/functions";
 import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
-
+import RealEstate from "./../../Models/RealEstate";
 export default class InsurabilitiesController {
   //   POST
   /**
    * create Acquisition
    */
   public async create(ctx: HttpContextContract) {
+    const token = getToken(ctx.request.headers());
+
     let dataInsurability = ctx.request.body();
+
+    let dataToCreate = {
+      ...dataInsurability,
+    };
+    delete dataToCreate.real_estate_id;
+    delete dataToCreate.insurance_companies;
+    delete dataToCreate.registry_number;
 
     try {
       // Creation: Data of audit trail
-      let auditTrail: AuditTrail = new AuditTrail();
-      dataInsurability.audit_trail = auditTrail.getAsJson();
-      dataInsurability.status = 1;
+      let auditTrail: AuditTrail = new AuditTrail(token);
+      dataToCreate.audit_trail = auditTrail.getAsJson();
+      dataToCreate.status = 1;
 
       // Service consumption
-      const newInsurability = await Insurability.create(dataInsurability);
+      const newInsurability = await Insurability.create(dataToCreate);
       if (typeof newInsurability === "number")
         return ctx.response
           .status(500)
           .json({ message: "¡Error al crear el bien inmueble!" });
+
+      try {
+        const { default: RealEstatesController } = await import(
+          "App/Controllers/Http/RealEstatesController"
+        );
+        return new RealEstatesController().update(ctx, {
+          id: dataInsurability.real_estate_id,
+          data: { policy_id: newInsurability.id },
+          dataToShow: newInsurability,
+        });
+      } catch (error) {}
 
       return ctx.response.status(200).json({
         message: "¡Nueva Póliza creada satisfactoriamente!",
@@ -49,30 +70,27 @@ export default class InsurabilitiesController {
     else tmpPage = page;
 
     try {
-      const results: any = await Insurability.query()
-        .select("re.name as name_real_estate")
-        .select("insurabilities.*")
-        .innerJoin(
-          "real_estates as re",
-          "insurabilities.real_estate_id",
-          "re.id"
-        )
-        .where("insurabilities.status", 1)
+      const results = await Insurability.query()
+        // .select("re.name as name_real_estate")
+        .select("*")
+        .where("status", 1)
         .orderBy("id", "desc");
 
       let data: any[] = [];
-      results.map((re) => {
-        let tmp = {
+      results.map(async (re) => {
+        // const realEstates = await RealEstate.query().where("policy_id", re.id);
+        let tmp: any = {
           ...re["$attributes"],
-          real_estate: {
-            name: re["$extras"]["name_real_estate"],
-            id: re["$attributes"].real_estate_id,
-          },
+          // real_estate: {
+          //   name: re["$extras"]["name_real_estate"],
+          //   id: re["$attributes"].real_estate_id,
+          // },
+          // real_estates: realEstates.length,
           status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
         };
 
-        delete tmp.real_estate_id;
-        if (tmp.status === "Vigente") data.push(tmp);
+        data.push(tmp);
+        // if (tmp.status === "Vigente") data.push(tmp);
       });
 
       return response.status(200).json({
@@ -102,32 +120,38 @@ export default class InsurabilitiesController {
    */
   public async getByRealEstate(ctx: HttpContextContract) {
     try {
-      const { real_estate_id } = ctx.request.qs();
+      const { policy_id } = ctx.request.qs();
 
-      let insurabilities: any | null = null;
-      if (typeof real_estate_id === "string")
-        insurabilities = await Insurability.query()
-          .where("real_estate_id", real_estate_id)
+      let realEstates: RealEstate[] = [];
+      if (typeof policy_id === "string")
+        realEstates = await RealEstate.query()
+          .where("policy_id", policy_id)
           .where("status", 1)
           .orderBy("id", "desc");
+      console.log(realEstates);
 
-      if (insurabilities === null) {
+      // insurabilities = await Insurability.query()
+      //   .where("real_estate_id", real_estate_id)
+      //   .where("status", 1)
+
+      if (realEstates.length === 0) {
         return ctx.response
           .status(404)
           .json({ error: "No insurability Found" });
       }
 
       let data: any[] = [];
-      insurabilities.map((re) => {
+      realEstates.map((re) => {
         let tmp = {
           ...re["$attributes"],
-          status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+          // status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
+          status: re["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
         };
         data.push(tmp);
       });
 
       ctx.response.status(200).json({
-        message: `All insurabilities by Real Estate ${real_estate_id}`,
+        message: `Bienes Inmuebles de la póliza ${policy_id}`,
         results: data,
       });
     } catch (error) {
@@ -152,7 +176,15 @@ export default class InsurabilitiesController {
       return ctx.response.status(500).json({ message: "insurability error" });
     }
 
-    const data = insurability === null ? {} : insurability;
+    const data =
+      insurability === null
+        ? {}
+        : {
+            ...insurability["$attributes"],
+            status: validateDate(
+              parseInt(insurability["$attributes"]["vigency_end"])
+            ),
+          };
 
     return ctx.response.json({ message: "insurability", results: data });
   }

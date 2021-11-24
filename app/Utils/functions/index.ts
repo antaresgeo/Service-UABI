@@ -161,4 +161,19 @@ export const getDataUser = async (token: string) => {
   // }
 };
 
+export const validatePagination = (q?, page?, pageSize?) => {
+  let tmpQ: string, tmpPage: number, tmpPageSize: number;
+
+  if (!q) tmpQ = "";
+  else tmpQ = String(q).toUpperCase().trim();
+
+  if (!pageSize) tmpPageSize = 10;
+  else tmpPageSize = Number(pageSize);
+
+  if (!page) tmpPage = 1;
+  else tmpPage = Number(page);
+
+  return { q: tmpQ, page: tmpPage, pageSize: tmpPageSize };
+};
+
 export * from "./jwt";
