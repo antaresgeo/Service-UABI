@@ -13,7 +13,7 @@ export default class VerifyToken {
     let token: string = "";
     let authorization = request.headers()["authorization"];
     if (typeof authorization !== "undefined") {
-      token = authorization.replace("Bearer ", "");
+      token = authorization.split("Bearer ").pop() as string;
     }
 
     if (token) payload = decodeJWT(token);
