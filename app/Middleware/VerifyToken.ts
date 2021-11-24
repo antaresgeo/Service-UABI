@@ -9,7 +9,6 @@ export default class VerifyToken {
     next: () => Promise<void>
   ) {
     let payload;
-    console.log(request.headers()["authorization"]);
     let token: string = "";
     let authorization = request.headers()["authorization"];
     if (typeof authorization !== "undefined") {

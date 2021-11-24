@@ -16,8 +16,9 @@ export default class InsurabilitiesController {
 
     let dataInsurability = ctx.request.body();
 
-    let dataToCreate = {
+    let dataToCreate: any = {
       ...dataInsurability,
+      type_assurance: dataInsurability["type_assurance"].toUpperCase(),
     };
     delete dataToCreate.real_estate_id;
     delete dataToCreate.insurance_companies;
@@ -207,10 +208,6 @@ export default class InsurabilitiesController {
           .orderBy("id", "desc");
       console.log(realEstates);
 
-      // insurabilities = await Insurability.query()
-      //   .where("real_estate_id", real_estate_id)
-      //   .where("status", 1)
-
       if (realEstates.length === 0) {
         return ctx.response
           .status(404)
@@ -221,7 +218,6 @@ export default class InsurabilitiesController {
       realEstates.map((re) => {
         let tmp = {
           ...re["$attributes"],
-          // status: validateDate(parseInt(re["$attributes"]["vigency_end"])),
           status: re["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
         };
         data.push(tmp);
@@ -247,10 +243,12 @@ export default class InsurabilitiesController {
     let insurability: Insurability | null;
 
     try {
-      insurability = await Insurability.find(id);
+      insurability = await Insurability.findOrFail(id);
     } catch (error) {
       console.error(error);
-      return ctx.response.status(500).json({ message: "insurability error" });
+      return ctx.response
+        .status(403)
+        .json({ message: `Póliza con ID: ${id} no existe.` });
     }
 
     const data =
@@ -262,6 +260,31 @@ export default class InsurabilitiesController {
               parseInt(insurability["$attributes"]["vigency_end"])
             ),
           };
+
+    try {
+      const insuranceCompanies = await PoliciesInsuranceCompany.query()
+        .from("policies_insurance_companies as pic")
+        .innerJoin(
+          "insurance_companies as ic",
+          "pic.insurance_company_id",
+          "ic.id"
+        )
+        .where("pic.policy_id", id);
+
+      let tmpInsuranceCompanies: any[] = [];
+      insuranceCompanies.map((ic) => {
+        tmpInsuranceCompanies.push({
+          ...ic["$extras"],
+          id: ic["$attributes"]["id"],
+          percentage_insured: ic["$attributes"]["percentage_insured"],
+          status: ic["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
+        });
+      });
+
+      data["insurance_companies"] = tmpInsuranceCompanies;
+    } catch (error) {
+      console.error(error);
+    }
 
     return ctx.response.json({ message: "insurability", results: data });
   }
