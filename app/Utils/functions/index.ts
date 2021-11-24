@@ -62,7 +62,11 @@ export const capitalize = (str) => {
     return str
       .trim()
       .toLowerCase()
-      .replace(/\w\S*/g, (w) => w.replace(/^\w/, (c) => c.toUpperCase()));
+      .replace(
+        /\w\S*/g,
+        (w) =>
+          (w && w.replace(/^\w/, (c) => (c && c.toUpperCase()) || "")) || ""
+      );
   } else {
     return "";
   }
