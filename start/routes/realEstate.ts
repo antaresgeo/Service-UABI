@@ -58,4 +58,4 @@ Route.group(() => {
   }).prefix("/real-estates");
 })
   .prefix(apiVersion)
-  .middleware(["logRegistered"]);
+  .middleware(["logRegistered", "verifyToken"]);

@@ -1,43 +1,43 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-// import { decodeJWT } from "App/Utils/functions/jwt";
-// import axios from "axios";
-// import Env from "@ioc:Adonis/Core/Env";
+import { decodeJWT } from "App/Utils/functions/jwt";
+import axios from "axios";
+import Env from "@ioc:Adonis/Core/Env";
 
 export default class VerifyToken {
   public async handle(
-    {}: /*request, response*/ HttpContextContract,
+    { request, response }: HttpContextContract,
     next: () => Promise<void>
   ) {
-    // let payload;
-    // console.log(request.headers()["authorization"]);
-    // let token: string = "";
-    // let authorization = request.headers()["authorization"];
-    // if (typeof authorization !== "undefined") {
-    //   token = authorization.split("Bearer ").pop() as string;
-    // }
+    let payload;
+    console.log(request.headers()["authorization"]);
+    let token: string = "";
+    let authorization = request.headers()["authorization"];
+    if (typeof authorization !== "undefined") {
+      token = authorization.split("Bearer ").pop() as string;
+    }
 
-    // if (token) payload = decodeJWT(token);
+    if (token) payload = decodeJWT(token);
 
-    // if (payload === undefined)
-    //   return response.unauthorized({
-    //     error: "Debe de ingresar para realizar esta acción",
-    //   });
+    if (payload === undefined)
+      return response.unauthorized({
+        error: "Debe de ingresar para realizar esta acción",
+      });
 
-    // // Consulting
-    // try {
-    //   // User.findOrFail(payload.id);
-    //   await axios.get(
-    //     `${Env.get("URI_SERVICE_AUTH")}${Env.get("API_AUTH_VERSION")}/users`,
-    //     {
-    //       params: { id: payload.id },
-    //     }
-    //   );
-    // } catch (error) {
-    //   console.error(error);
-    //   return response.unauthorized({
-    //     error: "Debe de ingresar para realizar esta acción",
-    //   });
-    // }
+    // Consulting
+    try {
+      // User.findOrFail(payload.id);
+      await axios.get(
+        `${Env.get("URI_SERVICE_AUTH")}${Env.get("API_AUTH_VERSION")}/users`,
+        {
+          params: { id: payload.id },
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      return response.unauthorized({
+        error: "Debe de ingresar para realizar esta acción",
+      });
+    }
 
     await next();
   }
