@@ -3,7 +3,6 @@ import Insurability from "App/Models/Insurability";
 // import RealEstate from "App/Models/RealEstate";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 import { getToken, sum, validateDate } from "App/Utils/functions";
-import { IAuditTrail, IUpdatedValues } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import PoliciesInsuranceCompany from "../../Models/PoliciesInsuranceCompany";
 export default class InsurabilitiesController {
@@ -301,6 +300,7 @@ export default class InsurabilitiesController {
    * update
    */
   public async update(ctx: HttpContextContract) {
+    const token = getToken(ctx.request.headers());
     const newData = ctx.request.body();
     const { id } = ctx.request.qs();
 
@@ -308,41 +308,21 @@ export default class InsurabilitiesController {
       if (typeof id === "string") {
         const insurabilty = await Insurability.findOrFail(id);
 
-        const lastestValues = { ...insurabilty["$attributes"] };
-        delete lastestValues["audit_trail"];
-        let updatedValues: IUpdatedValues = {
-          lastest: {
-            ...lastestValues,
-          },
-          new: newData,
+        let dataUpdated: any = {
+          ...newData,
         };
 
-        let tmpData: any = { ...insurabilty["$attributes"] };
-        if (tmpData.audit_trail?.updated_values)
-          if (!tmpData.audit_trail.updated_values.oldest) {
-            const oldestValues = { ...insurabilty["$attributes"] };
-            delete oldestValues["audit_trail"];
+        delete dataUpdated.insurance_companies;
 
-            updatedValues.oldest = {
-              ...oldestValues,
-            };
-          } else
-            updatedValues.oldest = tmpData.audit_trail.updated_values.oldest;
-
-        let auditTrail: IAuditTrail = {
-          created_by: tmpData.audit_trail?.created_by,
-          created_on: tmpData.audit_trail?.created_on,
-          updated_by: "Administrator",
-          updated_on: new Date().getTime(),
-          updated_values: updatedValues,
-        };
+        const auditTrail = new AuditTrail(token, insurabilty["audit_trail"]);
+        await auditTrail.update(dataUpdated, insurabilty);
 
         // Updating data
         try {
           const results = await insurabilty
             .merge({
-              ...newData,
-              audit_trail: auditTrail,
+              ...dataUpdated,
+              audit_trail: auditTrail.getAsJson(),
             })
             .save();
 

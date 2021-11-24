@@ -336,7 +336,7 @@ export default class ProjectsController {
         // Update of Audit Trail | Actualización del Registro de Auditoría
         const auditTrail = new AuditTrail(token, project.audit_trail);
 
-        auditTrail.update("Administrador", { ...dataUpdated }, project);
+        auditTrail.update({ ...dataUpdated }, project);
         dataUpdated["audit_trail"] = auditTrail.getAsJson();
 
         // Updating data

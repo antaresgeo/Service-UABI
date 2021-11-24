@@ -438,7 +438,7 @@ export default class RealEstatesController {
         const realEstate = await RealEstate.findOrFail(_id);
 
         const auditTrail = new AuditTrail(token, realEstate.audit_trail);
-        auditTrail.update("Administrador", newData, realEstate);
+        auditTrail.update(newData, realEstate);
 
         // let dataUpdated: IRealEstateAttributes = {
         //   name: newData["name"].toUpperCase().trim(),

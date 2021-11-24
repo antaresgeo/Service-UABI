@@ -29,15 +29,13 @@ export default class AuditTrail {
     const self = this;
     const detailsUser = await getDataUser(self.token);
 
-    if (typeof detailsUser !== "undefined") {
-      self.dataUser = detailsUser;
+    self.dataUser = detailsUser;
 
-      self.createdBy = `${self.dataUser.names.firstName} ${self.dataUser.surnames.firstSurname}`;
-      self.createdOn = moment().valueOf();
-      self.updatedBy = null;
-      self.updatedOn = null;
-      self.updatedValues = null;
-    }
+    self.createdBy = `${self.dataUser.names.firstName} ${self.dataUser.surnames.firstSurname}`;
+    self.createdOn = moment().valueOf();
+    self.updatedBy = null;
+    self.updatedOn = null;
+    self.updatedValues = null;
   }
 
   // GETTERS AND SETTERS
@@ -98,8 +96,10 @@ export default class AuditTrail {
    */
   public registry() {}
 
-  public update(updatedBy: string, updatedValues: any, model: any) {
-    this.updatedBy = updatedBy;
+  public async update(updatedValues: any, model: any) {
+    const detailsUser = await getDataUser(this.token);
+
+    this.updatedBy = `${detailsUser.names.firstName} ${detailsUser.surnames.firstSurname}`;
     this.updatedOn = moment().valueOf();
 
     let tmpData: any = { ...model["$attributes"] };

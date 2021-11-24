@@ -157,7 +157,7 @@ export default class InsuranceBrokersController {
       const insuranceBroker = await InsuranceBroker.findOrFail(_id);
 
       const auditTrail = new AuditTrail(token, insuranceBroker.audit_trail);
-      auditTrail.update("Administrador", newData, insuranceBroker);
+      auditTrail.update(newData, insuranceBroker);
 
       // Updating data
       try {
