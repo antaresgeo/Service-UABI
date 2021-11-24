@@ -130,9 +130,13 @@ export default class ProjectsController {
 
     try {
       projects = await Project.query()
-        .select(["id", "name"])
+        .from("projects as p")
+
+        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+        .select(["p.id", "p.name", "*"])
         .where("status", 1)
-        .orderBy("id", "desc");
+        .orderBy("p.id", "desc");
     } catch (error) {
       console.error(error);
       return response.status(500).json({
@@ -140,8 +144,20 @@ export default class ProjectsController {
       });
     }
 
-    const lastElement = projects.pop();
-    const res = [lastElement, ...projects];
+    let tmpData: any[] = [];
+    projects.map((project) => {
+      tmpData.push({
+        id: project["$attributes"]["id"],
+        name: project["$attributes"]["name"],
+        dependency: project["$extras"]["dependency"],
+        subdependency: project["$extras"]["subdependency"],
+        management_center: project["$extras"]["management_center"],
+        cost_center: project["$extras"]["cost_center"],
+      });
+    });
+
+    const lastElement = tmpData.pop();
+    const res = [lastElement, ...tmpData];
 
     return response.json({
       message: "Lista de Proyectos",
