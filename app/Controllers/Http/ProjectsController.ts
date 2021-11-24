@@ -302,12 +302,8 @@ export default class ProjectsController {
    * update
    */
   public async update({ request, response }: HttpContextContract) {
-    let tmpToken: string = "";
+    const token = getToken(request.headers());
 
-    if (request.headers().authorization) {
-      let tmp = request.headers().authorization?.split("Bearer ").pop()?.trim();
-      if (typeof tmp !== "undefined") tmpToken = tmp;
-    }
     const newData = request.body();
     const { id } = request.qs();
     let costCenterID;
@@ -338,7 +334,7 @@ export default class ProjectsController {
             });
 
         // Update of Audit Trail | Actualización del Registro de Auditoría
-        const auditTrail = new AuditTrail(tmpToken, project.audit_trail);
+        const auditTrail = new AuditTrail(token, project.audit_trail);
 
         auditTrail.update("Administrador", { ...dataUpdated }, project);
         dataUpdated["audit_trail"] = auditTrail.getAsJson();

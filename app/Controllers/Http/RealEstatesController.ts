@@ -416,6 +416,8 @@ export default class RealEstatesController {
    * update
    */
   public async update({ response, request }: HttpContextContract, alt?: any) {
+    const token = getToken(request.headers());
+
     let newData, _id;
     // let costCenterID;
 
@@ -435,7 +437,7 @@ export default class RealEstatesController {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
 
-        const auditTrail = new AuditTrail("undefined", realEstate.audit_trail);
+        const auditTrail = new AuditTrail(token, realEstate.audit_trail);
         auditTrail.update("Administrador", newData, realEstate);
 
         // let dataUpdated: IRealEstateAttributes = {
