@@ -11,6 +11,8 @@ Route.group(() => {
         "App/Controllers/Http/TipologiesController"
       );
 
+      if (ctx.request.qs()["id"]) return new TipologiesController().show(ctx);
+
       return new TipologiesController().showAll(ctx);
     });
   }).prefix("/tipologies");

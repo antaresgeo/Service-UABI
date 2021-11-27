@@ -8,7 +8,25 @@ export default class TipologiesController {
 
   public async store({}: HttpContextContract) {}
 
-  public async show({}: HttpContextContract) {}
+  public async show({ request, response }: HttpContextContract) {
+    const { id } = request.qs();
+
+    try {
+      const tipology = await Tipology.findOrFail(id);
+
+      return response.status(200).json({
+        message: `Tipología y Cuenta Contable del ID: ${id}`,
+        results: tipology,
+      });
+    } catch (error) {
+      console.error(error);
+      return response
+        .status(500)
+        .json({
+          message: `Error al obtener la tipología y cuenta contable del ID: ${id}`,
+        });
+    }
+  }
 
   public async showAll({ response }: HttpContextContract) {
     try {
