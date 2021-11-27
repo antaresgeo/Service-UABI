@@ -202,6 +202,7 @@ export default class RealEstatesController {
    * index
    */
   public async getOne(ctx: HttpContextContract) {
+    const token = getToken(ctx.request.headers());
     const { id } = ctx.request.qs();
 
     let results;
@@ -228,7 +229,8 @@ export default class RealEstatesController {
 
     // Get Info Address
     const address: any = await getAddressById(
-      Number(results[0]["$extras"]["address"])
+      Number(results[0]["$extras"]["address"]),
+      `Bearer ${token}`
     );
 
     let project: any = {};
