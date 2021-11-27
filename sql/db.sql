@@ -180,6 +180,7 @@ CREATE TABLE if not EXISTS real_estates (
 	id SERIAL PRIMARY KEY,
 	sap_id varchar(30) UNIQUE,
 	
+	cost_center_id int,
 	tipology_id int NOT NULL,
 	
 	destination_type varchar(200) NOT NULL,
@@ -197,9 +198,12 @@ CREATE TABLE if not EXISTS real_estates (
 	
 	supports_documents text,
 
-	cost_center_id int,
 	policy_id int,
 	active_type varchar(200),
+
+	disposition_type varchar(100),
+	exploitation_value double precision,
+	canyon_value double precision,
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL,

@@ -80,7 +80,7 @@ export default class RealEstatesController {
             name: re["$extras"]["project_name"],
           },
           id: re["$extras"]["re_id"],
-          status: re["$extras"]["name"],
+          status: re["$extras"]["status_name"],
           name: re["$extras"]["re_name"],
           materials: re["$extras"]["materials"].split(","),
         };
@@ -242,7 +242,7 @@ export default class RealEstatesController {
         name: results[0]["$extras"]["project_name"],
       },
       id: results[0]["$extras"]["re_id"],
-      status: results[0]["$extras"]["name"],
+      status: results[0]["$extras"]["status_name"],
       name: results[0]["$extras"]["re_name"],
       materials: results[0]["$extras"]["materials"].split(","),
       address: { ...address },
