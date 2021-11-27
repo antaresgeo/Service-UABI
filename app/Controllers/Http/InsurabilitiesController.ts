@@ -323,12 +323,11 @@ export default class InsurabilitiesController {
 
         // Updating data
         try {
-          const results = await insurabilty
-            .merge({
-              ...dataUpdated,
-              audit_trail: auditTrail.getAsJson(),
-            })
-            .save();
+          await insurabilty.merge({
+            ...dataUpdated,
+            audit_trail: auditTrail.getAsJson(),
+          });
+          const results = insurabilty.save();
 
           return ctx.response.status(200).json({
             message: `Póliza ${insurabilty.id} actualizada satisfactoriamente`,

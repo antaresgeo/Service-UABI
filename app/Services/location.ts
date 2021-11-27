@@ -6,12 +6,9 @@ const VERSION = Env.get("API_LOCATION_VERSION");
 
 export const getAddressById = async (id) => {
   try {
-    const axiosResponse = await axios.get(
-      `${URI}${VERSION}/addresses/formated`,
-      {
-        params: { id: id },
-      }
-    );
+    const axiosResponse = await axios.get(`${URI}${VERSION}/addresses`, {
+      params: { id: id },
+    });
 
     return axiosResponse.data.data;
   } catch (error) {

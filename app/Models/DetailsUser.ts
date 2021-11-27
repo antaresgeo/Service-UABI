@@ -1,6 +1,5 @@
 import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
-import { IAuditTrail, ISurnames } from "App/Utils/interfaces";
-import { INames } from "App/Utils/interfaces";
+import { IAuditTrail, ISurnames, INames } from "App/Utils/interfaces";
 
 export default class DetailsUser extends BaseModel {
   @column({ isPrimary: true })

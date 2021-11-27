@@ -228,6 +228,82 @@ create TABLE if not EXISTS real_estates_projects (
 		REFERENCES real_estates(id)
 );
 
+-- INSPECTION
+CREATE TABLE IF NOT EXISTS ocupation_real_estate (
+	id SERIAL PRIMARY KEY,
+
+	tenure varchar(250) NOT NULL,
+	use varchar(250) NOT NULL,
+	ownership varchar(250) NOT NULL,
+	contractual varchar(250) NOT NULL,
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_ocupation_re_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
+);
+
+CREATE TABLE IF NOT EXISTS physical_inspections (
+	id SERIAL PRIMARY KEY,
+
+	observations json,
+
+	real_estate_id int NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_inspection_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_real_estate_pi
+      FOREIGN KEY(real_estate_id) 
+	  REFERENCES real_estates(id)
+);
+
+CREATE TABLE IF NOT EXISTS public_services (
+	id SERIAL PRIMARY KEY,
+
+	name varchar(50) NOT NULL,
+	subscriber bigint NOT NULL,
+	accountant bigint NOT NULL,
+
+	physical_inspection_id int NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_inspection_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_physical_inspection
+      FOREIGN KEY(physical_inspection_id) 
+	  REFERENCES physical_inspections(id)
+);
+
+CREATE TABLE IF NOT EXISTS real_estate_properties (
+	id SERIAL PRIMARY KEY,
+
+	name varchar(100) NOT NULL,
+	status_property
+	observation varchar(250) NOT NULL,
+	accountant bigint NOT NULL,
+
+	physical_inspection_id int NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_inspection_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_physical_inspection
+      FOREIGN KEY(physical_inspection_id) 
+	  REFERENCES physical_inspections(id)
+);
+
 -- INSERTS
 -- Status
 INSERT 

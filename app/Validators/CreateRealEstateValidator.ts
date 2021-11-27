@@ -7,8 +7,7 @@ export default class CreateRealEstateValidator {
   public schema = schema.create({
     projects_id: schema.array.optional().members(schema.number()),
 
-    tipology: schema.string({ trim: true }),
-    accounting_account: schema.string(),
+    tipology_id: schema.number(),
 
     destination_type: schema.string({ trim: true }),
     registry_number: schema.string({ trim: true }),
