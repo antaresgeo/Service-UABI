@@ -4,7 +4,7 @@ import RealEstatesProject from "App/Models/RealEstatesProject";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 import {
   getCostCenterID,
-  getTipologyID,
+  // getTipologyID,
   getToken,
   sum,
   validatePagination,
@@ -293,15 +293,15 @@ export default class RealEstatesController {
     }
 
     // Get Id of Tipology and its values
-    const tipologyId = await getTipologyID(
-      payload["tipology"],
-      payload["accounting_account"]
-    );
+    // const tipologyId = await getTipologyID(
+    //   payload["tipology"],
+    //   payload["accounting_account"]
+    // );
 
-    if (tipologyId.status === 500)
-      return response
-        .status(tipologyId.status)
-        .json({ message: tipologyId.result });
+    // if (tipologyId.status === 500)
+    //   return response
+    //     .status(tipologyId.status)
+    //     .json({ message: tipologyId.result });
 
     const auditTrail: AuditTrail = new AuditTrail(token);
     await auditTrail.init();
@@ -309,7 +309,7 @@ export default class RealEstatesController {
     try {
       let dataRealEstate: IRealEstateAttributes = {
         ...payload,
-        tipology_id: parseInt(tipologyId.result),
+        // tipology_id: parseInt(tipologyId.result),
       };
       delete dataRealEstate["tipology"];
       delete dataRealEstate["accounting_account"];

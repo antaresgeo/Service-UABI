@@ -34,8 +34,7 @@ export interface IPayloadRealEstate {
   id?: number;
   sap_id?: string;
 
-  tipology: string;
-  accounting_account: string;
+  tipology_id: number;
 
   destination_type: string;
   registry_number: string;
