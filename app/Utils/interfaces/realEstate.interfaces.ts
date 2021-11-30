@@ -54,6 +54,8 @@ export interface IPayloadRealEstate {
   management_center?: number;
   cost_center?: number;
 
+  cost_center_id?: number;
+
   supports_documents?: string;
   projects_id?: number[];
 

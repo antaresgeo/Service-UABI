@@ -1,7 +1,12 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Project from "App/Models/Project";
+import RealEstateOwner from "./../../Models/RealEstateOwner";
 import RealEstatesProject from "App/Models/RealEstatesProject";
+import RealEstateProperty from "./../../Models/RealEstateProperty";
+import PublicService from "./../../Models/PublicService";
+import PhysicalInspection from "./../../Models/PhysicalInspection";
 import AuditTrail from "App/Utils/classes/AuditTrail";
+import OcupationRealEstate from "./../../Models/OcupationRealEstate";
 import {
   getCostCenterID,
   // getTipologyID,
@@ -383,6 +388,360 @@ export default class RealEstatesController {
       if (payload.projects_id)
         await this.createRelation(payload.projects_id, realEstate);
       else await this.createRelation([0], realEstate);
+
+      try {
+        await OcupationRealEstate.create({
+          tenure: "",
+          use: "",
+          ownership: "",
+          contractual: "",
+
+          real_estate_id: Number(realEstate["id"]),
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      } catch (error) {
+        console.error(error);
+        return response.status(500).json({
+          message: "Error inesperado al crear la ocupación del bien inmueble.",
+        });
+      }
+
+      let physicalInspectionID: number = 0;
+      try {
+        const physicalInspection = await PhysicalInspection.create({
+          real_estate_id: Number(realEstate["id"]),
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        physicalInspectionID = Number(physicalInspection["id"]);
+      } catch (error) {
+        console.error(error);
+        return response.status(500).json({
+          message:
+            "Error inesperado al crear la inspección física base del bien inmueble.",
+        });
+      }
+
+      try {
+        await PublicService.create({
+          name: "Energía",
+          subscriber: 0,
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await PublicService.create({
+          name: "Gas",
+          subscriber: 0,
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await PublicService.create({
+          name: "Agua",
+          subscriber: 0,
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await PublicService.create({
+          name: "Telefono",
+          subscriber: 0,
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      } catch (error) {
+        console.error(error);
+        return response.status(500).json({
+          message:
+            "Error inesperado al crear ls servicios públicos de la insepcción física base del bien inmueble.",
+        });
+      }
+
+      try {
+        await RealEstateOwner.create({
+          real_estate_id: Number(realEstate["id"]),
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      } catch (error) {
+        console.error(error);
+        return response.status(500).json({
+          message:
+            "Error inesperado al crear el registro del poseedor del bien inmueble.",
+        });
+      }
+
+      try {
+        await RealEstateProperty.create({
+          name: "Cerramiento",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Fachada",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Pintura exterior",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Cubierta o techo",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Pisos",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Enchapes de baño y/o cocina",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Pintura interior",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Ventanas",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Puerta principal",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Cerraduras puerta principal",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Puertas interiores",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Cerraduras puertas interiores",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Rejas de seguridad",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Paredes",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Escaleras",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Aparatos sanitarios",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Orinales",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Griferías y abastos",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Lavamanos",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Rejillas desagüe",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Sistema eléctronico",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+
+        await RealEstateProperty.create({
+          name: "Acometidas eléctricas",
+          status_property: "No aplica",
+          accountant: 0,
+
+          physical_inspection_id: physicalInspectionID,
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      } catch (error) {
+        console.error(error);
+        return response.status(500).json({
+          message:
+            "Error inesperado al crear el registro de la inspección física del bien inmueble.",
+        });
+      }
 
       return response.status(200).json({
         message: "Bien Inmueble creado correctamente.",

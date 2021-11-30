@@ -15,7 +15,7 @@ export default class OcupationRealEstate extends BaseModel {
   public contractual: string;
 
   @column()
-  public physical_inspection_id: number;
+  public real_estate_id: number;
 
   @column()
   public status: number;

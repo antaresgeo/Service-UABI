@@ -29,6 +29,8 @@ export default class CreateRealEstateValidator {
     management_center: schema.number.optional(),
     cost_center: schema.number.optional(),
 
+    cost_center_id: schema.number.optional(),
+
     zone: schema.string({ trim: true }),
     address: schema.number(),
 
