@@ -136,6 +136,7 @@ CREATE TABLE if not EXISTS projects (
 	description varchar(1000) NOT NULL,
 
 	cost_center_id int NOT NULL,
+	budget_value double precision,
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL,
@@ -156,11 +157,11 @@ CREATE TABLE if not EXISTS acquisitions (
 	title_type_document_id varchar(200),
 	act_number varchar(100) NOT NULL,
 	act_value double PRECISION NOT NULL,
+	area double precision,
+	acquisition_date bigint NOT NULL,
 
-	plot_area double precision NOT NULL,
-	construction_area double precision,
 	acquired_percentage int NOT NULL,
-	origin varchar(50) NOT NULL,
+	origin bigint NOT NULL,
 	
 	entity_type varchar (100) NOT NULL,
 	entity_number varchar(100) NOT NULL,
@@ -192,6 +193,9 @@ CREATE TABLE if not EXISTS real_estates (
 	total_area double PRECISION NOT NULL,
 	total_percentage INT NOT NULL,
 	materials text,
+
+	plot_area double precision NOT NULL,
+	construction_area double precision,
 	
 	zone varchar(10) NOT NULL,
 	address bigint NOT NULL,
@@ -201,8 +205,12 @@ CREATE TABLE if not EXISTS real_estates (
 	policy_id int,
 	active_type varchar(200),
 
+	accounting_amount varchar(100),
+	counterpart double precision,
+	assignments varchar(100),
 	disposition_type varchar(100),
 	exploitation_value double precision,
+	authorization_value double precision,
 	canyon_value double precision,
 	
 	status int NOT NULL,
@@ -240,6 +248,8 @@ CREATE TABLE IF NOT EXISTS ocupation_real_estate (
 	use varchar(250) NOT NULL,
 	ownership varchar(250) NOT NULL,
 	contractual varchar(250) NOT NULL,
+
+	real_estate_id int NOT NULL,
 	
 	status int NOT NULL,
 	audit_trail json NOT NULL,
@@ -253,6 +263,7 @@ CREATE TABLE IF NOT EXISTS physical_inspections (
 	id SERIAL PRIMARY KEY,
 
 	observations json,
+	photographic_record text,
 
 	real_estate_id int NOT NULL,
 
@@ -291,7 +302,7 @@ CREATE TABLE IF NOT EXISTS real_estate_properties (
 	id SERIAL PRIMARY KEY,
 
 	name varchar(100) NOT NULL,
-	status_property
+	status_property varchar(100),
 	observation varchar(250) NOT NULL,
 	accountant bigint NOT NULL,
 
@@ -306,6 +317,25 @@ CREATE TABLE IF NOT EXISTS real_estate_properties (
 	CONSTRAINT fk_physical_inspection
       FOREIGN KEY(physical_inspection_id) 
 	  REFERENCES physical_inspections(id)
+);
+
+CREATE TABLE IF NOT EXISTS real_estate_owner (
+	id SERIAL PRIMARY KEY,
+
+	names_surnames varchar(100),
+	document_type varchar(100),
+	document_number double precision,
+	phone_number double precision,
+	email varchar(100),
+
+	real_estate_id int NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_re_owner_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
 );
 
 -- INSERTS
@@ -476,6 +506,7 @@ INSERT
 		'SIN PROYECTO', 
 		'Proyecto para los bienes inmuebles que se encuentran sin proyecto.', 
 		1,
+		0,
 		1,
 		'{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'
 	);

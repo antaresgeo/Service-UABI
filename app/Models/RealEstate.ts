@@ -35,6 +35,11 @@ export default class RealEstate extends BaseModel {
   public address: number;
 
   @column()
+  public plot_area: number;
+  @column()
+  public construction_area: number;
+
+  @column()
   public supports_documents: string | undefined;
 
   @column()

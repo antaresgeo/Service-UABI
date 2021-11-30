@@ -12,6 +12,8 @@ export default class Project extends BaseModel {
 
   @column()
   public cost_center_id: number;
+  @column()
+  public budget_value: number;
 
   @column()
   public status: number;

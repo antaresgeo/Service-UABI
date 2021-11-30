@@ -19,6 +19,9 @@ export default class CreateRealEstateValidator {
     total_percentage: schema.number(),
     materials: schema.string.optional({ trim: true }),
 
+    plot_area: schema.number(),
+    construction_area: schema.number.optional(),
+
     active_type: schema.string({ trim: true }),
 
     dependency: schema.string.optional({ trim: true }),

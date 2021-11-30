@@ -15,7 +15,7 @@ export default class CreateAcquisitionValidator {
     plot_area: schema.number.optional(),
     construction_area: schema.number.optional(),
     acquired_percentage: schema.number(),
-    seller: schema.string({ trim: true }),
+    origin: schema.number(),
 
     entity_type: schema.string({ trim: true }),
     entity_number: schema.string({ trim: true }),

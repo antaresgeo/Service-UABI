@@ -18,13 +18,12 @@ export default class Acquisition extends BaseModel {
   @column()
   public act_value: number;
   @column()
-  public plot_area: number;
-  @column()
-  public construction_area: number;
+  public area: number;
+
   @column()
   public acquired_percentage: number;
   @column()
-  public origin: string;
+  public origin: number;
 
   @column()
   public entity_type: string;
