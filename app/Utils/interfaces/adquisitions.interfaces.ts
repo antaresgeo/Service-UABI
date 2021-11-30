@@ -12,7 +12,7 @@ export interface IAdquisitionAttributes {
   plot_area?: number;
   construction_area?: number;
   acquired_percentage: number;
-  seller: string;
+  origin: number;
 
   entity_type: string;
   entity_number: string;
