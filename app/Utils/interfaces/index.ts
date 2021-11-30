@@ -38,3 +38,4 @@ export * from "./project.interfaces";
 export * from "./realEstate.interfaces";
 export * from "./adquisitions.interfaces";
 export * from "./detailsUser";
+export * from "./inspection";

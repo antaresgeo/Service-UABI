@@ -1,3 +1,8 @@
+DROP TABLE if EXISTS ocupation_real_estates cascade;
+DROP TABLE if EXISTS physical_inspections cascade;
+DROP TABLE if EXISTS public_services cascade;
+DROP TABLE if EXISTS real_estate_properties cascade;
+DROP TABLE if EXISTS real_estate_owner cascade;
 DROP TABLE if EXISTS real_estates_projects cascade;
 DROP TABLE if EXISTS real_estates cascade;
 DROP TABLE if EXISTS acquisitions cascade;
@@ -241,7 +246,7 @@ create TABLE if not EXISTS real_estates_projects (
 );
 
 -- INSPECTION
-CREATE TABLE IF NOT EXISTS ocupation_real_estate (
+CREATE TABLE IF NOT EXISTS ocupation_real_estates (
 	id SERIAL PRIMARY KEY,
 
 	tenure varchar(250) NOT NULL,
@@ -256,7 +261,10 @@ CREATE TABLE IF NOT EXISTS ocupation_real_estate (
 
 	CONSTRAINT fk_ocupation_re_status
       FOREIGN KEY(status) 
-	  REFERENCES status(id)
+	  REFERENCES status(id),
+	CONSTRAINT fk_ocupation_re
+      FOREIGN KEY(real_estate_id) 
+	  REFERENCES real_estates(id)
 );
 
 CREATE TABLE IF NOT EXISTS physical_inspections (
@@ -303,7 +311,7 @@ CREATE TABLE IF NOT EXISTS real_estate_properties (
 
 	name varchar(100) NOT NULL,
 	status_property varchar(100),
-	observation varchar(250) NOT NULL,
+	observation varchar(250),
 	accountant bigint NOT NULL,
 
 	physical_inspection_id int NOT NULL,

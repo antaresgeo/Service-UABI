@@ -264,24 +264,35 @@ export default class ProjectsController {
       CreateProjectValidator
     );
 
-    let dataToCreate: IProjectAttributes, costCenterID: CostCenter[];
+    let dataToCreate: IProjectAttributes,
+      costCenterID: CostCenter[],
+      costCenterId: number = 0;
 
-    try {
-      costCenterID = await CostCenter.query()
-        .from("cost_centers as cc")
-        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-        .select("cc.id")
-        .where("d.dependency", payloadProject.dependency)
-        .where("cc.subdependency", payloadProject.subdependency)
-        .where("d.management_center", payloadProject.management_center)
-        .where("cc.cost_center", payloadProject.cost_center);
-    } catch (error) {
-      console.error(error);
-      return response.status(500).json({
-        message: "Error obteniendo el ID del Centro de Costos",
-        error,
-      });
-    }
+    if (
+      payloadProject.dependency &&
+      payloadProject.subdependency &&
+      payloadProject.management_center &&
+      payloadProject.cost_center
+    ) {
+      try {
+        costCenterID = await CostCenter.query()
+          .from("cost_centers as cc")
+          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+          .select("cc.id")
+          .where("d.dependency", payloadProject.dependency)
+          .where("cc.subdependency", payloadProject.subdependency)
+          .where("d.management_center", payloadProject.management_center)
+          .where("cc.cost_center", payloadProject.cost_center);
+      } catch (error) {
+        console.error(error);
+        return response.status(500).json({
+          message: "Error obteniendo el ID del Centro de Costos",
+          error,
+        });
+      }
+      costCenterId = costCenterID[0]["id"];
+    } else if (payloadProject.cost_center_id)
+      costCenterId = payloadProject.cost_center_id;
 
     const auditTrail: AuditTrail = new AuditTrail(token);
     await auditTrail.init();
@@ -290,7 +301,7 @@ export default class ProjectsController {
       name: payloadProject.name.toUpperCase(),
       description: payloadProject.description,
 
-      cost_center_id: costCenterID[0]["id"],
+      cost_center_id: costCenterId,
 
       status: 1,
       audit_trail: auditTrail.getAsJson(),

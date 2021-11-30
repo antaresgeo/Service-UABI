@@ -16,8 +16,12 @@ export interface IPayloadProject {
   name: string;
   description: string;
 
-  dependency: string;
-  subdependency: string;
-  management_center: number;
-  cost_center: number;
+  budget_value?: number;
+
+  cost_center_id?: number;
+
+  dependency?: string;
+  subdependency?: string;
+  management_center?: number;
+  cost_center?: number;
 }

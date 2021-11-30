@@ -7,10 +7,14 @@ export default class CreateProjectValidator {
   public schema = schema.create({
     name: schema.string({ trim: true }),
     description: schema.string({ trim: true }),
-    dependency: schema.string({ trim: true }),
-    subdependency: schema.string({ trim: true }),
-    management_center: schema.number(),
-    cost_center: schema.number(),
+
+    budget_value: schema.number.optional(),
+
+    cost_center_id: schema.number.optional(),
+    dependency: schema.string.optional({ trim: true }),
+    subdependency: schema.string.optional({ trim: true }),
+    management_center: schema.number.optional(),
+    cost_center: schema.number.optional(),
   });
 
   /**
