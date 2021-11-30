@@ -231,14 +231,12 @@ export default class RealEstatesController {
       console.error(error);
       return ctx.response.status(500).json({ message: "Real Estate error" });
     }
-    console.log(results[0]["$extras"]["address"]);
 
     // Get Info Address
     const address: any = await getAddressById(
       Number(results[0]["$extras"]["address"]),
       `Bearer ${token}`
     );
-    console.log(address);
 
     let project: any = {};
 
@@ -256,6 +254,7 @@ export default class RealEstatesController {
     };
 
     delete project["project_name"];
+    delete project["budget_value"];
     delete project["project_description"];
     delete project["re_name"];
     delete project["re_id"];

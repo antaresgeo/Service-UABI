@@ -4,4 +4,5 @@ import "./acquisition";
 import "./insurability";
 import "./insuranceBroker";
 import "./insuranceCompany";
+import "./inspection";
 import "./tipology";
