@@ -6,6 +6,8 @@ export interface IProjectAttributes {
   name: string;
   description: string;
 
+  budget_value: number;
+
   cost_center_id?: number;
 
   status?: number;

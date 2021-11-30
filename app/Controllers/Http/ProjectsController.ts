@@ -266,7 +266,8 @@ export default class ProjectsController {
 
     let dataToCreate: IProjectAttributes,
       costCenterID: CostCenter[],
-      costCenterId: number = 0;
+      costCenterId: number = 0,
+      budgetValue: number = 0;
 
     if (
       payloadProject.dependency &&
@@ -297,9 +298,13 @@ export default class ProjectsController {
     const auditTrail: AuditTrail = new AuditTrail(token);
     await auditTrail.init();
 
+    if (payloadProject.budget_value) budgetValue = payloadProject.budget_value;
+
     dataToCreate = {
       name: payloadProject.name.toUpperCase(),
       description: payloadProject.description,
+
+      budget_value: budgetValue,
 
       cost_center_id: costCenterId,
 
@@ -343,6 +348,9 @@ export default class ProjectsController {
         let dataUpdated: IProjectAttributes = {
           name: newData["name"].toUpperCase().trim(),
           description: newData["description"].trim(),
+          budget_value: newData.budget_value
+            ? newData.budget_value
+            : project.budget_value,
           cost_center_id: project.cost_center_id,
         };
 
