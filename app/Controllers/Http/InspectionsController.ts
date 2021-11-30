@@ -17,7 +17,7 @@ export default class InspectionsController {
     const ocupation = JSON.parse(dataBody.ocupation);
     const physicalInspection = JSON.parse(dataBody.physical_inspection);
 
-    const images = request.file("image");
+    const images = request.files("image");
     console.log(images);
     // return images
 

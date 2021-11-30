@@ -30,7 +30,7 @@ export default class RealEstatesController {
    * index
    */
   public async getList({ response, request }: HttpContextContract) {
-    const { q, page, pageSize } = request.qs();
+    const { q, page, pageSize, to } = request.qs();
     const tmpWith = request.qs().with;
     const pagination = validatePagination(q, page, pageSize);
     let results, realEstates;
@@ -73,11 +73,14 @@ export default class RealEstatesController {
           .where("re.status", 1)
           .where("re.registry_number", "LIKE", "%" + pagination["q"] + "%")
           .orderBy("re.id", "desc");
+
       results = results === null ? [] : results;
 
       let data: any[] = [];
 
       results.map((re) => {
+        console.log(re);
+
         let tmp = {
           ...re["$extras"],
           project: {
@@ -89,6 +92,13 @@ export default class RealEstatesController {
           name: re["$extras"]["re_name"],
           materials: re["$extras"]["materials"].split(","),
         };
+
+        if (to && to === "inspection") {
+          tmp["status"] =
+            re["$extras"]["disposition_type"] === null
+              ? "Sin contrato"
+              : "Con contrato";
+        }
 
         delete tmp["project_name"];
         delete tmp["project_description"];
