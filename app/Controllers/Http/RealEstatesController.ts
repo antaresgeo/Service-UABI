@@ -30,6 +30,7 @@ export default class RealEstatesController {
    * index
    */
   public async getList({ response, request }: HttpContextContract) {
+    const token = getToken(request.headers());
     const { q, page, pageSize, to } = request.qs();
     const tmpWith = request.qs().with;
     const pagination = validatePagination(q, page, pageSize);
@@ -78,35 +79,42 @@ export default class RealEstatesController {
 
       let data: any[] = [];
 
-      results.map((re) => {
-        console.log(re);
+      await Promise.all(
+        results.map(async (re) => {
+          // Get Info Address
+          const address: any = await getAddressById(
+            Number(results[0]["$extras"]["address"]),
+            `Bearer ${token}`
+          );
 
-        let tmp = {
-          ...re["$extras"],
-          project: {
-            id: re["project_id"],
-            name: re["$extras"]["project_name"],
-          },
-          id: re["$extras"]["re_id"],
-          status: re["$extras"]["status_name"],
-          name: re["$extras"]["re_name"],
-          materials: re["$extras"]["materials"].split(","),
-        };
+          let tmp = {
+            ...re["$extras"],
+            project: {
+              id: re["project_id"],
+              name: re["$extras"]["project_name"],
+            },
+            id: re["$extras"]["re_id"],
+            status: re["$extras"]["status_name"],
+            name: re["$extras"]["re_name"],
+            materials: re["$extras"]["materials"].split(","),
+            address: { ...address },
+          };
 
-        if (to && to === "inspection") {
-          tmp["status"] =
-            re["$extras"]["disposition_type"] === null
-              ? "Sin contrato"
-              : "Con contrato";
-        }
+          if (to && to === "inspection") {
+            tmp["status"] =
+              re["$extras"]["disposition_type"] === null
+                ? "Sin contrato"
+                : "Con contrato";
+          }
 
-        delete tmp["project_name"];
-        delete tmp["project_description"];
-        delete tmp["re_name"];
-        delete tmp["re_id"];
+          delete tmp["project_name"];
+          delete tmp["project_description"];
+          delete tmp["re_name"];
+          delete tmp["re_id"];
 
-        data.push(tmp);
-      });
+          await data.push(tmp);
+        })
+      );
 
       try {
         realEstates = await RealEstate.query().where("status", 1);
