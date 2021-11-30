@@ -11,7 +11,7 @@ export const getAddressById = async (id, token) => {
       headers: { authorization: token },
     });
 
-    return axiosResponse.data.data;
+    return axiosResponse.data.results;
   } catch (error) {
     console.error(error);
     return Promise.reject("");
