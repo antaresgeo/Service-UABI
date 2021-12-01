@@ -10,6 +10,8 @@ export default class PhysicalInspection extends BaseModel {
   public observations: IObservations;
   @column()
   public photographic_record: string;
+  @column()
+  public inspection_date: number | undefined;
 
   @column()
   public real_estate_id: number;

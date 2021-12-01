@@ -105,6 +105,10 @@ export default class InspectionsController {
         ocupation,
         physical_inspection: {
           ...physicalInspection["$attributes"],
+          inspection_date:
+            physicalInspection["$attributes"]["inspection_date"] === null
+              ? "No realizada"
+              : physicalInspection["$attributes"]["inspection_date"],
           public_services: attrPublicServices,
           properties: attrRealEstateProperties,
         },

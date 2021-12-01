@@ -35,6 +35,7 @@ export default class RealEstatesController {
     const tmpWith = request.qs().with;
     const pagination = validatePagination(q, page, pageSize);
     let results, realEstates;
+    let physicalInspection: PhysicalInspection;
 
     let count: number =
       pagination["page"] * pagination["pageSize"] - pagination["pageSize"];
@@ -101,6 +102,25 @@ export default class RealEstatesController {
           };
 
           if (to && to === "inspection") {
+            // Physical Inspection
+            try {
+              physicalInspection = await PhysicalInspection.findByOrFail(
+                "real_estate_id",
+                tmp.id
+              );
+            } catch (error) {
+              console.error(error);
+              return response.status(500).json({
+                message:
+                  "Error inesperado al obtener la Inspección Física actual de la inspección.\nRevisar Terminal.",
+              });
+            }
+
+            tmp["inspection_date"] =
+              physicalInspection["$attributes"]["inspection_date"] === null
+                ? "No realizada"
+                : physicalInspection["$attributes"]["inspection_date"];
+
             tmp["status"] =
               re["$extras"]["disposition_type"] === null
                 ? "Sin contrato"
