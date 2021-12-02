@@ -850,7 +850,7 @@ export default class RealEstatesController {
     try {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
-        await this.createRelation(newData["projects_id"], realEstate);
+        if (!alt) await this.createRelation(newData["projects_id"], realEstate);
 
         let dataUpdated: IRealEstateAttributes = {
           ...newData,

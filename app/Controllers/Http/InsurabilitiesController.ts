@@ -62,7 +62,14 @@ export default class InsurabilitiesController {
             dataToShow: newInsurability,
           });
         });
-      } catch (error) {}
+      } catch (error) {
+        console.error(error);
+        return ctx.response
+          .status(500)
+          .json({
+            message: "Error al actualizar el Bien Inmueble con su nueva póliza",
+          });
+      }
 
       return ctx.response.status(200).json({
         message: "¡Nueva Póliza creada satisfactoriamente!",
