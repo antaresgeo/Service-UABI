@@ -291,6 +291,8 @@ export default class ProjectsController {
           error,
         });
       }
+      console.log(costCenterID);
+
       costCenterId = costCenterID[0]["id"];
     } else if (payloadProject.cost_center_id)
       costCenterId = payloadProject.cost_center_id;

@@ -1,11 +1,11 @@
 // import jwt from "jsonwebtoken";
-import DetailsUser from "App/Models/DetailsUser";
+// import DetailsUser from "App/Models/DetailsUser";
 import moment from "moment";
 import { getDataUser } from "../functions";
 import { IUpdatedValues } from "../interfaces";
 
 export default class AuditTrail {
-  private dataUser: DetailsUser;
+  // private dataUser: DetailsUser;
   protected token: string;
   protected createdBy: string;
   protected createdOn: number;
@@ -29,9 +29,9 @@ export default class AuditTrail {
     const self = this;
     const detailsUser = await getDataUser(self.token);
 
-    self.dataUser = detailsUser;
+    // if (detailsUser !== undefined) self.dataUser = detailsUser;
 
-    self.createdBy = `${self.dataUser.names.firstName} ${self.dataUser.surnames.firstSurname}`;
+    self.createdBy = `${detailsUser.names.firstName} ${detailsUser.surnames.firstSurname}`;
     self.createdOn = moment().valueOf();
     self.updatedBy = null;
     self.updatedOn = null;
@@ -99,7 +99,8 @@ export default class AuditTrail {
   public async update(updatedValues: any, model: any) {
     const detailsUser = await getDataUser(this.token);
 
-    this.updatedBy = `${detailsUser.names.firstName} ${detailsUser.surnames.firstSurname}`;
+    if (detailsUser !== undefined)
+      this.updatedBy = `${detailsUser.names.firstName} ${detailsUser.surnames.firstSurname}`;
     this.updatedOn = moment().valueOf();
 
     let tmpData: any = { ...model["$attributes"] };
