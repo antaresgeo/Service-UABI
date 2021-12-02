@@ -892,7 +892,7 @@ export default class RealEstatesController {
             })
             .save();
 
-          if (alt["dataToShow"])
+          if (alt && alt["dataToShow"])
             return response.status(200).json({
               message: "Updated successfully!",
               results: {
