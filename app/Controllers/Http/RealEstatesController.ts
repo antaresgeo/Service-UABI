@@ -854,9 +854,15 @@ export default class RealEstatesController {
 
         let dataUpdated: IRealEstateAttributes = {
           ...newData,
-          name: newData["name"].toUpperCase().trim(),
-          description: newData["description"].trim(),
         };
+
+        if (newData["name"])
+          dataUpdated["name"] = newData["name"].toUpperCase().trim();
+
+        if (newData["description"])
+          dataUpdated["description"] = newData["description"]
+            .toUpperCase()
+            .trim();
 
         delete dataUpdated["projects_id"];
 
