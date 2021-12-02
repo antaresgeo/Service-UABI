@@ -856,6 +856,8 @@ export default class RealEstatesController {
           description: newData["description"].trim(),
         };
 
+        delete dataUpdated["projects_id"];
+
         const auditTrail = new AuditTrail(token, realEstate.audit_trail);
         await auditTrail.update(dataUpdated, realEstate);
         // if (
