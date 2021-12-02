@@ -181,5 +181,7 @@ export default class AdquisitionsController {
   /**
    * update
    */
-  public async update(lastAcquisitions: any[]) {}
+  public async update(lastAcquisitions: any[]) {
+    console.log(lastAcquisitions);
+  }
 }
