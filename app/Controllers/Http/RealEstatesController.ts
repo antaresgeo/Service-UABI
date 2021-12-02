@@ -145,6 +145,10 @@ export default class RealEstatesController {
         });
       }
 
+      data = data.sort((a, b) => {
+        return b.id - a.id;
+      });
+
       return response.json({
         message: "List of all Real Estates",
         results: data,
