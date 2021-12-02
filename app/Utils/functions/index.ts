@@ -4,7 +4,6 @@ import axios from "axios";
 
 import moment from "moment";
 import AuditTrail from "../classes/AuditTrail";
-import { decodeJWT } from "./jwt";
 import Tipology from "./../../Models/Tipology";
 
 export const sum = (num1: number, num2: number): number => {
@@ -137,7 +136,7 @@ export const getTipologyID = async (
 };
 
 export const getDataUser = async (token: string) => {
-  const { id } = decodeJWT(token);
+  // const { id } = decodeJWT(token);
 
   // Consulting
   try {
@@ -145,7 +144,8 @@ export const getDataUser = async (token: string) => {
     const axiosResponse = await axios.get(
       `${Env.get("URI_SERVICE_AUTH")}${Env.get("API_AUTH_VERSION")}/users`,
       {
-        params: { id },
+        // params: { id },
+        headers: { authorization: token },
       }
     );
     return axiosResponse.data.results.detailsUser;
