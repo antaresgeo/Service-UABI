@@ -177,45 +177,9 @@ export default class AdquisitionsController {
         .json({ message: "Project update failed!" });
     }
   }
+
+  /**
+   * update
+   */
+  public async update(lastAcquisitions: any[]) {}
 }
-
-// {
-// 	acquisition_type,
-// 	active_type,
-// 	title_type,
-// 	title_type_document_id,
-// 	act_number,
-// 	act_value,
-
-// 	plot_area,
-// 	construction_area,
-// 	acquired_percentage,
-// 	seller,
-
-// 	entity_type,
-// 	entity_number,
-// 	addctx.responses,
-// 	real_estate_id,
-// }
-
-// export const _getRealEstate = async (ctx.request: ctx.requestuest, ctx.response: ctx.responseponse) => {
-// 	const { id } = ctx.request.query;
-
-// 	try {
-// 		const realEstate = await getRealEstate(String(id));
-
-// 		if (!realEstate) {
-// 			ctx.response.status(404).json({ error: 'No Real Esate Found' });
-// 			return;
-// 		}
-
-// 		ctx.response.status(200).json({ message: 'Real Estate', results: data: realEstate });
-// 	} catch (error) {
-// 		console.error(error);
-// 		try {
-// 			ctx.response.status(500).json({ message: 'Error interno: Servidor', error });
-// 		} catch (error) {
-// 			console.error(error);
-// 		}
-// 		return;
-// 	}

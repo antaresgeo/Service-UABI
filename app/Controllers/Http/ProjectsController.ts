@@ -156,6 +156,8 @@ export default class ProjectsController {
       });
     });
 
+    tmpData = tmpData.sort((a, b) => b.id - a.id);
+
     const lastElement = tmpData.pop();
     const res = [lastElement, ...tmpData];
 
