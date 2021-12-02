@@ -800,6 +800,17 @@ export default class RealEstatesController {
     try {
       if (projectsId.length > 0)
         projectsId.map(async (id) => {
+          let relationREP = await RealEstatesProject.query().where(
+            "real_estate_id",
+            realEstate.id
+          );
+
+          await Promise.all(
+            relationREP.map(async (relation) => {
+              await relation.delete();
+            })
+          );
+
           await RealEstatesProject.create({
             project_id: id,
             real_estate_id: realEstate.id,
@@ -834,23 +845,19 @@ export default class RealEstatesController {
       _id = id;
     }
 
-    let project = newData.project;
-    delete newData.project;
-
     try {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
+        await this.createRelation(newData["projects_id"], realEstate);
+
+        let dataUpdated: IRealEstateAttributes = {
+          ...newData,
+          name: newData["name"].toUpperCase().trim(),
+          description: newData["description"].trim(),
+        };
 
         const auditTrail = new AuditTrail(token, realEstate.audit_trail);
-        auditTrail.update(newData, realEstate);
-
-        // let dataUpdated: IRealEstateAttributes = {
-        //   name: newData["name"].toUpperCase().trim(),
-        //   description: newData["description"].trim(),
-        //   cost_center_id: project.cost_center_id,
-        //   tipology_id: 0,
-        // };
-
+        await auditTrail.update(dataUpdated, realEstate);
         // if (
         //   newData["dependency"] &&
         //   newData["subdependency"] &&
@@ -878,7 +885,7 @@ export default class RealEstatesController {
         try {
           const realEstateUpdated = await realEstate
             .merge({
-              ...newData,
+              ...dataUpdated,
               audit_trail: auditTrail.getAsJson(),
             })
             .save();
@@ -894,7 +901,6 @@ export default class RealEstatesController {
             message: "Updated successfully!",
             results: {
               ...realEstateUpdated["$attributes"],
-              project,
             },
           });
         } catch (error) {
