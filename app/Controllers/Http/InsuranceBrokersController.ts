@@ -12,7 +12,7 @@ export default class InsuranceBrokersController {
   public async index({}: HttpContextContract) {}
 
   public async create({ request, response }: HttpContextContract) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
 
     const payload: IPayloadInsuranceBroker = await request.validate(
       CreateInsuranceBrokerValidator
@@ -140,7 +140,7 @@ export default class InsuranceBrokersController {
   public async edit({}: HttpContextContract) {}
 
   public async update({ response, request }: HttpContextContract, alt?: any) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
 
     let newData, _id;
 
@@ -204,7 +204,7 @@ export default class InsuranceBrokersController {
    * inactivate
    */
   public async inactivate({ request, response }: HttpContextContract) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
 
     const { id } = request.params();
 

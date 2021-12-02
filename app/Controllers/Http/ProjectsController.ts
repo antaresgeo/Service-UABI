@@ -258,7 +258,7 @@ export default class ProjectsController {
    *           message: Hello Guess
    */
   public async create({ request, response }: HttpContextContract) {
-    let token: string = getToken(request.headers());
+    let { token } = getToken(request.headers());
 
     const payloadProject: IPayloadProject = await request.validate(
       CreateProjectValidator
@@ -334,7 +334,7 @@ export default class ProjectsController {
    * update
    */
   public async update({ request, response }: HttpContextContract) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
 
     const newData = request.body();
     const { id } = request.qs();

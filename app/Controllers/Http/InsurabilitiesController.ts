@@ -11,7 +11,7 @@ export default class InsurabilitiesController {
    * create Acquisition
    */
   public async create(ctx: HttpContextContract) {
-    const token = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers());
 
     let dataInsurability = ctx.request.body();
 
@@ -304,7 +304,7 @@ export default class InsurabilitiesController {
    * update
    */
   public async update(ctx: HttpContextContract) {
-    const token = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers());
     const newData = ctx.request.body();
     const { id } = ctx.request.qs();
 

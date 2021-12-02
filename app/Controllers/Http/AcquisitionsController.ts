@@ -10,7 +10,7 @@ export default class AdquisitionsController {
    * create Acquisition
    */
   public async create({ request, response }: HttpContextContract) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
     let dataAdquisition = await request.validate(CreateAcquisitionValidator),
       newAdquisition;
 
@@ -47,7 +47,7 @@ export default class AdquisitionsController {
    * create Acquisition
    */
   public async createMany(ctx: HttpContextContract) {
-    const token = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers());
 
     let dataAdquisition = ctx.request.body();
     let newAcquisitions: any[] = [];

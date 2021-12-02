@@ -1,26 +1,28 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import { decodeJWT } from "App/Utils/functions/jwt";
+import { decodeJWT, getToken } from "App/Utils/functions/jwt";
 import axios from "axios";
 import Env from "@ioc:Adonis/Core/Env";
+import { IDataToken, IResponseData } from "App/Utils/interfaces";
 
 export default class VerifyToken {
   public async handle(
     { request, response }: HttpContextContract,
     next: () => Promise<void>
   ) {
-    let payload;
-    let token: string = "";
-    let authorization = request.headers()["authorization"];
-    if (typeof authorization !== "undefined") {
-      token = authorization.split("Bearer ").pop() as string;
+    let responseData: IResponseData = {
+      message: "Debe de ingresar para realizar esta acción.",
+      error: true,
+      status: 200,
+    };
+    const { token, headerAuthorization } = getToken(request.headers());
+
+    // Get data of Token
+    let payload: IDataToken = { id: -1, iat: -1 };
+    if (token !== "") payload = decodeJWT(token);
+
+    if (token === "" || (payload["iat"] === -1 && payload["id"] === -1)) {
+      return response.unauthorized(responseData);
     }
-
-    if (token) payload = decodeJWT(token);
-
-    if (payload === undefined)
-      return response.unauthorized({
-        error: "Debe de ingresar para realizar esta acción",
-      });
 
     // Consulting
     try {
@@ -28,7 +30,7 @@ export default class VerifyToken {
       await axios.get(
         `${Env.get("URI_SERVICE_AUTH")}${Env.get("API_AUTH_VERSION")}/users`,
         {
-          params: { id: payload.id },
+          headers: { authorization: headerAuthorization },
         }
       );
     } catch (error) {

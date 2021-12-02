@@ -30,7 +30,7 @@ export default class RealEstatesController {
    * index
    */
   public async getList({ response, request }: HttpContextContract) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
     const { q, page, pageSize, to } = request.qs();
     const tmpWith = request.qs().with;
     const pagination = validatePagination(q, page, pageSize);
@@ -245,7 +245,7 @@ export default class RealEstatesController {
    * index
    */
   public async getOne(ctx: HttpContextContract) {
-    const token = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers());
     const { id } = ctx.request.qs();
 
     let results;
@@ -311,7 +311,7 @@ export default class RealEstatesController {
    */
   public async create(ctx: HttpContextContract) {
     const { response, request } = ctx;
-    const token: string = getToken(request.headers());
+    const { token } = getToken(request.headers());
     const payload: IPayloadRealEstate = await request.validate(
       CreateRealEstate
     );
@@ -820,7 +820,7 @@ export default class RealEstatesController {
    * update
    */
   public async update({ response, request }: HttpContextContract, alt?: any) {
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
 
     let newData, _id;
     // let costCenterID;

@@ -10,13 +10,15 @@ export const decodeJWT = (token: string) => {
   }
 };
 
-export const getToken = (headers): string => {
-  let tmpToken: string = "";
+export const getToken = (
+  headers
+): { token: string; headerAuthorization: string } => {
+  let token: string = "";
+  let headerAuthorization = headers.authorization ? headers.authorization : "";
 
-  if (headers.authorization) {
-    let tmp = headers.authorization?.split("Bearer ").pop()?.trim();
-    if (typeof tmp !== "undefined") tmpToken = tmp;
+  if (headerAuthorization !== "") {
+    token = headerAuthorization.replace("Bearer ", "").trim();
   }
 
-  return tmpToken;
+  return { token, headerAuthorization };
 };

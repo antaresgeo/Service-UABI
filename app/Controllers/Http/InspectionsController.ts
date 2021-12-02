@@ -158,7 +158,7 @@ export default class InspectionsController {
     console.log(images);
     // return images
 
-    const token = getToken(request.headers());
+    const { token } = getToken(request.headers());
 
     // Update Ocupation
     try {
