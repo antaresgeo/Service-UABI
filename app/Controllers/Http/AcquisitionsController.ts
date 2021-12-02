@@ -69,7 +69,7 @@ export default class AdquisitionsController {
         //   return ctx.response
         //     .status(500)
         //     .json({ message: "¡Error al crear el bien inmueble!" });
-        newAcquisitions.push(newAdquisition);
+        newAcquisitions.push(newAdquisition["$attributes"]);
       } catch (error) {
         console.error(error);
         return ctx.response
