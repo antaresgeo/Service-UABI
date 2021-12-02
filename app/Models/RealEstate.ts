@@ -8,6 +8,8 @@ export default class RealEstate extends BaseModel {
   public sap_id: string | undefined;
 
   @column()
+  public cost_center_id: number | undefined;
+  @column()
   public tipology_id: number;
 
   @column()
@@ -30,25 +32,37 @@ export default class RealEstate extends BaseModel {
   public materials: string | undefined;
 
   @column()
+  public plot_area: number;
+  @column()
+  public construction_area: number | undefined;
+
+  @column()
   public zone: string;
   @column()
   public address: number;
 
   @column()
-  public plot_area: number;
-  @column()
-  public construction_area: number;
-
-  @column()
   public supports_documents: string | undefined;
 
   @column()
-  public active_type: string;
+  public policy_id: number;
   @column()
-  public cost_center_id: number;
+  public active_type: string;
 
   @column()
-  public policy_id: number;
+  public accounting_amount: string | undefined;
+  @column()
+  public counterpart: number | undefined;
+  @column()
+  public assignments: string | undefined;
+  @column()
+  public disposition_type: string | undefined;
+  @column()
+  public exploitation_value: number | undefined;
+  @column()
+  public authorization_value: number | undefined;
+  @column()
+  public canyon_value: number | undefined;
 
   @column()
   public status: number;

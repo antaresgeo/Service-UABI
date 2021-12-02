@@ -30,7 +30,7 @@ export default class RealEstatesController {
    * index
    */
   public async getList({ response, request }: HttpContextContract) {
-    const { token } = getToken(request.headers());
+    const { headerAuthorization } = getToken(request.headers());
     const { q, page, pageSize, to } = request.qs();
     const tmpWith = request.qs().with;
     const pagination = validatePagination(q, page, pageSize);
@@ -85,7 +85,7 @@ export default class RealEstatesController {
           // Get Info Address
           const address: any = await getAddressById(
             Number(results[0]["$extras"]["address"]),
-            `Bearer ${token}`
+            headerAuthorization
           );
 
           let tmp = {
