@@ -220,10 +220,9 @@ export default class AdquisitionsController {
    * update
    */
   public async updateMany(ctx: HttpContextContract) {
+    let responseData: IResponseData = { message: "", status: 200 };
     const { request, response } = ctx;
     const { token } = getToken(request.headers());
-
-    let responseData: IResponseData = { message: "", status: 200 };
 
     const { acquisitions } = request.body();
 
@@ -296,9 +295,14 @@ export default class AdquisitionsController {
       );
     }
 
-    return response.status(responseData["status"]).json({
+    responseData["results"] = {
       old_acquisitions: oldAcquisitionsUpdated,
       new_acquisitions: newAcquisitionsCreated,
-    });
+    };
+
+    responseData["total_results"] =
+      oldAcquisitionsUpdated.length + newAcquisitionsCreated.length;
+
+    return response.status(responseData["status"]).json(responseData);
   }
 }

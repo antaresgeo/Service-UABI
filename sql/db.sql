@@ -274,6 +274,7 @@ CREATE TABLE IF NOT EXISTS physical_inspections (
 	photographic_record text,
 
 	real_estate_id int NOT NULL,
+	user_inspector_id int,
 
 	status int NOT NULL,
 	audit_trail json NOT NULL,
@@ -327,7 +328,7 @@ CREATE TABLE IF NOT EXISTS real_estate_properties (
 	  REFERENCES physical_inspections(id)
 );
 
-CREATE TABLE IF NOT EXISTS real_estate_owner (
+CREATE TABLE IF NOT EXISTS real_estate_occupants (
 	id SERIAL PRIMARY KEY,
 
 	names_surnames varchar(100),
