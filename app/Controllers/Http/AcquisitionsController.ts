@@ -3,7 +3,8 @@ import Acquisition from "App/Models/Acquisition";
 import AuditTrail from "./../../Utils/classes/AuditTrail";
 import CreateAcquisitionValidator from "./../../Validators/CreateAcquisitionValidator";
 import { IAdquisitionAttributes } from "./../../Utils/interfaces/adquisitions.interfaces";
-import { getToken } from "App/Utils/functions";
+import { getToken, messageError } from "App/Utils/functions";
+import { IResponseData } from "App/Utils/interfaces";
 
 export default class AdquisitionsController {
   /**
@@ -46,18 +47,48 @@ export default class AdquisitionsController {
   /**
    * create Acquisition
    */
-  public async createMany(ctx: HttpContextContract) {
+  public async createMany(ctx: HttpContextContract, _newAcquisitions?: any[]) {
     const { token } = getToken(ctx.request.headers());
 
     let dataAdquisition = ctx.request.body();
     let newAcquisitions: any[] = [];
+    let auditTrail: AuditTrail = new AuditTrail(token);
+    let dataToCreate: any[] = [];
+
+    if (_newAcquisitions) {
+      await Promise.all(
+        _newAcquisitions.map(async (acquisition) => {
+          await auditTrail.init();
+          dataToCreate.push({
+            ...acquisition,
+            status: 1,
+            audit_trail: auditTrail.getAsJson(),
+          });
+        })
+      );
+
+      try {
+        newAcquisitions = await Acquisition.createMany(dataToCreate);
+        return newAcquisitions;
+        return ctx.response.status(200).json({
+          message: `Nuevas adquisiciones creadas satisfactoriamente. [ ${newAcquisitions.length} ]`,
+          results: newAcquisitions,
+        });
+      } catch (error) {
+        return messageError(
+          error,
+          ctx.response,
+          "Error inesperado al crear las nuevas adquisiciones. [ Multiple ]"
+        );
+      }
+    }
 
     let data = dataAdquisition.data;
 
     data.map(async (act) => {
       try {
         // Creation: Data of audit trail
-        let auditTrail: AuditTrail = new AuditTrail(token);
+
         await auditTrail.init();
 
         act.audit_trail = auditTrail.getAsJson();
@@ -181,7 +212,93 @@ export default class AdquisitionsController {
   /**
    * update
    */
-  public async update(lastAcquisitions: any[]) {
+  public async update({}: HttpContextContract, lastAcquisitions?: any[]) {
     console.log(lastAcquisitions);
+  }
+
+  /**
+   * update
+   */
+  public async updateMany(ctx: HttpContextContract) {
+    const { request, response } = ctx;
+    const { token } = getToken(request.headers());
+
+    let responseData: IResponseData = { message: "", status: 200 };
+
+    const { acquisitions } = request.body();
+
+    const newAcquisitions = acquisitions.filter(
+      (acquisition) => !acquisition.id
+    );
+
+    const oldAcquisitions = acquisitions.filter(
+      (acquisition) => acquisition.id
+    );
+
+    let newAcquisitionsCreated;
+    if (newAcquisitions.length > 0) {
+      // Create new acquisitions
+      try {
+        newAcquisitionsCreated = await this.createMany(ctx, newAcquisitions);
+      } catch (error) {
+        return messageError(
+          error,
+          response,
+          "Error inesperado al crear las nuevas adquisiciones."
+        );
+      }
+    }
+
+    // Update acquisitions
+    let oldAcquisitionsUpdated: any[] = [];
+    try {
+      await Promise.all(
+        oldAcquisitions.map(async (acquisition) => {
+          let actualAcquisition: Acquisition;
+          try {
+            actualAcquisition = await Acquisition.findOrFail(acquisition.id);
+          } catch (error) {
+            return messageError(
+              error,
+              response,
+              `ID: ${acquisition.id} no existe, revisar los ids enviados.`
+            );
+          }
+
+          let dataToUpdate = {
+            ...actualAcquisition["$attributes"],
+          };
+
+          delete dataToUpdate["id"];
+          delete dataToUpdate["status"];
+          delete dataToUpdate["audit_trail"];
+
+          const auditTrail = new AuditTrail(
+            token,
+            actualAcquisition["audit_trail"]
+          );
+
+          await auditTrail.update({ ...dataToUpdate }, actualAcquisition);
+
+          dataToUpdate["audit_trail"] = auditTrail.getAsJson();
+
+          const newAcquistion = await actualAcquisition
+            .merge(dataToUpdate)
+            .save();
+          oldAcquisitionsUpdated.push(newAcquistion);
+        })
+      );
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error inesperado al actualizar las nuevas adquisiciones."
+      );
+    }
+
+    return response.status(responseData["status"]).json({
+      old_acquisitions: oldAcquisitionsUpdated,
+      new_acquisitions: newAcquisitionsCreated,
+    });
   }
 }

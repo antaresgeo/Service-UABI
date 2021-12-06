@@ -45,12 +45,15 @@ Route.group(() => {
       });
 
       // PUT
-      // Route.put("/", async (ctx) => {
-      //   const { default: AdquisitionsController } = await import(
-      //     "App/Controllers/Http/AdquisitionsController"
-      //   );
-      //   return new AdquisitionsController().update(ctx);
-      // });
+      Route.put("/", async (ctx) => {
+        const { default: AcquisitionsController } = await import(
+          "App/Controllers/Http/AcquisitionsController"
+        );
+        if (ctx.request.qs().action === "many")
+          return new AcquisitionsController().updateMany(ctx);
+
+        return new AcquisitionsController().update(ctx);
+      });
 
       Route.delete("/", async (ctx) => {
         const { default: AcquisitionsController } = await import(

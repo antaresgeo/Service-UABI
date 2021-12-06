@@ -15,6 +15,7 @@ import {
   validatePagination,
 } from "App/Utils/functions";
 import {
+  IPayloadManyRealEstates,
   IPayloadRealEstate,
   IRealEstateAttributes,
 } from "App/Utils/interfaces";
@@ -23,6 +24,7 @@ import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
 import { createSAPID } from "../../Utils/functions/index";
 import Dependency from "App/Models/Dependency";
 import { getAddressById } from "App/Services";
+import CreateManyRealeEstateValidator from "App/Validators/CreateManyRealeEstateValidator";
 
 export default class RealEstatesController {
   // GET
@@ -339,17 +341,6 @@ export default class RealEstatesController {
           .status(costCenterId.status)
           .json({ message: costCenterId.results.id });
     }
-
-    // Get Id of Tipology and its values
-    // const tipologyId = await getTipologyID(
-    //   payload["tipology"],
-    //   payload["accounting_account"]
-    // );
-
-    // if (tipologyId.status === 500)
-    //   return response
-    //     .status(tipologyId.status)
-    //     .json({ message: tipologyId.result });
 
     const auditTrail: AuditTrail = new AuditTrail(token);
     await auditTrail.init();
@@ -788,6 +779,487 @@ export default class RealEstatesController {
         message: "Bien Inmueble creado correctamente.",
         results: { ...realEstate["$attributes"], project: project },
       });
+    } catch (error) {
+      console.error(error);
+      return response.status(500).json({
+        message:
+          "A ocurrido un error inesperado al crear el Bien Inmueble.\nRevisar Terminal.",
+        error,
+      });
+    }
+  }
+
+  public async createMany(ctx: HttpContextContract) {
+    const { response, request } = ctx;
+    const { token } = getToken(request.headers());
+    const payload: IPayloadManyRealEstates = await request.validate(
+      CreateManyRealeEstateValidator
+    );
+    let project: Project | any;
+    let costCenterId: any;
+
+    // Get Id of Dependency and its values
+    if (
+      payload["dependency"] &&
+      payload["subdependency"] &&
+      payload["management_center"] &&
+      payload["cost_center"]
+    ) {
+      costCenterId = await getCostCenterID(
+        payload["dependency"],
+        payload["subdependency"],
+        payload["management_center"],
+        payload["cost_center"]
+      );
+
+      if (costCenterId.status === 500)
+        return response
+          .status(costCenterId.status)
+          .json({ message: costCenterId.results.id });
+    }
+
+    const auditTrail: AuditTrail = new AuditTrail(token);
+    await auditTrail.init();
+
+    try {
+      await Promise.all(
+        payload.data.map(async (re) => {
+          let dataRealEstate: IRealEstateAttributes = {
+            ...re,
+            // tipology_id: parseInt(tipologyId.result),
+          };
+          delete dataRealEstate["tipology"];
+          delete dataRealEstate["accounting_account"];
+
+          if (re.projects_id) {
+            try {
+              // project = await Project.findOrFail(payload.projects_id[0]);
+              const { default: ProjectsController } = await import(
+                "App/Controllers/Http/ProjectsController"
+              );
+
+              if (typeof dataRealEstate.projects_id !== "undefined") {
+                project = await new ProjectsController().show(
+                  ctx,
+                  dataRealEstate.projects_id[0]
+                );
+
+                if (typeof project !== "undefined")
+                  dataRealEstate["cost_center_id"] = project.cost_center_id;
+                let sapIds: string[] = [];
+                dataRealEstate.active_type.split(",").map((activeType) => {
+                  sapIds.push(
+                    createSAPID(
+                      project.fixed_assets,
+                      Number(project.last_consecutive),
+                      String(activeType.trim())
+                    )
+                  );
+                });
+                const tipology = await Dependency.find(project.dependency_id);
+                tipology
+                  ?.merge({
+                    last_consecutive: sum(Number(project.last_consecutive), 1),
+                  })
+                  .save();
+                dataRealEstate["sap_id"] = sapIds.join(", ");
+              }
+            } catch (error) {
+              console.error(error);
+              return response.status(402).json({
+                message:
+                  "El Proyecto al que quiere relacionar no existe, crearlo antes de asignar.",
+              });
+            }
+          } else {
+            dataRealEstate.cost_center_id = costCenterId.results.id;
+            let sapIds: string[] = [];
+            dataRealEstate.active_type.split(",").map((activeType) => {
+              sapIds.push(
+                createSAPID(
+                  costCenterId.results.fixed_assets,
+                  costCenterId.results.last_consecutive,
+                  String(activeType)
+                )
+              );
+            });
+            dataRealEstate["sap_id"] = sapIds.join(", ");
+          }
+
+          delete dataRealEstate.projects_id;
+          dataRealEstate.audit_trail = auditTrail.getAsJson();
+
+          dataRealEstate.status = 1;
+
+          const realEstate = await RealEstate.create({
+            ...dataRealEstate,
+          });
+
+          if (re.projects_id)
+            await this.createRelation(re.projects_id, realEstate);
+          else await this.createRelation([0], realEstate);
+
+          try {
+            await OcupationRealEstate.create({
+              tenure: "",
+              use: "",
+              ownership: "",
+              contractual: "",
+
+              real_estate_id: Number(realEstate["id"]),
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message:
+                "Error inesperado al crear la ocupación del bien inmueble.",
+            });
+          }
+
+          let physicalInspectionID: number = 0;
+          try {
+            const physicalInspection = await PhysicalInspection.create({
+              real_estate_id: Number(realEstate["id"]),
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            physicalInspectionID = Number(physicalInspection["id"]);
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message:
+                "Error inesperado al crear la inspección física base del bien inmueble.",
+            });
+          }
+
+          try {
+            await PublicService.create({
+              name: "Energía",
+              subscriber: 0,
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await PublicService.create({
+              name: "Gas",
+              subscriber: 0,
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await PublicService.create({
+              name: "Agua",
+              subscriber: 0,
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await PublicService.create({
+              name: "Telefono",
+              subscriber: 0,
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message:
+                "Error inesperado al crear ls servicios públicos de la insepcción física base del bien inmueble.",
+            });
+          }
+
+          try {
+            await RealEstateOwner.create({
+              real_estate_id: Number(realEstate["id"]),
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message:
+                "Error inesperado al crear el registro del poseedor del bien inmueble.",
+            });
+          }
+
+          try {
+            await RealEstateProperty.create({
+              name: "Cerramiento",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Fachada",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Pintura exterior",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Cubierta o techo",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Pisos",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Enchapes de baño y/o cocina",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Pintura interior",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Ventanas",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Puerta principal",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Cerraduras puerta principal",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Puertas interiores",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Cerraduras puertas interiores",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Rejas de seguridad",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Paredes",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Escaleras",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Aparatos sanitarios",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Orinales",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Griferías y abastos",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Lavamanos",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Rejillas desagüe",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Sistema eléctronico",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+
+            await RealEstateProperty.create({
+              name: "Acometidas eléctricas",
+              status_property: "No aplica",
+              accountant: 0,
+
+              physical_inspection_id: physicalInspectionID,
+
+              status: 1,
+              audit_trail: auditTrail.getAsJson(),
+            });
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message:
+                "Error inesperado al crear el registro de la inspección física del bien inmueble.",
+            });
+          }
+
+          // return response.status(200).json({
+          //   message: "Bien Inmueble creado correctamente.",
+          //   results: { ...realEstate["$attributes"], project: project },
+          // });
+        })
+      );
     } catch (error) {
       console.error(error);
       return response.status(500).json({

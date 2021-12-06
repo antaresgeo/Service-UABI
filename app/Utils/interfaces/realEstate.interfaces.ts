@@ -61,3 +61,7 @@ export interface IPayloadRealEstate {
 
   active_type: string;
 }
+
+export interface IPayloadManyRealEstates {
+  data: IPayloadRealEstate[];
+}

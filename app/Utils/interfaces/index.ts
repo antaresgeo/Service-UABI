@@ -21,14 +21,6 @@ export interface IUpdatedValues {
   new: IUpdatedValues | object;
 }
 
-export interface IAuditTrail {
-  created_by?: string;
-  created_on?: number;
-  updated_by: string | null;
-  updated_on: number | null;
-  updated_values: IUpdatedValues | null;
-}
-
 export interface ISupportsDocuments {
   id: string;
   name: string;
@@ -52,3 +44,4 @@ export * from "./realEstate.interfaces";
 export * from "./adquisitions.interfaces";
 export * from "./detailsUser";
 export * from "./inspection";
+export * from "./auditTrail";

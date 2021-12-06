@@ -37,6 +37,10 @@ Route.group(() => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
+
+      if (ctx.request.qs().action === "many")
+        return new RealEstatesController().createMany(ctx);
+
       return new RealEstatesController().create(ctx);
     });
 
