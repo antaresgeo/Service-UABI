@@ -25,7 +25,7 @@ Route.group(() => {
       );
 
       // if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
-      return new RealEstatesController().getList(ctx);
+      return new RealEstatesController().list(ctx);
 
       // return new RealEstatesController().filter(ctx);
     });

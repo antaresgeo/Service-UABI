@@ -69,7 +69,7 @@ export default class RealEstatesController {
   /**
    * index
    */
-  public async getList(
+  public async list(
     { response, request }: HttpContextContract,
     toExcel?: boolean
   ) {
@@ -870,7 +870,7 @@ export default class RealEstatesController {
 
     try {
       await Promise.all(
-        payload.data.map(async (re) => {
+        payload.realEstates.map(async (re) => {
           let dataRealEstate: IRealEstateAttributes = {
             ...re,
             // tipology_id: parseInt(tipologyId.result),

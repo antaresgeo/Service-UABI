@@ -5,7 +5,7 @@ export default class CreateRealEstateValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   public schema = schema.create({
-    data: schema.array().members(
+    realEstates: schema.array().members(
       schema.object().members({
         projects_id: schema.array.optional().members(schema.number()),
 

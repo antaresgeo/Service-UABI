@@ -63,5 +63,5 @@ export interface IPayloadRealEstate {
 }
 
 export interface IPayloadManyRealEstates {
-  data: IPayloadRealEstate[];
+  realEstates: IPayloadRealEstate[];
 }
