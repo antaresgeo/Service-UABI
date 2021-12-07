@@ -452,6 +452,12 @@ export default class RealEstatesController {
             )
           );
         });
+        const tipology = await Dependency.find(project.dependency_id);
+        tipology
+          ?.merge({
+            last_consecutive: sum(Number(project.last_consecutive), 1),
+          })
+          .save();
         dataRealEstate["sap_id"] = sapIds.join(", ");
       }
 
@@ -844,6 +850,7 @@ export default class RealEstatesController {
     );
     let project: Project | any;
     let costCenterId: any;
+    let realEstatedCreated: any[] = [];
 
     // Get Id of Dependency and its values
     if (
@@ -930,6 +937,12 @@ export default class RealEstatesController {
                 )
               );
             });
+            const tipology = await Dependency.find(project.dependency_id);
+            tipology
+              ?.merge({
+                last_consecutive: sum(Number(project.last_consecutive), 1),
+              })
+              .save();
             dataRealEstate["sap_id"] = sapIds.join(", ");
           }
 
@@ -1300,13 +1313,17 @@ export default class RealEstatesController {
                 "Error inesperado al crear el registro de la inspección física del bien inmueble.",
             });
           }
-
-          // return response.status(200).json({
-          //   message: "Bien Inmueble creado correctamente.",
-          //   results: { ...realEstate["$attributes"], project: project },
-          // });
+          realEstatedCreated.push({
+            ...realEstate["$attributes"],
+            project: project,
+          });
         })
       );
+
+      return response.status(200).json({
+        message: "Bien Inmueble creado correctamente.",
+        results: realEstatedCreated,
+      });
     } catch (error) {
       console.error(error);
       return response.status(500).json({

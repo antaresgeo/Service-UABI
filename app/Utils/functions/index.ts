@@ -77,7 +77,13 @@ export const createSAPID = (
   lastConsecutive: number,
   activeType: string
 ) => {
-  activeType = activeType.replace(/mejora/gi, "MJ").replace(/lote/gi, "L");
+  activeType = activeType
+    .replace(/mejora/gi, "MJ")
+    .replace(/lote/gi, "L")
+    .replace(
+      /construccion|construcción|Construccion para demoler|Mejora para demoler/gi,
+      ""
+    );
   return `${activeCode}${String(sum(lastConsecutive, 1))
     .padStart(4, "0")
     .trim()}${activeType}`;
