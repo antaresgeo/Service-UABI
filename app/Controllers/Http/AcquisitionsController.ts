@@ -2,7 +2,7 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Acquisition from "App/Models/Acquisition";
 import AuditTrail from "./../../Utils/classes/AuditTrail";
 import CreateAcquisitionValidator from "./../../Validators/CreateAcquisitionValidator";
-import { IAdquisitionAttributes } from "./../../Utils/interfaces/adquisitions.interfaces";
+import { IAcquisition } from "../../Utils/interfaces/acquisitions";
 import { getToken, messageError } from "App/Utils/functions";
 import { IResponseData } from "App/Utils/interfaces";
 
@@ -15,7 +15,7 @@ export default class AdquisitionsController {
     let dataAdquisition = await request.validate(CreateAcquisitionValidator),
       newAdquisition;
 
-    let data: IAdquisitionAttributes = { ...dataAdquisition };
+    let data: IAcquisition = { ...dataAdquisition };
 
     try {
       // Creation: Data of audit trail

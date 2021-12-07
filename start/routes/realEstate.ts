@@ -5,8 +5,20 @@ import Env from "@ioc:Adonis/Core/Env";
 const apiVersion = Env.get("API_VERSION");
 
 Route.group(() => {
+  Route.get("/historic", async (ctx) => {
+    const { default: RealEstatesController } = await import(
+      "App/Controllers/Http/RealEstatesController"
+    );
+    return new RealEstatesController().historic(ctx);
+  });
   Route.group(() => {
     // GET
+    Route.get("/index", async (ctx) => {
+      const { default: RealEstatesController } = await import(
+        "App/Controllers/Http/RealEstatesController"
+      );
+      return new RealEstatesController().index(ctx);
+    });
     Route.get("/list", async (ctx) => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
@@ -59,7 +71,9 @@ Route.group(() => {
       );
       return new RealEstatesController().delete(ctx);
     });
-  }).prefix("/real-estates");
+  })
+    .prefix("/real-estates")
+    .middleware(["verifyToken"]);
 })
   .prefix(apiVersion)
-  .middleware(["logRegistered", "verifyToken"]);
+  .middleware(["logRegistered"]);

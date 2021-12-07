@@ -162,6 +162,7 @@ CREATE TABLE if not EXISTS acquisitions (
 	title_type_document_id varchar(200),
 	act_number varchar(100) NOT NULL,
 	act_value double PRECISION NOT NULL,
+	recognition_value double PRECISION NOT NULL,
 	area double precision,
 	acquisition_date bigint NOT NULL,
 

@@ -1,6 +1,6 @@
 import { IAuditTrail } from ".";
 
-export interface IAdquisitionAttributes {
+export interface IAcquisition {
   id?: number;
   acquisition_type: string;
   acquisition_date: number;
@@ -8,6 +8,7 @@ export interface IAdquisitionAttributes {
   title_type_document_id?: string;
   act_number: string;
   act_value: number;
+  recognition_value: number;
 
   plot_area?: number;
   construction_area?: number;

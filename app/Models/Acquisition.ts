@@ -18,6 +18,8 @@ export default class Acquisition extends BaseModel {
   @column()
   public act_value: number;
   @column()
+  public recognition_value: number;
+  @column()
   public area: number;
 
   @column()

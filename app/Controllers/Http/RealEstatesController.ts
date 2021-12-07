@@ -25,13 +25,54 @@ import { createSAPID } from "../../Utils/functions/index";
 import Dependency from "App/Models/Dependency";
 import { getAddressById } from "App/Services";
 import CreateManyRealeEstateValidator from "App/Validators/CreateManyRealeEstateValidator";
+import { createXLSXFromInventoryRegister } from "App/Utils/functions/xlsx";
 
 export default class RealEstatesController {
   // GET
+
   /**
    * index
    */
-  public async getList({ response, request }: HttpContextContract) {
+  public async index(ctx: HttpContextContract) {
+    await createXLSXFromInventoryRegister(ctx, "UABI");
+
+    return ctx.response.download("tmp/Registro de Inventario.xlsx");
+  }
+
+  /**
+   * historic
+   */
+  public async historic(ctx: HttpContextContract) {
+    const realEstates = await RealEstatesProject.query()
+      .from("real_estates_projects as a")
+      .innerJoin("projects as p", "a.project_id", "p.id")
+      .innerJoin("cost_centers as ccp", "p.cost_center_id", "ccp.id")
+      .innerJoin("dependencies as dp", "ccp.dependency_id", "dp.id")
+      .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+      .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+      .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+      .innerJoin("tipologies as t", "re.tipology_id", "t.id")
+      // .innerJoin("tipologies as t", "re.tipology_id", "t.id")
+      .select([
+        "p.name as project_name",
+        "p.cost_center_id as project_cost_center_id",
+        "re.name as re_name",
+        "*",
+      ])
+      .orderBy("re.id", "desc");
+
+    console.log(realEstates);
+
+    return ctx.response.json({ results: {} });
+  }
+
+  /**
+   * index
+   */
+  public async getList(
+    { response, request }: HttpContextContract,
+    toExcel?: boolean
+  ) {
     const { headerAuthorization } = getToken(request.headers());
     const { q, page, pageSize, to } = request.qs();
     const tmpWith = request.qs().with;
@@ -68,8 +109,11 @@ export default class RealEstatesController {
           .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
           .innerJoin("status as s", "re.status", "s.id")
           .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+          .innerJoin("tipologies as t", "re.tipology_id", "t.id")
           .select([
             "p.name as project_name",
+            "p.cost_center_id as project_cost_center_id",
             "re.name as re_name",
             "re.id as re_id",
           ])
@@ -95,6 +139,7 @@ export default class RealEstatesController {
             project: {
               id: re["project_id"],
               name: re["$extras"]["project_name"],
+              cost_center_id: re["$extras"]["project_cost_center_id"],
             },
             id: re["$extras"]["re_id"],
             status: re["$extras"]["status_name"],
@@ -130,7 +175,8 @@ export default class RealEstatesController {
           }
 
           delete tmp["project_name"];
-          delete tmp["project_description"];
+          // delete tmp["project_description"];
+          delete tmp["project_cost_center_id"];
           delete tmp["re_name"];
           delete tmp["re_id"];
 
@@ -149,6 +195,7 @@ export default class RealEstatesController {
 
       data = data.sort((a, b) => b.id - a.id);
 
+      if (toExcel) return data;
       return response.json({
         message: "List of all Real Estates",
         results: data,
