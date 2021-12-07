@@ -23,7 +23,7 @@ export const createXLSXFromInventoryRegister = async (
   );
 
   // if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
-  const data = await new RealEstatesController().getList(ctx, true);
+  const data = await new RealEstatesController().list(ctx, true);
   console.log(data);
 
   let nb_data = [
