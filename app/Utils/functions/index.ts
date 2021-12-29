@@ -193,11 +193,11 @@ export const validatePagination = (
 
   // Where Raw
   let column = `"${
-    tmpSearch["key"] === "id" || tmpSearch["key"] === "name" ? "p" : "cc"
+    tmpSearch["key"] === "id" || tmpSearch["key"] === "name" ? "p" : "d"
   }"."${tmpSearch["key"]}"`;
 
   let value = `${
-    typeof tmpSearch["value"] === "number"
+    tmpSearch["value"].search(/[0-9]/gi)
       ? tmpSearch["value"]
       : `'%${String(tmpSearch["value"]).toUpperCase()}%'`
   }`;
