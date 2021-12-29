@@ -42,7 +42,6 @@ export default class Acquisition extends BaseModel {
 
   @column()
   public status: number;
-
   @column()
   public audit_trail: IAuditTrail;
 }

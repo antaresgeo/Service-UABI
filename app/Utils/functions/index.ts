@@ -5,7 +5,7 @@ import axios from "axios";
 import moment from "moment";
 import AuditTrail from "../classes/AuditTrail";
 import Tipology from "./../../Models/Tipology";
-import { IResponseData } from "../interfaces";
+import { IPaginationValidated, IResponseData } from "../interfaces";
 
 export const sum = (num1: number, num2: number): number => {
   return num1 + num2;
@@ -172,11 +172,18 @@ export const getDataUser = async (token: string) => {
   // }
 };
 
-export const validatePagination = (q?, page?, pageSize?) => {
-  let tmpQ: string, tmpPage: number, tmpPageSize: number;
+export const validatePagination = (
+  searchKey: string,
+  searchQ?: string | number,
+  page?: number,
+  pageSize?: number
+): IPaginationValidated => {
+  let tmpSearch: { key: string; value: string },
+    tmpPage: number,
+    tmpPageSize: number;
 
-  if (!q) tmpQ = "";
-  else tmpQ = String(q).toUpperCase().trim();
+  if (!searchQ) tmpSearch = { key: searchKey, value: "" };
+  else tmpSearch = { key: searchKey, value: String(searchQ) };
 
   if (!pageSize) tmpPageSize = 10;
   else tmpPageSize = Number(pageSize);
@@ -184,7 +191,7 @@ export const validatePagination = (q?, page?, pageSize?) => {
   if (!page) tmpPage = 1;
   else tmpPage = Number(page);
 
-  return { q: tmpQ, page: tmpPage, pageSize: tmpPageSize };
+  return { search: tmpSearch, page: tmpPage, pageSize: tmpPageSize };
 };
 
 export const messageError = (

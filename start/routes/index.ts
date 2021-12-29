@@ -5,4 +5,5 @@ import "./insurability";
 import "./insuranceBroker";
 import "./insuranceCompany";
 import "./inspection";
-import "./tipology";
+import "./generalData";
+import "./contract";

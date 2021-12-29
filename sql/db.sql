@@ -348,6 +348,46 @@ CREATE TABLE IF NOT EXISTS real_estate_occupants (
 	  REFERENCES status(id)
 );
 
+CREATE TABLE IF NOT EXISTS historic (
+	id SERIAL NOT NULL,
+
+	created_by varchar(255) NOT NULL,
+	created_on double precision NOT NULL,
+
+	updated_by varchar(255),
+	updated_on double precision,
+
+	values_changed json,
+
+	father_id int,
+	son_id int
+);
+
+CREATE TABLE IF NOT EXISTS contracts (
+	id SERIAL PRIMARY KEY,
+	
+	act_number double precision NOT NULL,
+	contract_decree varchar(50) NOT NULL,
+	decree_date varchar(25) NOT NULL,
+	decree_number double precision NOT NULL,
+	dispose_area double precision NOT NULL,
+	finish_date varchar(25) NOT NULL,
+	guarantee varchar(200) NOT NULL,
+	manager_sabi varchar(5) NOT NULL,
+	minutes_date varchar(25) NOT NULL,
+	object_contract varchar(50) NOT NULL,
+	secretary json NOT NULL,
+	subscription_date varchar(25) NOT NULL,
+	type_contract varchar(50) NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_contract_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
+);
+
 -- INSERTS
 -- Status
 INSERT 
@@ -642,3 +682,11 @@ INSERT
 		(DEFAULT, 'Otros activos', 314512, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}'),
 		(DEFAULT, 'Otros impactos por transición', 314590, 1, '{"created_by":"Administrador","created_on":1634341311411,"updated_by":null,"updated_on":null,"updated_values":null}');
 
+INSERT
+	INTO historic
+	VALUES
+		(DEFAULT, "Santiago Suárez", 1634341311411, NULL, NULL, NULL, NULL, NULL),
+		(DEFAULT, "Karen Nova", 1634341311411, NULL, NULL, NULL, NULL, 3),
+		(DEFAULT, "Karen Nova", 1634341311411, "Santiago Suárez", 1634341312411, '{"last":"","new":""}', 2, NULL);
+
+SELECT * FROM historic

@@ -32,11 +32,10 @@ export interface IDataUser {
   name: string;
 }
 
-export interface IResponseData {
-  message: string;
-  results?: any;
-  error?: any;
-  total?: number;
+export interface IPaginationValidated {
+  search: { key: string; value: string };
+  page: number;
+  pageSize: number;
 }
 
 export * from "./project.interfaces";

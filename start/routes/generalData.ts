@@ -16,6 +16,19 @@ Route.group(() => {
       return new TipologiesController().showAll(ctx);
     });
   }).prefix("/tipologies");
+
+  Route.group(() => {
+    // GET
+    Route.get("/", async (ctx) => {
+      const { default: DependenciesController } = await import(
+        "App/Controllers/Http/DependenciesController"
+      );
+
+      if (ctx.request.qs()["id"]) return new DependenciesController().show(ctx);
+
+      return new DependenciesController().list(ctx);
+    });
+  }).prefix("/dependencies");
 })
   .prefix(apiVersion)
   .middleware(["logRegistered", "verifyToken"]);
