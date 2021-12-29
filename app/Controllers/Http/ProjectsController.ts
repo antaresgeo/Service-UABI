@@ -17,7 +17,12 @@ import {
 } from "App/Utils/functions";
 
 // INTERFACES
-import { IPayloadProject, IProjectAttributes } from "App/Utils/interfaces";
+import {
+  IPaginationValidated,
+  IPayloadProject,
+  IProjectAttributes,
+  IResponseData,
+} from "App/Utils/interfaces";
 
 // MODELS
 // import RealEstate from "App/Models/RealEstate";
@@ -126,7 +131,21 @@ export default class ProjectsController {
   /**
    * showAll
    */
-  public async showAll({ response }: HttpContextContract) {
+  public async showAll({ response, request }: HttpContextContract) {
+    let responseData: IResponseData = {
+      message: "Lista de Usuarios completa. | Sin paginación.",
+      status: 200,
+    };
+
+    const { page, pageSize, key, value, only } = request.qs();
+
+    let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
+    if (request.qs().with && request.qs().with === "pagination") {
+      pagination = validatePagination(key, value, page, pageSize);
+      responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
+    }
+    console.log(pagination);
+
     let projects: Project[];
 
     try {
@@ -141,8 +160,19 @@ export default class ProjectsController {
     } catch (error) {
       console.error(error);
       return response.status(500).json({
-        message: "Error al traer la lista de todos los Bienes Inmuebles.",
+        message: "Error al traer la lista de todos los Proyectos.",
       });
+    }
+
+    if (only) {
+      const num = only === "active" ? 1 : 0;
+      projects = await Project.query()
+        .from("projects as p")
+        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+        .select(["p.id", "p.name", "*"])
+        .where("status", num)
+        .orderBy("p.id", "desc");
     }
 
     let tmpData: any[] = [];
@@ -298,7 +328,7 @@ export default class ProjectsController {
 
       costCenterId = costCenterID[0]["id"];
     } else if (payloadProject.cost_center_id)
-      costCenterId = payloadProject.cost_center_id;
+      costCenterId = Number(payloadProject.cost_center_id);
 
     const auditTrail: AuditTrail = new AuditTrail(token);
     await auditTrail.init();

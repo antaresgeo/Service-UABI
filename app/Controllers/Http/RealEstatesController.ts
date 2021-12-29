@@ -15,6 +15,7 @@ import {
   validatePagination,
 } from "App/Utils/functions";
 import {
+  IPaginationValidated,
   IPayloadManyRealEstates,
   IPayloadRealEstate,
   IRealEstateAttributes,
@@ -74,9 +75,15 @@ export default class RealEstatesController {
     toExcel?: boolean
   ) {
     const { headerAuthorization } = getToken(request.headers());
-    const { q, page, pageSize, to } = request.qs();
+    const { key, value, page, pageSize, to } = request.qs();
     const tmpWith = request.qs().with;
-    const pagination = validatePagination(q, page, pageSize);
+
+    let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
+    if (request.qs().with && request.qs().with === "pagination") {
+      pagination = validatePagination(key, value, page, pageSize);
+      // responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
+    }
+
     let results, realEstates;
     let physicalInspection: PhysicalInspection;
 
@@ -98,7 +105,11 @@ export default class RealEstatesController {
           ])
           .select("*")
           .where("re.status", 1)
-          // .where("re.registry_number", "LIKE", "'%" + pagination["q"] + "%'")
+          // .where(
+          //   `re.${pagination["search"]?.key}`,
+          //   "LIKE",
+          //   "'%" + pagination["search"]?.value + "%'"
+          // )
           .orderBy("re.id", "desc")
           .limit(pagination["pageSize"])
           .offset(count);
@@ -120,9 +131,9 @@ export default class RealEstatesController {
           .select("*")
           .where("re.status", 1)
           .orderBy("re.id", "desc");
-      console.log(results);
 
       results = results === null ? [] : results;
+      console.log(results);
 
       let data: any[] = [];
 
