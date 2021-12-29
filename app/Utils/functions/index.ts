@@ -197,8 +197,8 @@ export const validatePagination = (
   }"."${tmpSearch["key"]}"`;
 
   let value = `${
-    tmpSearch["value"].search(/[0-9]/gi)
-      ? tmpSearch["value"]
+    tmpSearch["key"] === "id"
+      ? `%${Number(tmpSearch["value"])}%`
       : `'%${String(tmpSearch["value"]).toUpperCase()}%'`
   }`;
 
