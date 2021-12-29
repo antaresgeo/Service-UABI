@@ -98,7 +98,7 @@ export default class RealEstatesController {
           ])
           .select("*")
           .where("re.status", 1)
-          .where("re.registry_number", "LIKE", "%" + pagination["q"] + "%")
+          // .where("re.registry_number", "LIKE", "'%" + pagination["q"] + "%'")
           .orderBy("re.id", "desc")
           .limit(pagination["pageSize"])
           .offset(count);
@@ -119,8 +119,8 @@ export default class RealEstatesController {
           ])
           .select("*")
           .where("re.status", 1)
-          .where("re.registry_number", "LIKE", "%" + pagination["q"] + "%")
           .orderBy("re.id", "desc");
+      console.log(results);
 
       results = results === null ? [] : results;
 
@@ -147,7 +147,8 @@ export default class RealEstatesController {
             materials: re["$extras"]["materials"].split(","),
             address: { ...address },
           };
-
+          if (to && to === "disposition") {
+          }
           if (to && to === "inspection") {
             // Physical Inspection
             try {

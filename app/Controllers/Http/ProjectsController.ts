@@ -289,13 +289,12 @@ export default class ProjectsController {
           .where("d.management_center", payloadProject.management_center)
           .where("cc.cost_center", payloadProject.cost_center);
       } catch (error) {
-        console.error(error);
-        return response.status(500).json({
-          message: "Error obteniendo el ID del Centro de Costos",
+        return messageError(
           error,
-        });
+          response,
+          "Error al obtener el ID del Centro de Costos"
+        );
       }
-      console.log(costCenterID);
 
       costCenterId = costCenterID[0]["id"];
     } else if (payloadProject.cost_center_id)
@@ -330,23 +329,23 @@ export default class ProjectsController {
         .json({ message: "Hubo un error al crear el Proyecto." });
     }
 
-    await Promise.all(
-      payloadProject["contracts"].map(async (contract) => {
-        try {
-          const { default: ContractsController } = await import(
-            "App/Controllers/Http/ContractsController"
-          );
-          return new ContractsController().create(ctx, contract);
-        } catch (error) {
-          return messageError(
-            error,
-            response,
-            "Error al crear los contratos",
-            500
-          );
-        }
-      })
-    );
+    // await Promise.all(
+    //   payloadProject["contracts"].map(async (contract) => {
+    //     try {
+    //       const { default: ContractsController } = await import(
+    //         "App/Controllers/Http/ContractsController"
+    //       );
+    //       return new ContractsController().create(ctx, contract);
+    //     } catch (error) {
+    //       return messageError(
+    //         error,
+    //         response,
+    //         "Error al crear los contratos",
+    //         500
+    //       );
+    //     }
+    //   })
+    // );
 
     return response.status(200).json({
       message: "Proyecto creado satisfactoriamente.",
