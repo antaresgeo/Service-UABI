@@ -61,7 +61,7 @@ export default class ProjectsController {
         .from("projects as p")
         .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
         .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-        .select(["p.id", "p.name", "*"])
+        .select(["p.id as project_id", "p.name", "*"])
         .orderBy("p.id", "desc");
 
       if (only) {
@@ -70,7 +70,7 @@ export default class ProjectsController {
           .from("projects as p")
           .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
           .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-          .select(["p.id", "p.name", "*"])
+          .select(["p.id as project_id", "p.name", "*"])
           .where("status", num)
           .orderBy("p.id", "desc");
       }
@@ -81,7 +81,7 @@ export default class ProjectsController {
           .from("projects as p")
           .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
           .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-          .select(["p.id", "p.name", "*"])
+          .select(["p.id as project_id", "p.name", "*"])
           .whereRaw(
             `"p"."${pagination["search"]!["key"]}" LIKE '%${
               pagination["search"]!["value"]
@@ -102,7 +102,7 @@ export default class ProjectsController {
           .from("projects as p")
           .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
           .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-          .select(["p.id", "p.name", "*"])
+          .select(["p.id as project_id", "p.name", "*"])
           .where("status", num)
           .whereRaw(
             `"p"."${pagination["search"]!["key"]}" LIKE '%${
@@ -127,7 +127,7 @@ export default class ProjectsController {
     let tmpData: any[] = [];
     results.map((project) => {
       tmpData.push({
-        id: project["$attributes"]["id"],
+        id: project["$extras"]["project_id"],
         name: project["$attributes"]["name"],
         dependency: project["$extras"]["dependency"],
         subdependency: project["$extras"]["subdependency"],
