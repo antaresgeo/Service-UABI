@@ -15,7 +15,7 @@ export default class CreateProjectValidator {
     subdependency: schema.string.optional({ trim: true }),
     management_center: schema.number.optional(),
     cost_center: schema.number.optional(),
-    contracts: schema.array().members(
+    contracts: schema.array.optional().members(
       schema.object().members({
         contract_number: schema.string(),
         contractor: schema.string(),

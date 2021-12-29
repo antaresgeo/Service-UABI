@@ -27,7 +27,7 @@ export interface IPayloadProject {
   management_center?: number;
   cost_center?: number;
 
-  contracts: {
+  contracts?: {
     contract_number: string;
     contractor: string;
     validity: { end_date: string; start_date: string };
