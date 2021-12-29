@@ -22,6 +22,7 @@ export interface IContract {
   subscription_date: string;
   type_contract: string;
 
+  project_id?: number;
   status?: number;
   audit_trail?: IAuditTrail;
 }

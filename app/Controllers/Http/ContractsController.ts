@@ -10,10 +10,12 @@ import { getToken } from "App/Utils/functions/jwt";
 export default class ContractsController {
   public async index({}: HttpContextContract) {}
 
-  public async create({ request, response }: HttpContextContract) {
+  public async create({ request, response }: HttpContextContract, data?) {
     const { token } = getToken(request.headers());
     let responseData: IResponseData = { message: "", status: 200 };
-    const bodyPayload = await request.validate(CreateContractValidator);
+    const bodyPayload = data
+      ? data
+      : await request.validate(CreateContractValidator);
 
     const auditTrail = new AuditTrail(token);
     await auditTrail.init();

@@ -1,4 +1,5 @@
 import { IAuditTrail } from ".";
+import { IContract } from "./contract";
 
 export interface IProjectAttributes {
   id?: number;
@@ -26,4 +27,6 @@ export interface IPayloadProject {
   subdependency?: string;
   management_center?: number;
   cost_center?: number;
+
+  contracts: IContract[];
 }

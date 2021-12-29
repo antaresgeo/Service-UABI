@@ -11,6 +11,7 @@ import {
   getCostCenterID,
   getToken,
   validatePagination,
+  messageError,
   // getToken,
   // getDataUser,
 } from "App/Utils/functions";
@@ -259,7 +260,8 @@ export default class ProjectsController {
    *         example:
    *           message: Hello Guess
    */
-  public async create({ request, response }: HttpContextContract) {
+  public async create(ctx: HttpContextContract) {
+    let { request, response } = ctx;
     let { token } = getToken(request.headers());
 
     const payloadProject: IPayloadProject = await request.validate(
@@ -316,14 +318,10 @@ export default class ProjectsController {
       audit_trail: auditTrail.getAsJson(),
     };
 
+    let project: Project;
     try {
-      const project = await Project.create({
+      project = await Project.create({
         ...dataToCreate,
-      });
-
-      return response.status(200).json({
-        message: "Proyecto creado satisfactoriamente.",
-        results: project,
       });
     } catch (error) {
       console.error(error);
@@ -331,6 +329,29 @@ export default class ProjectsController {
         .status(500)
         .json({ message: "Hubo un error al crear el Proyecto." });
     }
+
+    await Promise.all(
+      payloadProject["contracts"].map(async (contract) => {
+        try {
+          const { default: ContractsController } = await import(
+            "App/Controllers/Http/ContractsController"
+          );
+          return new ContractsController().create(ctx, contract);
+        } catch (error) {
+          return messageError(
+            error,
+            response,
+            "Error al crear los contratos",
+            500
+          );
+        }
+      })
+    );
+
+    return response.status(200).json({
+      message: "Proyecto creado satisfactoriamente.",
+      results: project,
+    });
   }
 
   // PUT
