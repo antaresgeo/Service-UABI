@@ -6,7 +6,6 @@ import AuditTrail from "App/Utils/classes/AuditTrail";
 
 // FUNCTIONS
 import {
-  sum,
   capitalize,
   getCostCenterID,
   getToken,
@@ -50,8 +49,8 @@ export default class ProjectsController {
       pagination = validatePagination(key, value, page, pageSize);
       responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
     }
-    let results: any[] = [],
-      data: any[] = [];
+    let results: any[] = [];
+    // data: any[] = [];
     let count: number =
       pagination["page"] > 0
         ? pagination["page"] * pagination["pageSize"] - pagination["pageSize"]
