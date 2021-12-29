@@ -191,7 +191,20 @@ export const validatePagination = (
   if (!page) tmpPage = 1;
   else tmpPage = Number(page);
 
-  return { search: tmpSearch, page: tmpPage, pageSize: tmpPageSize };
+  // Where Raw
+  let column = `"${
+    tmpSearch["key"] === "id" || tmpSearch["key"] === "name" ? "p" : "cc"
+  }"."${tmpSearch["key"]}"`;
+
+  let value = `${
+    typeof tmpSearch["value"] === "number"
+      ? tmpSearch["value"]
+      : `'%${String(tmpSearch["value"]).toUpperCase()}%'`
+  }`;
+
+  let whereRaw = `${column} LIKE ${value}`;
+
+  return { search: tmpSearch, page: tmpPage, pageSize: tmpPageSize, whereRaw };
 };
 
 export const messageError = (

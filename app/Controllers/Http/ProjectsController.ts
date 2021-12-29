@@ -76,18 +76,14 @@ export default class ProjectsController {
           .orderBy("p.id", "desc");
       }
 
-      if (pagination["page"] !== 0)
+      if (pagination["page"] !== 0 && pagination["whereRaw"])
         results = await Project.query()
           // .preload("status_info")
           .from("projects as p")
           .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
           .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
           .select(["p.id as project_id", "p.name", "*"])
-          .whereRaw(
-            `"p"."${pagination["search"]!["key"]}" LIKE '%${pagination[
-              "search"
-            ]!["value"].toUpperCase()}%'`
-          )
+          .whereRaw(pagination["whereRaw"])
           // .where(
           //   pagination["search"]!["key"],
           //   "LIKE",
@@ -97,7 +93,7 @@ export default class ProjectsController {
           .limit(pagination["pageSize"])
           .offset(count);
 
-      if (only) {
+      if (only && pagination["whereRaw"]) {
         const num = only === "active" ? 1 : 0;
         results = await Project.query()
           .from("projects as p")
@@ -105,11 +101,7 @@ export default class ProjectsController {
           .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
           .select(["p.id as project_id", "p.name", "*"])
           .where("status", num)
-          .whereRaw(
-            `"p"."${pagination["search"]!["key"]}" LIKE '%${pagination[
-              "search"
-            ]!["value"].toUpperCase()}%'`
-          )
+          .whereRaw(pagination["whereRaw"])
           .orderBy("p.id", "desc")
           .limit(pagination["pageSize"])
           .offset(count);
