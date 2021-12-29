@@ -191,20 +191,32 @@ export const validatePagination = (
   if (!page) tmpPage = 1;
   else tmpPage = Number(page);
 
-  // Where Raw
-  let column = `"${
-    tmpSearch["key"] === "id" || tmpSearch["key"] === "name" ? "p" : "d"
-  }"."${tmpSearch["key"]}"`;
+  return { search: tmpSearch, page: tmpPage, pageSize: tmpPageSize };
+};
 
-  let value = `${
-    tmpSearch["key"] === "id"
-      ? `'%${Number(tmpSearch["value"])}%'`
-      : `'%${String(tmpSearch["value"]).toUpperCase()}%'`
-  }`;
+type To = "projects" | "realEstates";
+export const getWhereRaw = (to: To, search: { key: string; value: string }) => {
+  switch (to) {
+    case "projects":
+      let column = `"${
+        search["key"] === "id" || search["key"] === "name" ? "p" : "d"
+      }"."${search["key"]}"`;
 
-  let whereRaw = `${column} LIKE ${value}`;
+      if (search["key"] === "id")
+        column = `CAST("p"."${search["key"]}" AS TEXT)`;
 
-  return { search: tmpSearch, page: tmpPage, pageSize: tmpPageSize, whereRaw };
+      let value = `${
+        search["key"] === "id"
+          ? `'%${Number(search["value"])}%'`
+          : `'%${String(search["value"]).toUpperCase()}%'`
+      }`;
+
+      return `${column} LIKE ${value}`;
+
+    default:
+      return "";
+      break;
+  }
 };
 
 export const messageError = (
