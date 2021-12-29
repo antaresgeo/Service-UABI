@@ -11,9 +11,6 @@ Route.group(() => {
         "App/Controllers/Http/ProjectsController"
       );
 
-      if (ctx.request.qs().with === "pagination")
-        return new ProjectsController().showAllWithPagination(ctx);
-
       return new ProjectsController().showAll(ctx);
     });
 

@@ -33,100 +33,6 @@ import CostCenter from "App/Models/CostCenter";
 
 export default class ProjectsController {
   // GET
-  /**
-   * index
-   */
-  public async showAllWithPagination({
-    request,
-    response,
-  }: HttpContextContract) {
-    const { q, page, pageSize } = request.qs();
-    const pagination = validatePagination(q, page, pageSize);
-    let results: Project[] | null = null,
-      data: any[] = [],
-      projects;
-
-    // const token: string = getToken(request.headers());
-    // await getDataUser(token);
-    let count: number =
-      pagination["page"] * pagination["pageSize"] - pagination["pageSize"];
-
-    try {
-      results = await Project.query()
-        .from("projects as p")
-        .innerJoin("status as s", "p.status", "s.id")
-        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
-        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-        .select(["p.id as project_id", "*"])
-        .where("status", 1)
-        .where("name", "LIKE", `%${pagination["q"]}%`)
-        .orderBy("p.id", "desc")
-        .limit(pagination["pageSize"])
-        .offset(count);
-
-      results = results === null ? [] : results;
-
-      results.map((realEstate) => {
-        let tmpNewData: any = {
-          ...realEstate["$original"],
-          id: realEstate["$extras"]["project_id"],
-
-          name: capitalize(realEstate["$original"]["name"]),
-          status: realEstate["$extras"]["status_name"],
-          dependency: realEstate["$extras"]["dependency"],
-          subdependency: realEstate["$extras"]["subdependency"],
-          management_center: realEstate["$extras"]["management_center"],
-          cost_center: realEstate["$extras"]["cost_center"],
-          fixed_assets: realEstate["$extras"]["fixed_assets"],
-        };
-
-        delete tmpNewData.cost_center_id;
-        data.push(tmpNewData);
-      });
-
-      // Total Results
-      try {
-        projects = await Project.query().where("status", 1);
-      } catch (error) {
-        console.error(error);
-        return response.status(500).json({
-          message: "Error al traer la lista de todos los Bienes Inmuebles.",
-        });
-      }
-      const total_results = projects.length;
-
-      // Count
-      count = results.length;
-
-      // Next Page
-      let next_page: number | null =
-        pagination["page"] * pagination["pageSize"] < projects.length
-          ? sum(parseInt(pagination["page"] + ""), 1)
-          : null;
-
-      // Previous Page
-      let previous_page: number | null =
-        pagination["page"] - 1 > 0 ? pagination["page"] - 1 : null;
-
-      const lastElement = data.pop();
-      const res = [lastElement, ...data];
-
-      return response.json({
-        message: "Lista de Proyectos",
-        results: res,
-        page: pagination["page"],
-        count,
-        next_page,
-        previous_page,
-        total_results,
-      });
-    } catch (error) {
-      console.error(error);
-      return response
-        .status(500)
-        .json({ message: "Request to Projects failed!" });
-    }
-  }
 
   /**
    * showAll
@@ -144,39 +50,83 @@ export default class ProjectsController {
       pagination = validatePagination(key, value, page, pageSize);
       responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
     }
-    console.log(pagination);
-
-    let projects: Project[];
+    let results: any[] = [],
+      data: any[] = [];
+    let count: number =
+      pagination["page"] > 0
+        ? pagination["page"] * pagination["pageSize"] - pagination["pageSize"]
+        : 0;
 
     try {
-      projects = await Project.query()
+      results = await Project.query()
         .from("projects as p")
-
         .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
         .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
         .select(["p.id", "p.name", "*"])
-        .where("status", 1)
         .orderBy("p.id", "desc");
+
+      if (only) {
+        const num = only === "active" ? 1 : 0;
+        results = await Project.query()
+          .from("projects as p")
+          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+          .select(["p.id", "p.name", "*"])
+          .where("status", num)
+          .orderBy("p.id", "desc");
+      }
+
+      if (pagination["page"] !== 0)
+        results = await Project.query()
+          // .preload("status_info")
+          .from("projects as p")
+          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+          .select(["p.id", "p.name", "*"])
+          .whereRaw(
+            `"p"."${pagination["search"]!["key"]}" LIKE '%${
+              pagination["search"]!["value"]
+            }%'`
+          )
+          // .where(
+          //   pagination["search"]!["key"],
+          //   "LIKE",
+          //   `%${pagination["search"]!["value"]}%`
+          // )
+          .orderBy("p.id", "desc")
+          .limit(pagination["pageSize"])
+          .offset(count);
+
+      if (only) {
+        const num = only === "active" ? 1 : 0;
+        results = await Project.query()
+          .from("projects as p")
+          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+          .select(["p.id", "p.name", "*"])
+          .where("status", num)
+          .whereRaw(
+            `"p"."${pagination["search"]!["key"]}" LIKE '%${
+              pagination["search"]!["value"]
+            }%'`
+          )
+          .orderBy("id", "desc")
+          .limit(pagination["pageSize"])
+          .offset(count);
+      }
     } catch (error) {
-      console.error(error);
-      return response.status(500).json({
-        message: "Error al traer la lista de todos los Proyectos.",
-      });
+      return messageError(
+        error,
+        response,
+        "Error inesperado al obtener todos los Proyectos.",
+        400
+      );
     }
-
-    if (only) {
-      const num = only === "active" ? 1 : 0;
-      projects = await Project.query()
-        .from("projects as p")
-        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
-        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-        .select(["p.id", "p.name", "*"])
-        .where("status", num)
-        .orderBy("p.id", "desc");
-    }
+    console.log("results");
+    console.log(results);
 
     let tmpData: any[] = [];
-    projects.map((project) => {
+    results.map((project) => {
       tmpData.push({
         id: project["$attributes"]["id"],
         name: project["$attributes"]["name"],
@@ -189,13 +139,10 @@ export default class ProjectsController {
 
     tmpData = tmpData.sort((a, b) => b.id - a.id);
 
-    const lastElement = tmpData.pop();
-    const res = [lastElement, ...tmpData];
-
     return response.json({
       message: "Lista de Proyectos",
-      results: res,
-      total: projects.length,
+      results: tmpData,
+      total: results.length,
     });
   }
 
