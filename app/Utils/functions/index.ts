@@ -205,9 +205,9 @@ export const getWhereRaw = (to: To, search: { key: string; value: string }) => {
       if (search["key"] === "id")
         column = `CAST("p"."${search["key"]}" AS TEXT)`;
 
-      if (search["key"] === "dependency") column = `"d"."${search["key"]}`;
+      if (search["key"] === "dependency") column = `"d"."${search["key"]}"`;
 
-      if (search["key"] === "subdependency") column = `"cc"."${search["key"]}`;
+      if (search["key"] === "subdependency") column = `"cc"."${search["key"]}"`;
 
       let value = `${
         search["key"] === "id"
