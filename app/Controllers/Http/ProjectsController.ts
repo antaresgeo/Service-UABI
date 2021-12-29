@@ -11,6 +11,7 @@ import {
   getToken,
   validatePagination,
   messageError,
+  sum,
   // getToken,
   // getDataUser,
 } from "App/Utils/functions";
@@ -49,8 +50,8 @@ export default class ProjectsController {
       pagination = validatePagination(key, value, page, pageSize);
       responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
     }
-    let results: any[] = [];
-    // data: any[] = [];
+    let results: any[] = [],
+      data: any[] = [];
     let count: number =
       pagination["page"] > 0
         ? pagination["page"] * pagination["pageSize"] - pagination["pageSize"]
@@ -83,9 +84,9 @@ export default class ProjectsController {
           .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
           .select(["p.id as project_id", "p.name", "*"])
           .whereRaw(
-            `"p"."${pagination["search"]!["key"]}" LIKE '%${
-              pagination["search"]!["value"]
-            }%'`
+            `"p"."${pagination["search"]!["key"]}" LIKE '%${pagination[
+              "search"
+            ]!["value"].toUpperCase()}%'`
           )
           // .where(
           //   pagination["search"]!["key"],
@@ -105,11 +106,11 @@ export default class ProjectsController {
           .select(["p.id as project_id", "p.name", "*"])
           .where("status", num)
           .whereRaw(
-            `"p"."${pagination["search"]!["key"]}" LIKE '%${
-              pagination["search"]!["value"]
-            }%'`
+            `"p"."${pagination["search"]!["key"]}" LIKE '%${pagination[
+              "search"
+            ]!["value"].toUpperCase()}%'`
           )
-          .orderBy("id", "desc")
+          .orderBy("p.id", "desc")
           .limit(pagination["pageSize"])
           .offset(count);
       }
@@ -121,14 +122,11 @@ export default class ProjectsController {
         400
       );
     }
-    console.log("results");
-    console.log(results);
 
-    let tmpData: any[] = [];
     results.map((project) => {
-      tmpData.push({
+      data.push({
         id: project["$extras"]["project_id"],
-        name: project["$attributes"]["name"],
+        name: String(project["$attributes"]["name"]).capitalize(),
         dependency: project["$extras"]["dependency"],
         subdependency: project["$extras"]["subdependency"],
         management_center: project["$extras"]["management_center"],
@@ -136,13 +134,50 @@ export default class ProjectsController {
       });
     });
 
-    tmpData = tmpData.sort((a, b) => b.id - a.id);
+    // Total Results
+    try {
+      responseData["total_results"] = (await Project.all()).length;
 
-    return response.json({
-      message: "Lista de Proyectos",
-      results: tmpData,
-      total: results.length,
-    });
+      if (only) {
+        const num = only === "active" ? 1 : 0;
+        responseData["total_results"] = (
+          await Project.query().where("status", num)
+        ).length;
+      }
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error al obtener la cantidad de usuarios completa.",
+        400
+      );
+    }
+    // responseData["total_results"] = detailsUser.length;
+
+    // Count
+    count = results.length;
+
+    // Next Page
+    responseData["next_page"] =
+      pagination["page"] * pagination["pageSize"] <
+        responseData["total_results"] && pagination["page"] !== 0
+        ? sum(parseInt(pagination["page"] + ""), 1)
+        : null;
+
+    // Previous Page
+    responseData["previous_page"] =
+      pagination["page"] - 1 > 0 && pagination["page"] !== 0
+        ? pagination["page"] - 1
+        : null;
+
+    // Order by descending
+    data = data.sort((a, b) => b.id - a.id);
+
+    responseData["results"] = data;
+    responseData["page"] = pagination["page"];
+    responseData["count"] = count;
+
+    return response.status(responseData["status"]).json(responseData);
   }
 
   /**

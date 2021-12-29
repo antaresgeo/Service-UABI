@@ -32,7 +32,13 @@ Array.prototype.diff = function (a) {
 
 if (!String.prototype.capitalize) {
   String.prototype.capitalize = function () {
-    return this.charAt(0).toUpperCase() + this.slice(1);
+    return this.trim()
+      .toLowerCase()
+      .replace(
+        /\w\S*/g,
+        (w) =>
+          (w && w.replace(/^\w/, (c) => (c && c.toUpperCase()) || "")) || ""
+      );
   };
 }
 
