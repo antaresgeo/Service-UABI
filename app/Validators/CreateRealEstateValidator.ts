@@ -21,6 +21,9 @@ export default class CreateRealEstateValidator {
 
     plot_area: schema.number(),
     construction_area: schema.number.optional(),
+    total_area_unit: schema.string.optional(),
+    construction_area_unit: schema.string.optional(),
+    plot_area_unit: schema.string.optional(),
 
     active_type: schema.string({ trim: true }),
 

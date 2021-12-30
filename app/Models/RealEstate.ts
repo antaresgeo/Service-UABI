@@ -27,6 +27,12 @@ export default class RealEstate extends BaseModel {
   @column()
   public total_area: number;
   @column()
+  public total_area_unit: string;
+  @column()
+  public construction_area_unit: string;
+  @column()
+  public plot_area_unit: string;
+  @column()
   public total_percentage: number;
   @column()
   public materials: string | undefined;
