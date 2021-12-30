@@ -51,7 +51,6 @@ export default class ProjectsController {
       pagination = validatePagination(key, value, page, pageSize);
       responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
     }
-    const whereRaw = getWhereRaw("projects", pagination["search"]!);
     let results: any[] = [],
       data: any[] = [];
     let count: number =
@@ -78,7 +77,9 @@ export default class ProjectsController {
           .orderBy("p.id", "desc");
       }
 
-      if (pagination["page"] !== 0)
+      if (pagination["page"] !== 0) {
+        const whereRaw = getWhereRaw("projects", pagination["search"]!);
+
         results = await Project.query()
           // .preload("status_info")
           .from("projects as p")
@@ -95,18 +96,19 @@ export default class ProjectsController {
           .limit(pagination["pageSize"])
           .offset(count);
 
-      if (only) {
-        const num = only === "active" ? 1 : 0;
-        results = await Project.query()
-          .from("projects as p")
-          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
-          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-          .select(["p.id as project_id", "p.name", "*"])
-          .where("status", num)
-          .whereRaw(whereRaw)
-          .orderBy("p.id", "desc")
-          .limit(pagination["pageSize"])
-          .offset(count);
+        if (only) {
+          const num = only === "active" ? 1 : 0;
+          results = await Project.query()
+            .from("projects as p")
+            .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+            .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+            .select(["p.id as project_id", "p.name", "*"])
+            .where("status", num)
+            .whereRaw(whereRaw)
+            .orderBy("p.id", "desc")
+            .limit(pagination["pageSize"])
+            .offset(count);
+        }
       }
     } catch (error) {
       return messageError(
