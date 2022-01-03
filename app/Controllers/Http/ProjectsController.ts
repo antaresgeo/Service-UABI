@@ -186,20 +186,26 @@ export default class ProjectsController {
     else _id = request.qs().id;
 
     try {
-      results = await Project.query()
-        .from("projects as p")
-        .innerJoin("status as s", "p.status", "s.id")
-        .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
-        .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-        .select(["p.id as project_id", "*"])
-        .where("status", 1)
-        .where("p.id", _id);
+      results = (
+        await Project.query()
+          .from("projects as p")
+          .innerJoin("status as s", "p.status", "s.id")
+          .innerJoin("cost_centers as cc", "p.cost_center_id", "cc.id")
+          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+          .select(["p.id as project_id", "*"])
+          .where("p.id", _id)
+      )[0];
     } catch (error) {
-      console.error(error);
-      return response.status(500).json({ message: "Project error" });
+      return messageError(
+        error,
+        response,
+        "Error inesperado al obtener el proyecto",
+        500
+      );
     }
+    console.log(results);
 
-    results = results === null ? {} : results[0];
+    results = results === null ? {} : results;
 
     let tmpNewData: any = {
       ...results["$original"],
