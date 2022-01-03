@@ -128,6 +128,7 @@ export default class ProjectsController {
         management_center: project["$extras"]["management_center"],
         cost_center: project["$extras"]["cost_center"],
         status: project["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
+        audit_trail: project["$attributes"]["audit_trail"],
       });
     });
 
