@@ -127,6 +127,7 @@ export default class ProjectsController {
         subdependency: project["$extras"]["subdependency"],
         management_center: project["$extras"]["management_center"],
         cost_center: project["$extras"]["cost_center"],
+        status: project["$attributes"]["status"] === 1 ? "Activo" : "Inactivo",
       });
     });
 
@@ -203,7 +204,6 @@ export default class ProjectsController {
         500
       );
     }
-    console.log(results);
 
     results = results === null ? {} : results;
 
