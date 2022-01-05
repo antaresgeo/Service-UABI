@@ -1,4 +1,5 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import ProjectContract from "./../../Models/ProjectContract";
 
 // ******* UTILS *******
 // CLASSES
@@ -275,6 +276,7 @@ export default class ProjectsController {
    *           message: Hello Guess
    */
   public async create(ctx: HttpContextContract) {
+    let responseData: IResponseData = { message: "", status: 200 };
     let { request, response } = ctx;
     let { token } = getToken(request.headers());
 
@@ -336,13 +338,25 @@ export default class ProjectsController {
       project = await Project.create({
         ...dataToCreate,
       });
+
+      responseData["message"] = "¡Proyecto creado correctamente!";
+      responseData["results"] = project;
     } catch (error) {
-      console.error(error);
-      return response
-        .status(500)
-        .json({ message: "Hubo un error al crear el Proyecto." });
+      return messageError(
+        error,
+        response,
+        "Hubo un error al crear el Proyecto.",
+        400
+      );
     }
 
+    if (payloadProject["contracts"]) {
+      try {
+        this.createContracts(payloadProject["contracts"]);
+      } catch (error) {
+        return messageError(error, response);
+      }
+    }
     // await Promise.all(
     //   payloadProject["contracts"].map(async (contract) => {
     //     try {
@@ -361,10 +375,34 @@ export default class ProjectsController {
     //   })
     // );
 
-    return response.status(200).json({
-      message: "Proyecto creado satisfactoriamente.",
-      results: project,
+    return response.status(responseData["status"]).json(responseData);
+  }
+
+  /**
+   * createContracts
+   */
+  public async createContracts(contracts: any[]) {
+    let dataToCreate: any[] = [];
+
+    contracts.map((contract) => {
+      let tmp = {
+        ...contract,
+        vigency_start: contract["validity"]["start_date"],
+        vigency_end: contract["validity"]["end_date"],
+      };
+      delete tmp["validity"];
+      dataToCreate.push({
+        ...tmp,
+      });
     });
+
+    try {
+      const contractsCreated = await ProjectContract.createMany(dataToCreate);
+      return contractsCreated;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject("Error al crear los contratos del Proyecto");
+    }
   }
 
   // PUT
