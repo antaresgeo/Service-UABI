@@ -401,7 +401,7 @@ export default class ProjectsController {
       });
 
       responseData["message"] = "¡Proyecto creado correctamente!";
-      responseData["results"] = project;
+      responseData["results"] = project["$attributes"];
     } catch (error) {
       return messageError(
         error,
