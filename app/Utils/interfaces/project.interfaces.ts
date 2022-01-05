@@ -28,8 +28,8 @@ export interface IPayloadProject {
   cost_center?: number;
 
   contracts?: {
-    contract_number: string;
+    contract_number: number;
     contractor: string;
-    validity: { end_date: string; start_date: string };
+    validity: { end_date: number; start_date: number };
   }[];
 }
