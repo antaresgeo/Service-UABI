@@ -352,28 +352,15 @@ export default class ProjectsController {
 
     if (payloadProject["contracts"]) {
       try {
-        this.createContracts(payloadProject["contracts"]);
+        this.createContracts(
+          payloadProject["contracts"],
+          auditTrail,
+          Number(responseData["results"]["id"])
+        );
       } catch (error) {
         return messageError(error, response);
       }
     }
-    // await Promise.all(
-    //   payloadProject["contracts"].map(async (contract) => {
-    //     try {
-    //       const { default: ContractsController } = await import(
-    //         "App/Controllers/Http/ContractsController"
-    //       );
-    //       return new ContractsController().create(ctx, contract);
-    //     } catch (error) {
-    //       return messageError(
-    //         error,
-    //         response,
-    //         "Error al crear los contratos",
-    //         500
-    //       );
-    //     }
-    //   })
-    // );
 
     return response.status(responseData["status"]).json(responseData);
   }
@@ -381,7 +368,11 @@ export default class ProjectsController {
   /**
    * createContracts
    */
-  public async createContracts(contracts: any[]) {
+  public async createContracts(
+    contracts: any[],
+    audit_trail: AuditTrail,
+    projectId: number
+  ) {
     let dataToCreate: any[] = [];
 
     contracts.map((contract) => {
@@ -389,6 +380,11 @@ export default class ProjectsController {
         ...contract,
         vigency_start: contract["validity"]["start_date"],
         vigency_end: contract["validity"]["end_date"],
+
+        project_id: projectId,
+
+        status: 1,
+        audit_trail: audit_trail.getAsJson(),
       };
       delete tmp["validity"];
       dataToCreate.push({
