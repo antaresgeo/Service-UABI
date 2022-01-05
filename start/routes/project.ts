@@ -11,6 +11,9 @@ Route.group(() => {
         "App/Controllers/Http/ProjectsController"
       );
 
+      if (ctx.request.qs()["to"] === "realEstates")
+        return new ProjectsController().showContracts(ctx);
+
       return new ProjectsController().showAll(ctx);
     });
 

@@ -180,7 +180,7 @@ export default class ProjectsController {
   }
 
   /**
-   * index
+   * Show details of Project
    */
   public async show({ response, request }: HttpContextContract, id?: number) {
     let responseData: IResponseData = { message: "Proyecto ", status: 200 };
@@ -245,6 +245,48 @@ export default class ProjectsController {
     if (id) return tmpNewData;
 
     return response.json({ message: "Project", results: tmpNewData });
+  }
+
+  /**
+   * Show all contracts for ID Project
+   */
+  public async showContracts({ response, request }: HttpContextContract) {
+    let responseData: IResponseData = {
+      message: "Contratos del proyecto con ID: ",
+      status: 200,
+    };
+
+    const { id } = request.qs();
+
+    if (!id)
+      return messageError({}, response, "Ingrese el ID del proyecto.", 400);
+    responseData["message"] += String(id);
+
+    try {
+      const contracts: ProjectContract[] = await ProjectContract.query()
+        .where("status", 1)
+        .where("project_id", id);
+
+      let dataToReturn: any[] = [];
+      contracts.map((contract) => {
+        let tmp = { ...contract["$attributes"] };
+        delete tmp["project_id"];
+        delete tmp["status"];
+        delete tmp["audit_trail"];
+
+        dataToReturn.push({ ...tmp });
+      });
+
+      responseData["results"] = dataToReturn;
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        `Error al obtener los contratos del proyecto con ID: ${id}`
+      );
+    }
+
+    return response.status(responseData["status"]).json(responseData);
   }
 
   // POST
@@ -376,7 +418,21 @@ export default class ProjectsController {
           auditTrail,
           Number(responseData["results"]["id"])
         );
-        responseData["results"] = { ...responseData["results"], contracts };
+
+        let dataToReturn: any[] = [];
+        contracts.map((contract) => {
+          let tmp = { ...contract["$attributes"] };
+          delete tmp["project_id"];
+          delete tmp["status"];
+          delete tmp["audit_trail"];
+
+          dataToReturn.push({ ...tmp });
+        });
+
+        responseData["results"] = {
+          ...responseData["results"],
+          contracts: dataToReturn,
+        };
       } catch (error) {
         return messageError(error, response);
       }
@@ -388,7 +444,7 @@ export default class ProjectsController {
   /**
    * createContracts
    */
-  public async createContracts(
+  private async createContracts(
     contracts: any[],
     audit_trail: AuditTrail,
     projectId: number
