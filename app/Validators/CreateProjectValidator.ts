@@ -17,11 +17,11 @@ export default class CreateProjectValidator {
     cost_center: schema.number.optional(),
     contracts: schema.array.optional().members(
       schema.object().members({
-        contract_number: schema.string(),
+        contract_number: schema.number(),
         contractor: schema.string(),
         validity: schema
           .object()
-          .members({ end_date: schema.string(), start_date: schema.string() }),
+          .members({ end_date: schema.number(), start_date: schema.number() }),
       })
     ),
   });
