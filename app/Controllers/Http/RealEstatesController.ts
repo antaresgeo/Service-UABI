@@ -133,7 +133,6 @@ export default class RealEstatesController {
           .orderBy("re.id", "desc");
 
       results = results === null ? [] : results;
-      console.log(results);
 
       let data: any[] = [];
 
@@ -158,8 +157,7 @@ export default class RealEstatesController {
             materials: re["$extras"]["materials"].split(","),
             address: { ...address },
           };
-          if (to && to === "disposition") {
-          }
+
           if (to && to === "inspection") {
             // Physical Inspection
             try {
@@ -187,7 +185,7 @@ export default class RealEstatesController {
           }
 
           delete tmp["project_name"];
-          // delete tmp["project_description"];
+          delete tmp["status_name"];
           delete tmp["project_cost_center_id"];
           delete tmp["re_name"];
           delete tmp["re_id"];

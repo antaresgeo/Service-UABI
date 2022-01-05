@@ -183,13 +183,15 @@ export default class ProjectsController {
    * index
    */
   public async show({ response, request }: HttpContextContract, id?: number) {
-    let results: Project[] | {}, _id: number;
+    let responseData: IResponseData = { message: "Proyecto ", status: 200 };
+
+    let project: Project, _id: number, contracts: ProjectContract[];
 
     if (id) _id = id;
     else _id = request.qs().id;
 
     try {
-      results = (
+      project = (
         await Project.query()
           .from("projects as p")
           .innerJoin("status as s", "p.status", "s.id")
@@ -198,6 +200,10 @@ export default class ProjectsController {
           .select(["p.id as project_id", "*"])
           .where("p.id", _id)
       )[0];
+
+      responseData["message"] += String(
+        project["$original"]["name"]
+      ).capitalize();
     } catch (error) {
       return messageError(
         error,
@@ -207,20 +213,33 @@ export default class ProjectsController {
       );
     }
 
-    results = results === null ? {} : results;
+    try {
+      contracts = await ProjectContract.query().where(
+        "project_id",
+        project["$extras"]["project_id"]
+      );
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error inesperado al obtener los contratos del proyecto",
+        500
+      );
+    }
 
     let tmpNewData: any = {
-      ...results["$original"],
-      id: results["$extras"]["project_id"],
-      name: capitalize(results["$original"]["name"]),
-      status: results["$extras"]["status_name"],
-      dependency: results["$extras"]["dependency"],
-      subdependency: results["$extras"]["subdependency"],
-      management_center: results["$extras"]["management_center"],
-      cost_center: results["$extras"]["cost_center"],
-      last_consecutive: results["$extras"]["last_consecutive"],
-      fixed_assets: results["$extras"]["fixed_assets"],
-      dependency_id: results["$extras"]["dependency_id"],
+      ...project["$original"],
+      id: project["$extras"]["project_id"],
+      name: capitalize(project["$original"]["name"]),
+      status: project["$extras"]["status_name"],
+      dependency: project["$extras"]["dependency"],
+      subdependency: project["$extras"]["subdependency"],
+      management_center: project["$extras"]["management_center"],
+      cost_center: project["$extras"]["cost_center"],
+      last_consecutive: project["$extras"]["last_consecutive"],
+      fixed_assets: project["$extras"]["fixed_assets"],
+      dependency_id: project["$extras"]["dependency_id"],
+      contracts,
     };
 
     if (id) return tmpNewData;
@@ -352,11 +371,12 @@ export default class ProjectsController {
 
     if (payloadProject["contracts"]) {
       try {
-        this.createContracts(
+        const contracts = await this.createContracts(
           payloadProject["contracts"],
           auditTrail,
           Number(responseData["results"]["id"])
         );
+        responseData["results"] = { ...responseData["results"], contracts };
       } catch (error) {
         return messageError(error, response);
       }
