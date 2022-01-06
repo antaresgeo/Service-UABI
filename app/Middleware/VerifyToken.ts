@@ -17,6 +17,11 @@ export default class VerifyToken {
     const { token, headerAuthorization, payloadToken } = getToken(
       request.headers()
     );
+    if (payloadToken === undefined) {
+      responseData["message"] =
+        "Token expirado. Iniciar sesión de nuevo para poder continuar.";
+      return response.unauthorized(responseData);
+    }
 
     if (
       token === "" ||
