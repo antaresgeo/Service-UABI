@@ -116,19 +116,46 @@ export default class AdquisitionsController {
   }
 
   // GET
-  public async getAll(ctx: HttpContextContract) {
-    try {
-      const results: any = await Acquisition.query().where("status", 1);
+  public async getAll({ response }: HttpContextContract) {
+    let responseData: IResponseData = {
+      message: "Lista de todas las Adquisiciones.",
+      status: 200,
+    };
+    let acquisitions: Acquisition[] = [];
 
-      return ctx.response
-        .status(200)
-        .json({ message: "All adquisitions", results });
+    try {
+      acquisitions = await Acquisition.query()
+        .preload("status_info")
+        .preload("real_estate_info", (res) => {
+          res.select(["id", "registry_number"]);
+        })
+        .where("status", 1);
     } catch (error) {
-      console.error(error);
-      return ctx.response
-        .status(500)
-        .json({ message: "Error interno: Servidor", error });
+      return messageError(
+        error,
+        response,
+        "Error al obtener las adquisiones.",
+        400
+      );
     }
+
+    // Order data to show
+    let dataToShow: IAcquisition[] = [];
+
+    acquisitions.map((acquisition) => {
+      // console.log(acquisition["$preloaded"]);
+
+      let tmp: any = {
+        ...acquisition["$attributes"],
+        ...acquisition["$preloaded"],
+      };
+      delete tmp["status"];
+
+      dataToShow.push({ ...tmp });
+    });
+    responseData["results"] = dataToShow;
+
+    return response.status(responseData["status"]).json(responseData);
   }
 
   /**

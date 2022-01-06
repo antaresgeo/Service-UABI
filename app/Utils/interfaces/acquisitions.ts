@@ -22,5 +22,6 @@ export interface IAcquisition {
   real_estate_id: number;
 
   status?: number;
+  status_info?: { id: number; status_name: string };
   audit_trail?: IAuditTrail;
 }

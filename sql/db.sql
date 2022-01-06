@@ -388,6 +388,30 @@ CREATE TABLE IF NOT EXISTS contracts (
 	  REFERENCES status(id)
 );
 
+CREATE TABLE IF NOT EXISTS personal_information ( 
+	id SERIAL PRIMARY KEY,
+	
+	document_type varchar(10) not null,
+	document_number int8 not null,
+
+	first_name varchar(50) not null,
+	last_name varchar(50),
+	first_surname varchar(50) not null,
+	last_surname varchar(50),
+
+	gender varchar(50) not null,
+	phone_number int8 not null,
+	phone_number_ext int4,
+	email varchar(255) not null,
+		
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_personal_information_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
+);
+
 -- INSERTS
 -- Status
 INSERT 

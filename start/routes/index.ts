@@ -7,3 +7,4 @@ import "./insuranceCompany";
 import "./inspection";
 import "./generalData";
 import "./contract";
+import "./personalInformation";

@@ -38,8 +38,8 @@ export interface IPaginationValidated {
   pageSize: number;
 }
 
-export * from "./project.interfaces";
-export * from "./realEstate.interfaces";
+export * from "./project";
+export * from "./realEstate";
 export * from "./acquisitions";
 export * from "./detailsUser";
 export * from "./inspection";

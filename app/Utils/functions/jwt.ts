@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import Env from "@ioc:Adonis/Core/Env";
+import { IDataToken } from "../interfaces";
 
 export const decodeJWT = (token: string) => {
   try {
@@ -12,7 +13,7 @@ export const decodeJWT = (token: string) => {
 
 export const getToken = (
   headers
-): { token: string; headerAuthorization: string } => {
+): { token: string; headerAuthorization: string; payloadToken: IDataToken } => {
   let token: string = "";
   let headerAuthorization = headers.authorization ? headers.authorization : "";
 
@@ -20,5 +21,7 @@ export const getToken = (
     token = headerAuthorization.replace("Bearer ", "").trim();
   }
 
-  return { token, headerAuthorization };
+  const payloadToken: IDataToken = decodeJWT(token);
+
+  return { token, headerAuthorization, payloadToken };
 };

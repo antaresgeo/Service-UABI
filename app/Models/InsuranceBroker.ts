@@ -1,6 +1,6 @@
 import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
 import { IAuditTrail } from "App/Utils/interfaces";
-import { IContactInformation } from "App/Utils/interfaces/insurances.interfaces";
+import { IContactInformation } from "App/Utils/interfaces/insurances";
 
 export default class InsuranceBroker extends BaseModel {
   @column({ isPrimary: true })

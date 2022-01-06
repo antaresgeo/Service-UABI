@@ -3,7 +3,7 @@ import AuditTrail from "App/Utils/classes/AuditTrail";
 import {
   IInsuranceBroker,
   IPayloadInsuranceBroker,
-} from "App/Utils/interfaces/insurances.interfaces";
+} from "App/Utils/interfaces/insurances";
 import CreateInsuranceBrokerValidator from "./../../Validators/CreateInsuranceBrokerValidator";
 import InsuranceBroker from "./../../Models/InsuranceBroker";
 import { changeStatus, getToken, sum } from "App/Utils/functions";
