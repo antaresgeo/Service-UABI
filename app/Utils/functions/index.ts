@@ -241,7 +241,7 @@ export const messageError = (
   // Error 23505
   if (Number(error.code) === 23505)
     responseData.message =
-      "Error interno controlable. Realice la consulta hasta que le funcione. :)";
+      "Valor ya existente en la DB. Ingresa otro para continuar.";
 
   if (responseData["status"] === 401)
     responseData["error"] = {
