@@ -13,6 +13,7 @@ export interface IResponseData {
 export interface IDataToken {
   id: number;
   iat: number;
+  exp?: number;
 }
 
 export interface IUpdatedValues {
