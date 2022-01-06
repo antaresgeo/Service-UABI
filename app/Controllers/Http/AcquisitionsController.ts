@@ -5,129 +5,73 @@ import CreateAcquisitionValidator from "./../../Validators/CreateAcquisitionVali
 import { IAcquisition } from "../../Utils/interfaces/acquisitions";
 import { getToken, messageError } from "App/Utils/functions";
 import { IResponseData } from "App/Utils/interfaces";
+import CreateManyAcquisitionValidator from "App/Validators/CreateManyAcquisitionValidator";
 
 export default class AdquisitionsController {
   /**
    * create Acquisition
    */
-  public async create({ request, response }: HttpContextContract) {
+  public async create(
+    { request, response }: HttpContextContract,
+    _newAcquisitions?: any[]
+  ) {
     let responseData: IResponseData = {
       message: "Adquisiciones creadas correctamente.",
       status: 200,
     };
     const { token } = getToken(request.headers());
-    let dataAdquisition = await request.validate(CreateAcquisitionValidator),
-      newAdquisition: Acquisition;
+    let dataAcquisition, newAcquisitions: Acquisition[];
+    const { action } = request.qs();
 
-    let data: IAcquisition = { ...dataAdquisition };
+    if (action === "one")
+      dataAcquisition = await request.validate(CreateAcquisitionValidator);
+    if (action === "many")
+      dataAcquisition = _newAcquisitions
+        ? { data: _newAcquisitions }
+        : await request.validate(CreateManyAcquisitionValidator);
 
-    let dataToCreate = {
-      ...data,
-      city: data["address"],
-      status: 1,
-    };
-    delete dataToCreate["address"];
+    // Creation: Data of audit trail
+    let auditTrail: AuditTrail = new AuditTrail(token);
+    await auditTrail.init();
 
-    try {
-      // Creation: Data of audit trail
-      let auditTrail: AuditTrail = new AuditTrail(token);
-      await auditTrail.init();
+    let dataToCreate: any[] = [];
 
-      dataToCreate["audit_trail"] = auditTrail.getAsJson();
-    } catch (error) {
-      return messageError(
-        error,
-        response,
-        "Error al inicializar el registro de auditoria."
-      );
+    if (dataAcquisition["data"]) {
+      dataAcquisition["data"].map((acquisition) => {
+        dataToCreate.push({
+          ...acquisition,
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      });
+    } else {
+      dataToCreate.push({
+        ...dataAcquisition,
+        status: 1,
+        audit_trail: auditTrail.getAsJson(),
+      });
     }
 
     try {
       // Service consumption
-      newAdquisition = await Acquisition.create(dataToCreate);
+      newAcquisitions = await Acquisition.createMany(dataToCreate);
 
-      responseData["results"] = newAdquisition["$attributes"];
+      responseData["results"] = newAcquisitions;
+      if (newAcquisitions.length === 1) {
+        responseData["message"] = "Adquisición creada correctamente.";
+        responseData["results"] = newAcquisitions[0];
+      }
     } catch (error) {
       return messageError(
         error,
         response,
-        "Error al crear la adquisición.",
+        "Error al crear las adquisiciones.",
         400
       );
     }
 
+    if (_newAcquisitions) return responseData["results"];
     return response.status(responseData["status"]).json(responseData);
-  }
-
-  /**
-   * create Acquisition
-   */
-  public async createMany(ctx: HttpContextContract, _newAcquisitions?: any[]) {
-    const { token } = getToken(ctx.request.headers());
-
-    let dataAdquisition = ctx.request.body();
-    let newAcquisitions: any[] = [];
-    let auditTrail: AuditTrail = new AuditTrail(token);
-    let dataToCreate: any[] = [];
-
-    if (_newAcquisitions) {
-      await Promise.all(
-        _newAcquisitions.map(async (acquisition) => {
-          await auditTrail.init();
-          dataToCreate.push({
-            ...acquisition,
-            status: 1,
-            audit_trail: auditTrail.getAsJson(),
-          });
-        })
-      );
-
-      try {
-        newAcquisitions = await Acquisition.createMany(dataToCreate);
-        return newAcquisitions;
-        return ctx.response.status(200).json({
-          message: `Nuevas adquisiciones creadas satisfactoriamente. [ ${newAcquisitions.length} ]`,
-          results: newAcquisitions,
-        });
-      } catch (error) {
-        return messageError(
-          error,
-          ctx.response,
-          "Error inesperado al crear las nuevas adquisiciones. [ Multiple ]"
-        );
-      }
-    }
-
-    let data = dataAdquisition.data;
-
-    data.map(async (act) => {
-      try {
-        // Creation: Data of audit trail
-
-        await auditTrail.init();
-
-        act.audit_trail = auditTrail.getAsJson();
-        act.status = 1;
-
-        // Service consumption
-        const newAdquisition = await Acquisition.create(act);
-        // if (typeof newAdquisition === "number")
-        //   return ctx.response
-        //     .status(500)
-        //     .json({ message: "¡Error al crear el bien inmueble!" });
-        newAcquisitions.push(newAdquisition["$attributes"]);
-      } catch (error) {
-        console.error(error);
-        return ctx.response
-          .status(500)
-          .json({ message: "Error interno: Servidor", error });
-      }
-    });
-
-    return ctx.response.status(200).json({
-      message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
-      results: newAcquisitions,
-    });
   }
 
   // GET
@@ -280,7 +224,7 @@ export default class AdquisitionsController {
     if (newAcquisitions.length > 0) {
       // Create new acquisitions
       try {
-        newAcquisitionsCreated = await this.createMany(ctx, newAcquisitions);
+        newAcquisitionsCreated = await this.create(ctx, newAcquisitions);
       } catch (error) {
         return messageError(
           error,

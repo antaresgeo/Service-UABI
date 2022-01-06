@@ -19,7 +19,7 @@ export default class CreateAcquisitionValidator {
 
     entity_type: schema.string({ trim: true }),
     entity_number: schema.string({ trim: true }),
-    address: schema.string.optional({ trim: true }),
+    city: schema.string.optional({ trim: true }),
 
     real_estate_id: schema.number(),
   });

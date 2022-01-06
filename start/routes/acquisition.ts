@@ -38,10 +38,10 @@ Route.group(() => {
           "App/Controllers/Http/AcquisitionsController"
         );
 
-        if (ctx.request.qs().action === "many")
-          return new AdquisitionsController().createMany(ctx);
-        else if (ctx.request.qs().action === "one")
-          return new AdquisitionsController().create(ctx);
+        // if (ctx.request.qs().action === "many")
+        //   return new AdquisitionsController().createMany(ctx);
+        // else if (ctx.request.qs().action === "one")
+        return new AdquisitionsController().create(ctx);
       });
 
       // PUT
