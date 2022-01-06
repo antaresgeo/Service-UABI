@@ -1,8 +1,8 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import { decodeJWT, getToken } from "App/Utils/functions/jwt";
+import { getToken } from "App/Utils/functions/jwt";
 import axios from "axios";
 import Env from "@ioc:Adonis/Core/Env";
-import { IDataToken, IResponseData } from "App/Utils/interfaces";
+import { IResponseData } from "App/Utils/interfaces";
 
 export default class VerifyToken {
   public async handle(
@@ -14,13 +14,15 @@ export default class VerifyToken {
       error: true,
       status: 200,
     };
-    const { token, headerAuthorization } = getToken(request.headers());
+    const { token, headerAuthorization, payloadToken } = getToken(
+      request.headers()
+    );
 
-    // Get data of Token
-    let payload: IDataToken = { id: -1, iat: -1 };
-    if (token !== "") payload = decodeJWT(token);
-
-    if (token === "" || (payload["iat"] === -1 && payload["id"] === -1)) {
+    if (
+      token === "" ||
+      payloadToken["iat"] ||
+      (payloadToken["iat"] === -1 && payloadToken["id"] === -1)
+    ) {
       return response.unauthorized(responseData);
     }
 
