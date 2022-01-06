@@ -8,10 +8,9 @@ export interface IAcquisition {
   title_type_document_id?: string;
   act_number: string;
   act_value: number;
-  recognition_value: number;
+  recognition_value?: number;
 
-  plot_area?: number;
-  construction_area?: number;
+  area?: number;
   acquired_percentage: number;
   origin: number;
 

@@ -11,37 +11,52 @@ export default class AdquisitionsController {
    * create Acquisition
    */
   public async create({ request, response }: HttpContextContract) {
+    let responseData: IResponseData = {
+      message: "Adquisiciones creadas correctamente.",
+      status: 200,
+    };
     const { token } = getToken(request.headers());
     let dataAdquisition = await request.validate(CreateAcquisitionValidator),
-      newAdquisition;
+      newAdquisition: Acquisition;
 
     let data: IAcquisition = { ...dataAdquisition };
+
+    let dataToCreate = {
+      ...data,
+      city: data["address"],
+      status: 1,
+    };
+    delete dataToCreate["address"];
 
     try {
       // Creation: Data of audit trail
       let auditTrail: AuditTrail = new AuditTrail(token);
       await auditTrail.init();
 
-      data.audit_trail = auditTrail.getAsJson();
-      data.status = 1;
-
-      // Service consumption
-      newAdquisition = await Acquisition.create(data);
-      // if (typeof newAdquisition === "number")
-      //   return ctx.response
-      //     .status(500)
-      //     .json({ message: "¡Error al crear el bien inmueble!" });
+      dataToCreate["audit_trail"] = auditTrail.getAsJson();
     } catch (error) {
-      console.error(error);
-      return response
-        .status(500)
-        .json({ message: "Error interno: Servidor", error });
+      return messageError(
+        error,
+        response,
+        "Error al inicializar el registro de auditoria."
+      );
     }
 
-    return response.status(200).json({
-      message: "¡Nuevas Adquisiciones creadas satisfactoriamente!",
-      results: newAdquisition,
-    });
+    try {
+      // Service consumption
+      newAdquisition = await Acquisition.create(dataToCreate);
+
+      responseData["results"] = newAdquisition["$attributes"];
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error al crear la adquisición.",
+        400
+      );
+    }
+
+    return response.status(responseData["status"]).json(responseData);
   }
 
   /**

@@ -11,10 +11,9 @@ export default class CreateAcquisitionValidator {
     title_type_document_id: schema.string.optional({ trim: true }),
     act_number: schema.string({ trim: true }),
     act_value: schema.number(),
-    recognition_value: schema.number(),
+    recognition_value: schema.number.optional(),
 
-    plot_area: schema.number.optional(),
-    construction_area: schema.number.optional(),
+    area: schema.number.optional(),
     acquired_percentage: schema.number(),
     origin: schema.number(),
 
