@@ -31,6 +31,15 @@ Route.group(() => {
 
       return new PersonalInformation().update(ctx);
     });
+
+    // DELETE
+    Route.delete("/", async (ctx) => {
+      const { default: PersonalInformation } = await import(
+        "App/Controllers/Http/PersonalInformationsController"
+      );
+
+      return new PersonalInformation().destroy(ctx);
+    });
   }).prefix("/personal-information");
 })
   .prefix(apiVersion)

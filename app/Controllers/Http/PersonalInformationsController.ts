@@ -214,5 +214,41 @@ export default class PersonalInformationsController {
     return response.status(responseData["status"]).json(responseData);
   }
 
-  public async destroy({}: HttpContextContract) {}
+  public async destroy({ response, request }: HttpContextContract) {
+    let responseData: IResponseData = {
+      message: "Información personal eliminada correctamente.",
+      status: 200,
+    };
+    let personalInformation: PersonalInformation;
+
+    const { id } = request.qs();
+    if (!id)
+      return messageError(
+        {},
+        response,
+        "Ingrese el ID de la información personal a eliminar."
+      );
+
+    try {
+      personalInformation = await PersonalInformation.findOrFail(id);
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error al obtener la información personal."
+      );
+    }
+
+    try {
+      await personalInformation.delete();
+
+      return response.status(responseData["status"]).json(responseData);
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error al eliminar la información personal."
+      );
+    }
+  }
 }
