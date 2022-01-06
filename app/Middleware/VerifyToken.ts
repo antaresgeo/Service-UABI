@@ -12,7 +12,7 @@ export default class VerifyToken {
     let responseData: IResponseData = {
       message: "Debe de ingresar para realizar esta acción.",
       error: true,
-      status: 200,
+      status: 401,
     };
     const { token, headerAuthorization, payloadToken } = getToken(
       request.headers()
@@ -20,7 +20,7 @@ export default class VerifyToken {
 
     if (
       token === "" ||
-      payloadToken["iat"] ||
+      !payloadToken["iat"] ||
       (payloadToken["iat"] === -1 && payloadToken["id"] === -1)
     ) {
       return response.unauthorized(responseData);
