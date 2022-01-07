@@ -412,6 +412,19 @@ CREATE TABLE IF NOT EXISTS personal_information (
 	  REFERENCES status(id)
 );
 
+CREATE TABLE IF NOT EXISTS claimants (
+	id SERIAL PRIMARY KEY,
+
+	
+	
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_personal_information_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
+);
+
 -- INSERTS
 -- Status
 INSERT 

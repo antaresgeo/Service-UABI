@@ -27,11 +27,11 @@ export default class RealEstate extends BaseModel {
   @column()
   public total_area: number;
   @column()
-  public total_area_unit: string;
+  public total_area_unit: string | undefined;
   @column()
-  public construction_area_unit: string;
+  public construction_area_unit: string | undefined;
   @column()
-  public plot_area_unit: string;
+  public plot_area_unit: string | undefined;
   @column()
   public total_percentage: number;
   @column()
@@ -59,6 +59,10 @@ export default class RealEstate extends BaseModel {
   public accounting_amount: string | undefined;
   @column()
   public counterpart: number | undefined;
+  @column()
+  public years_useful_life: number | undefined;
+  @column()
+  public useful_life_periods: number | undefined;
   @column()
   public assignments: string | undefined;
   @column()

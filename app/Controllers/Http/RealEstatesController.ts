@@ -9,7 +9,6 @@ import AuditTrail from "App/Utils/classes/AuditTrail";
 import OcupationRealEstate from "./../../Models/OcupationRealEstate";
 import {
   getCostCenterID,
-  // getTipologyID,
   getToken,
   sum,
   validatePagination,
@@ -32,7 +31,7 @@ export default class RealEstatesController {
   // GET
 
   /**
-   * index
+   * Index: Currently create the excel with all data of RE
    */
   public async index(ctx: HttpContextContract) {
     await createXLSXFromInventoryRegister(ctx, "UABI");
@@ -405,7 +404,6 @@ export default class RealEstatesController {
     try {
       let dataRealEstate: IRealEstateAttributes = {
         ...payload,
-        // tipology_id: parseInt(tipologyId.result),
       };
       delete dataRealEstate["tipology"];
       delete dataRealEstate["accounting_account"];
