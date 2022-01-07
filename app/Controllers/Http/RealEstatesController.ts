@@ -451,21 +451,27 @@ export default class RealEstatesController {
       } else {
         dataRealEstate.cost_center_id = costCenterId.results.id;
         let sapIds: string[] = [];
-        dataRealEstate.active_type.split(",").map((activeType) => {
-          sapIds.push(
-            createSAPID(
-              costCenterId.results.fixed_assets,
-              costCenterId.results.last_consecutive,
-              String(activeType)
-            )
-          );
-        });
-        const tipology = await Dependency.find(project.dependency_id);
-        tipology
-          ?.merge({
-            last_consecutive: sum(Number(project.last_consecutive), 1),
-          })
-          .save();
+        if (dataRealEstate["sap_id"]) {
+          dataRealEstate["sap_id"].split(",").map((activeCode) => {
+            sapIds.push(activeCode);
+          });
+        } else {
+          dataRealEstate.active_type.split(",").map((activeType) => {
+            sapIds.push(
+              createSAPID(
+                costCenterId.results.fixed_assets,
+                costCenterId.results.last_consecutive,
+                String(activeType)
+              )
+            );
+          });
+          const tipology = await Dependency.find(project.dependency_id);
+          tipology
+            ?.merge({
+              last_consecutive: sum(Number(project.last_consecutive), 1),
+            })
+            .save();
+        }
         dataRealEstate["sap_id"] = sapIds.join(", ");
       }
 
@@ -1394,7 +1400,8 @@ export default class RealEstatesController {
     try {
       if (typeof _id === "string") {
         const realEstate = await RealEstate.findOrFail(_id);
-        if (!alt) await this.createRelation(newData["projects_id"], realEstate);
+        if (!alt && newData["projects_id"])
+          await this.createRelation(newData["projects_id"], realEstate);
 
         let dataUpdated: IRealEstateAttributes = {
           ...newData,

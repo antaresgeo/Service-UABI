@@ -8,6 +8,7 @@ export default class CreateRealEstateValidator {
     realEstates: schema.array().members(
       schema.object().members({
         projects_id: schema.array.optional().members(schema.number()),
+        sap_id: schema.string.optional(),
 
         tipology_id: schema.number(),
 

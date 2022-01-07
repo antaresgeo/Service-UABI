@@ -6,6 +6,7 @@ export default class CreateRealEstateValidator {
 
   public schema = schema.create({
     projects_id: schema.array.optional().members(schema.number()),
+    sap_id: schema.string.optional(),
 
     tipology_id: schema.number(),
 
