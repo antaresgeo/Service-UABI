@@ -287,7 +287,8 @@ export default class AdquisitionsController {
     };
 
     responseData["total_results"] =
-      oldAcquisitionsUpdated.length + newAcquisitionsCreated.length;
+      oldAcquisitionsUpdated.length +
+      (newAcquisitionsCreated ? newAcquisitionsCreated.length : 0);
 
     return response.status(responseData["status"]).json(responseData);
   }
