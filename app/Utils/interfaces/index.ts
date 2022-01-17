@@ -44,4 +44,5 @@ export * from "./realEstate";
 export * from "./acquisitions";
 export * from "./detailsUser";
 export * from "./inspection";
+export * from "./tipology";
 export * from "./auditTrail";

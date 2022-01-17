@@ -376,9 +376,12 @@ export default class RealEstatesController {
       CreateRealEstate
     );
     let project: Project | any;
-    let costCenterId: any;
 
     // Get Id of Dependency and its values
+    let costCenterId: any = payload["cost_center_id"]
+      ? payload["cost_center_id"]
+      : null;
+
     if (
       payload["dependency"] &&
       payload["subdependency"] &&

@@ -415,8 +415,16 @@ CREATE TABLE IF NOT EXISTS personal_information (
 CREATE TABLE IF NOT EXISTS claimants (
 	id SERIAL PRIMARY KEY,
 
-	
-	
+	person_type
+	document_type
+	document_number
+	company_name
+	company_location_id
+	company_phone_number
+	company_email
+	legal_representative_person_type
+	legal_representative_id
+
 	status int NOT NULL,
 	audit_trail json NOT NULL,
 
