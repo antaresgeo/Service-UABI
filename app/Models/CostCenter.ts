@@ -1,4 +1,5 @@
-import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
+import { BaseModel, column, hasOne, HasOne } from "@ioc:Adonis/Lucid/Orm";
+import Dependency from "App/Models/Dependency";
 
 export default class CostCenter extends BaseModel {
   @column({ isPrimary: true })
@@ -10,4 +11,8 @@ export default class CostCenter extends BaseModel {
   public subdependency: string;
   @column()
   public cost_center: number;
+
+  // Foreign Key Relation
+  @hasOne(() => Dependency, { foreignKey: "id", localKey: "dependency_id" })
+  public dependency_info: HasOne<typeof Dependency>;
 }

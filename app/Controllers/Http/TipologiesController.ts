@@ -4,6 +4,7 @@ import { IResponseData } from "App/Utils/interfaces";
 import { ITipology } from "./../../Utils/interfaces/tipology";
 import AuditTrail from "App/Utils/classes/AuditTrail";
 import { getToken } from "App/Utils/functions/jwt";
+import { messageError } from "App/Utils/functions";
 
 export default class TipologiesController {
   public async index({}: HttpContextContract) {}
@@ -14,26 +15,49 @@ export default class TipologiesController {
       status: 200,
     };
     const { token } = getToken(request.headers());
-    const { tipology, accounting_account } = request.body();
+    const requestBodyPayload = request.body();
+    const { action } = request.qs();
+    let dataToCreate: ITipology[] = [];
 
     // Audit Trail
     const auditTrail = new AuditTrail(token);
     await auditTrail.init();
+    console.log(requestBodyPayload);
 
-    let dataToCreate: ITipology = {
-      tipology,
-      accounting_account,
+    if (!action || String(action).toUpperCase() === "ONE") {
+      dataToCreate.push({
+        tipology: requestBodyPayload["tipology"].toUpperCase(),
+        accounting_account: requestBodyPayload["accounting_account"],
 
-      status: 1,
-      audit_trail: auditTrail.getAsJson(),
-    };
-    console.log(dataToCreate);
+        status: 1,
+        audit_trail: auditTrail.getAsJson(),
+      });
+    } else {
+      requestBodyPayload["data"].map((tmpTipology) => {
+        dataToCreate.push({
+          tipology: tmpTipology["tipology"].toUpperCase(),
+          accounting_account: tmpTipology["accounting_account"],
+
+          status: 1,
+          audit_trail: auditTrail.getAsJson(),
+        });
+      });
+    }
 
     try {
-      // Tipology.createMany()
+      const tipologiesCreated = await Tipology.createMany(dataToCreate);
+
+      responseData["results"] = tipologiesCreated;
+      responseData["total_results"] = tipologiesCreated.length;
+
+      if (!action || String(action).toUpperCase() === "ONE") {
+        responseData["results"] = tipologiesCreated[0];
+        responseData["total_results"] = 1;
+      }
     } catch (error) {
-      return response.status(responseData["status"]).json(responseData);
+      return messageError(error, response, "Error al crear las tipologías");
     }
+    return response.status(responseData["status"]).json(responseData);
   }
 
   public async store({}: HttpContextContract) {}

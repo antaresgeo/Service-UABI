@@ -195,6 +195,7 @@ export const validatePagination = (
 };
 
 type To = "projects" | "realEstates";
+
 export const getWhereRaw = (to: To, search: { key: string; value: string }) => {
   switch (to) {
     case "projects":
@@ -237,6 +238,8 @@ export const messageError = (
     status: initialStatus,
   };
   responseData.error = { name: error.name, message: error.message };
+
+  if (error.code) responseData["error"]["code"] = error.code;
 
   // Error 23505
   if (Number(error.code) === 23505)

@@ -15,6 +15,14 @@ Route.group(() => {
 
       return new TipologiesController().showAll(ctx);
     });
+
+    Route.post("/", async (ctx) => {
+      const { default: TipologiesController } = await import(
+        "App/Controllers/Http/TipologiesController"
+      );
+
+      return new TipologiesController().create(ctx);
+    });
   }).prefix("/tipologies");
 
   Route.group(() => {

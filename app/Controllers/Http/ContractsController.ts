@@ -1,7 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import { IResponseData } from "App/Utils/interfaces";
+import { IPaginationValidated, IResponseData } from "App/Utils/interfaces";
 import CreateContractValidator from "./../../Validators/CreateContractValidator";
-import { messageError } from "App/Utils/functions";
+import { messageError, validatePagination } from "App/Utils/functions";
 import Contract from "./../../Models/Contract";
 import { IContract } from "./../../Utils/interfaces/contract";
 import AuditTrail from "App/Utils/classes/AuditTrail";
@@ -46,6 +46,41 @@ export default class ContractsController {
   public async store({}: HttpContextContract) {}
 
   public async show({}: HttpContextContract) {}
+
+  public async showAll({ response, request }: HttpContextContract) {
+    let responseData: IResponseData = {
+      message: "Lista de Contratos completa. | Sin paginación",
+      status: 200,
+    };
+
+    const { page, pageSize, key, value /*only*/ } = request.qs();
+    let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
+    if (request.qs().with && request.qs().with === "pagination") {
+      pagination = validatePagination(key, value, page, pageSize);
+      responseData["message"] =
+        "Lista de Contratos completa. | Con paginación.";
+    }
+
+    let count: number =
+      pagination["page"] > 0
+        ? pagination["page"] * pagination["pageSize"] - pagination["pageSize"]
+        : 0;
+    console.log(count);
+
+    try {
+      const contracts = await Contract.all();
+      responseData["results"] = contracts;
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error al obtener todos los Contratos.",
+        400
+      );
+    }
+
+    return response.status(responseData["status"]).json(responseData);
+  }
 
   public async edit({}: HttpContextContract) {}
 

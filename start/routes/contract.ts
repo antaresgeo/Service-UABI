@@ -6,18 +6,16 @@ const apiVersion = Env.get("API_VERSION");
 Route.group(() => {
   Route.group(() => {
     // GET
-    // Route.get("/", async (ctx) => {
-    //   const { default: InspectionsController } = await import(
-    //     "App/Controllers/Http/InspectionsController"
-    //   );
+    Route.get("/", async (ctx) => {
+      const { default: ContractsController } = await import(
+        "App/Controllers/Http/ContractsController"
+      );
 
-    //   if (ctx.request.qs().id) return new InspectionsController().show(ctx);
+      if (ctx.request.qs().id) return new ContractsController().show(ctx);
+      // if (ctx.request.qs().project) return new ContractsController().showByProject(ctx);
 
-    //   //   if (ctx.request.qs().with)
-    //   //     return new InspectionsController().showAllPagination(ctx);
-
-    //   // return new InspectionsController().showAll(ctx);
-    // });
+      return new ContractsController().showAll(ctx);
+    });
 
     // POST
     Route.post("/", async (ctx) => {
@@ -28,20 +26,12 @@ Route.group(() => {
     });
 
     // PUT
-    // Route.put("/", async (ctx) => {
-    //   const { default: InspectionsController } = await import(
-    //     "App/Controllers/Http/InspectionsController"
-    //   );
-    //   return new InspectionsController().update(ctx);
-    // });
-
-    // Route.put("/alt-status", async (ctx) => {
-    //   const { default: InspectionsController } = await import(
-    //     "App/Controllers/Http/InspectionsController"import ContractsController from './../../app/Controllers/Http/ContractsController';
-
-    //   );
-    //   return new InspectionsController().changeStatus(ctx);
-    // });
+    Route.put("/", async (ctx) => {
+      const { default: ContractsController } = await import(
+        "App/Controllers/Http/ContractsController"
+      );
+      return new ContractsController().update(ctx);
+    });
   }).prefix("/contracts");
 })
   .prefix(apiVersion)

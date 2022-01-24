@@ -1,5 +1,9 @@
-import { BaseModel, column } from "@ioc:Adonis/Lucid/Orm";
+import { BaseModel, column, HasOne, hasOne } from "@ioc:Adonis/Lucid/Orm";
 import { IAuditTrail } from "App/Utils/interfaces";
+import Status from "./Status";
+import CostCenter from "App/Models/CostCenter";
+import Tipology from "App/Models/Tipology";
+import Insurability from "App/Models/Insurability";
 
 export default class RealEstate extends BaseModel {
   @column({ isPrimary: true })
@@ -78,4 +82,17 @@ export default class RealEstate extends BaseModel {
   public status: number;
   @column()
   public audit_trail: IAuditTrail;
+
+  // Foreign Key Relation
+  @hasOne(() => Status, { foreignKey: "id", localKey: "status" })
+  public status_info: HasOne<typeof Status>;
+
+  @hasOne(() => CostCenter, { foreignKey: "id", localKey: "cost_center_id" })
+  public cost_center_info: HasOne<typeof CostCenter>;
+
+  @hasOne(() => Tipology, { foreignKey: "id", localKey: "tipology_id" })
+  public tipology_info: HasOne<typeof Tipology>;
+
+  @hasOne(() => Insurability, { foreignKey: "id", localKey: "policy_id" })
+  public policy_info: HasOne<typeof Insurability>;
 }

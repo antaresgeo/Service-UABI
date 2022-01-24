@@ -41,7 +41,7 @@ export default class ProjectsController {
    */
   public async showAll({ response, request }: HttpContextContract) {
     let responseData: IResponseData = {
-      message: "Lista de Usuarios completa. | Sin paginación.",
+      message: "Lista de Proyectos completa. | Sin paginación.",
       status: 200,
     };
 
@@ -50,7 +50,8 @@ export default class ProjectsController {
     let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
     if (request.qs().with && request.qs().with === "pagination") {
       pagination = validatePagination(key, value, page, pageSize);
-      responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
+      responseData["message"] =
+        "Lista de Proyectos completa. | Con paginación.";
     }
     let results: any[] = [],
       data: any[] = [];
@@ -245,48 +246,6 @@ export default class ProjectsController {
     if (id) return tmpNewData;
 
     return response.json({ message: "Project", results: tmpNewData });
-  }
-
-  /**
-   * Show all contracts for ID Project
-   */
-  public async showContracts({ response, request }: HttpContextContract) {
-    let responseData: IResponseData = {
-      message: "Contratos del proyecto con ID: ",
-      status: 200,
-    };
-
-    const { id } = request.qs();
-
-    if (!id)
-      return messageError({}, response, "Ingrese el ID del proyecto.", 400);
-    responseData["message"] += String(id);
-
-    try {
-      const contracts: ProjectContract[] = await ProjectContract.query()
-        .where("status", 1)
-        .where("project_id", id);
-
-      let dataToReturn: any[] = [];
-      contracts.map((contract) => {
-        let tmp = { ...contract["$attributes"] };
-        delete tmp["project_id"];
-        delete tmp["status"];
-        delete tmp["audit_trail"];
-
-        dataToReturn.push({ ...tmp });
-      });
-
-      responseData["results"] = dataToReturn;
-    } catch (error) {
-      return messageError(
-        error,
-        response,
-        `Error al obtener los contratos del proyecto con ID: ${id}`
-      );
-    }
-
-    return response.status(responseData["status"]).json(responseData);
   }
 
   // POST

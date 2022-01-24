@@ -10,14 +10,16 @@ export default class DependenciesController {
   public async create({}: HttpContextContract) {}
 
   public async list({ response }: HttpContextContract) {
-    let responseData: IResponseData = { message: "", status: 200 };
+    let responseData: IResponseData = {
+      message: "Lista de Dependencias.",
+      status: 200,
+    };
     let dependencies: Dependency[],
       costCenters: CostCenter[],
       data: any[] = [];
 
     try {
       dependencies = await Dependency.query().orderBy("id", "asc");
-      // responseData["results"] = costCenter;
       // const dependencies = await CostCenter.query().where('status', 1)
     } catch (error) {
       return messageError(

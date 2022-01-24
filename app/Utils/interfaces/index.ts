@@ -1,6 +1,7 @@
 export interface IResponseData {
   message: string;
   results?: any;
+  logs?: string;
   status: number;
   error?: any;
   page?: number;

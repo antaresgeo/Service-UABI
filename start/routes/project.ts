@@ -6,13 +6,18 @@ const apiVersion = Env.get("API_VERSION");
 Route.group(() => {
   Route.group(() => {
     // GET
+    Route.get("/list/contracts", async (ctx) => {
+      const { default: ProjectContractsController } = await import(
+        "App/Controllers/Http/ProjectContractsController"
+      );
+
+      return new ProjectContractsController().showByProject(ctx);
+    });
+
     Route.get("/list", async (ctx) => {
       const { default: ProjectsController } = await import(
         "App/Controllers/Http/ProjectsController"
       );
-
-      if (ctx.request.qs()["to"] === "realEstates")
-        return new ProjectsController().showContracts(ctx);
 
       return new ProjectsController().showAll(ctx);
     });

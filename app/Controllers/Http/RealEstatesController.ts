@@ -10,6 +10,7 @@ import OcupationRealEstate from "./../../Models/OcupationRealEstate";
 import {
   getCostCenterID,
   getToken,
+  messageError,
   sum,
   validatePagination,
 } from "App/Utils/functions";
@@ -18,6 +19,7 @@ import {
   IPayloadManyRealEstates,
   IPayloadRealEstate,
   IRealEstateAttributes,
+  IResponseData,
 } from "App/Utils/interfaces";
 import RealEstate from "./../../Models/RealEstate";
 import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
@@ -67,165 +69,242 @@ export default class RealEstatesController {
   }
 
   /**
-   * index
+   * Real Estates List.
    */
   public async list(
     { response, request }: HttpContextContract,
     toExcel?: boolean
   ) {
+    let responseData: IResponseData = {
+      message: "Lista de Bienes Inmuebles completa. | Sin paginación.",
+      status: 200,
+    };
     const { headerAuthorization } = getToken(request.headers());
-    const { key, value, page, pageSize, to } = request.qs();
-    const tmpWith = request.qs().with;
+    const { key, value, page, pageSize, to, only } = request.qs();
 
+    let data: any[] = [],
+      logs: string = "";
     let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
-    if (request.qs().with && request.qs().with === "pagination") {
+    const tmpWith = request.qs().with;
+    if (tmpWith && tmpWith === "pagination") {
       pagination = validatePagination(key, value, page, pageSize);
-      // responseData["message"] = "Lista de Usuarios completa. | Con paginación.";
+      responseData["message"] =
+        "Lista de Bienes Inmuebles completa. | Con paginación.";
+      logs += "Line 89 | Paginación validada.\n";
     }
 
-    let results, realEstates;
+    let results: any[] = [],
+      realEstates;
     let physicalInspection: PhysicalInspection;
 
     let count: number =
-      pagination["page"] * pagination["pageSize"] - pagination["pageSize"];
+      pagination["page"] > 0
+        ? pagination["page"] * pagination["pageSize"] - pagination["pageSize"]
+        : 0;
 
-    try {
-      if (tmpWith === "pagination")
-        results = await RealEstatesProject.query()
-          .from("real_estates_projects as a")
-          .innerJoin("projects as p", "a.project_id", "p.id")
-          .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
-          .innerJoin("status as s", "re.status", "s.id")
-          .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
-          .select([
-            "p.name as project_name",
-            "re.name as re_name",
-            "re.id as re_id",
-          ])
-          .select("*")
-          .where("re.status", 1)
-          // .where(
-          //   `re.${pagination["search"]?.key}`,
-          //   "LIKE",
-          //   "'%" + pagination["search"]?.value + "%'"
-          // )
-          .orderBy("re.id", "desc")
-          .limit(pagination["pageSize"])
-          .offset(count);
-      else
-        results = await RealEstatesProject.query()
-          .from("real_estates_projects as a")
-          .innerJoin("projects as p", "a.project_id", "p.id")
-          .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
-          .innerJoin("status as s", "re.status", "s.id")
-          .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
-          .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-          .innerJoin("tipologies as t", "re.tipology_id", "t.id")
-          .select([
-            "p.name as project_name",
-            "p.cost_center_id as project_cost_center_id",
-            "re.name as re_name",
-            "re.id as re_id",
-          ])
-          .select("*")
-          .where("re.status", 1)
-          .orderBy("re.id", "desc");
-
-      results = results === null ? [] : results;
-
-      let data: any[] = [];
-
-      await Promise.all(
-        results.map(async (re) => {
-          // Get Info Address
-          const address: any = await getAddressById(
-            Number(results[0]["$extras"]["address"]),
-            headerAuthorization
+    switch (to) {
+      case "insurabilities":
+        try {
+          results = await RealEstatesProject.query()
+            .preload("real_estate_info", (realEstate) => {
+              realEstate.preload("status_info").preload("cost_center_info");
+            })
+            .preload("project_info", (project) => {
+              project.preload("status_info").preload("cost_center_info");
+            })
+            .orderBy("real_estate_id", "desc")
+            .limit(pagination["pageSize"])
+            .offset(count);
+        } catch (error) {
+          return messageError(
+            error,
+            response,
+            "Error al obtener la lista de los Bienes Inmuebles. [ I ]",
+            400
           );
+        }
+        break;
 
-          let tmp = {
-            ...re["$extras"],
-            project: {
-              id: re["project_id"],
-              name: re["$extras"]["project_name"],
-              cost_center_id: re["$extras"]["project_cost_center_id"],
-            },
-            id: re["$extras"]["re_id"],
-            status: re["$extras"]["status_name"],
-            name: re["$extras"]["re_name"],
-            materials: re["$extras"]["materials"].split(","),
-            address: { ...address },
-          };
+      default:
+        try {
+          results = await RealEstatesProject.query()
+            .preload("real_estate_info", (realEstate) => {
+              realEstate.preload("status_info").preload("cost_center_info");
+            })
+            .preload("project_info", (project) => {
+              project.preload("status_info");
+            })
+            .orderBy("real_estate_id", "desc")
+            .limit(pagination["pageSize"])
+            .offset(count);
 
-          if (to && to === "inspection") {
-            // Physical Inspection
-            try {
-              physicalInspection = await PhysicalInspection.findByOrFail(
-                "real_estate_id",
-                tmp.id
-              );
-            } catch (error) {
-              console.error(error);
-              return response.status(500).json({
-                message:
-                  "Error inesperado al obtener la Inspección Física actual de la inspección.\nRevisar Terminal.",
-              });
-            }
-
-            tmp["inspection_date"] =
-              physicalInspection["$attributes"]["inspection_date"] === null
-                ? "No realizada"
-                : physicalInspection["$attributes"]["inspection_date"];
-
-            tmp["status"] =
-              re["$extras"]["disposition_type"] === null
-                ? "Sin contrato"
-                : "Con contrato";
+          if (only) {
+            const num = only === "active" ? 1 : 0;
+            results = await RealEstatesProject.query()
+              .innerJoin(
+                "real_estates as re",
+                "real_estates_projects.real_estate_id",
+                "re.id"
+              )
+              .preload("real_estate_info", (realEstate) => {
+                realEstate
+                  .preload("status_info")
+                  .select(["id", "registry_number", "name", ""]);
+              })
+              .preload("project_info", (project) => {
+                project.preload("status_info");
+              })
+              .orderBy("real_estate_id", "desc")
+              .limit(pagination["pageSize"])
+              .offset(count)
+              .where("re.status", num);
           }
 
-          delete tmp["project_name"];
-          delete tmp["status_name"];
-          delete tmp["project_cost_center_id"];
-          delete tmp["re_name"];
-          delete tmp["re_id"];
+          // results.map((result) => {
+          //   console.log(result["$preloaded"]);
+          // });
+        } catch (error) {
+          return messageError(
+            error,
+            response,
+            "Error al obtener la lista de los Bienes Inmuebles. [ RE ]",
+            400
+          );
+        }
+        break;
+    }
+    logs += "Line 172 | BIs obtenidos.\n";
 
-          await data.push(tmp);
-        })
-      );
+    //   if (tmpWith === "pagination")
+    //     results = await RealEstatesProject.query()
+    //       .from("real_estates_projects as a")
+    //       .innerJoin("projects as p", "a.project_id", "p.id")
+    //       .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+    //       .innerJoin("status as s", "re.status", "s.id")
+    //       .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+    //       .select([
+    //         "p.name as project_name",
+    //         "re.name as re_name",
+    //         "re.id as re_id",
+    //       ])
+    //       .select("*")
+    //       .where("re.status", 1)
+    //       // .where(
+    //       //   `re.${pagination["search"]?.key}`,
+    //       //   "LIKE",
+    //       //   "'%" + pagination["search"]?.value + "%'"
+    //       // )
 
-      try {
-        realEstates = await RealEstate.query().where("status", 1);
-      } catch (error) {
-        console.error(error);
-        return response.status(500).json({
-          message: "Error al traer la lista de todos los Bienes Inmuebles.",
-        });
-      }
+    //   else
+    //     results = await RealEstatesProject.query()
+    //       .from("real_estates_projects as a")
+    //       .innerJoin("projects as p", "a.project_id", "p.id")
+    //       .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
+    //       .innerJoin("status as s", "re.status", "s.id")
+    //       .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
+    //       .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
+    //       .innerJoin("tipologies as t", "re.tipology_id", "t.id")
+    //       .select([
+    //         "p.name as project_name",
+    //         "p.cost_center_id as project_cost_center_id",
+    //         "re.name as re_name",
+    //         "re.id as re_id",
+    //       ])
 
-      data = data.sort((a, b) => b.id - a.id);
+    await Promise.all(
+      results.map(async (re) => {
+        // Get Info Address
+        const address: any = await getAddressById(
+          Number(
+            re["$preloaded"]["real_estate_info"]["$attributes"]["address"]
+          ),
+          headerAuthorization
+        );
 
-      if (toExcel) return data;
-      return response.json({
-        message: "List of all Real Estates",
-        results: data,
-        page: pagination["page"],
-        count: data.length,
-        next_page:
-          realEstates.length - pagination["page"] * pagination["pageSize"] !==
-            10 &&
-          realEstates.length - pagination["page"] * pagination["pageSize"] > 0
-            ? sum(parseInt(pagination["page"] + ""), 1)
-            : null,
-        previous_page:
-          pagination["page"] - 1 < 0 ? pagination["page"] - 1 : null,
-        total_results: realEstates.length,
-      });
+        let project = { ...re["$preloaded"]["project_info"] };
+        delete project["$attributes"]["audit_trail"]["updated_values"];
+
+        let tmp = {
+          ...re["$preloaded"]["real_estate_info"]["$attributes"],
+          address: { ...address },
+          project: {
+            ...project["$attributes"],
+            status: project["$preloaded"]["status_info"]["status_name"],
+          },
+          // id: re["$extras"]["re_id"],
+          // status: re["$extras"]["status_name"],
+          // name: re["$extras"]["re_name"],
+          // materials: re["$extras"]["materials"].split(","),
+        };
+
+        delete tmp["audit_trail"]["updated_values"];
+
+        logs += "Line 239 | Información limpiada.\n";
+
+        if (to && to === "inspection") {
+          // Physical Inspection
+          try {
+            physicalInspection = await PhysicalInspection.findByOrFail(
+              "real_estate_id",
+              tmp.id
+            );
+          } catch (error) {
+            console.error(error);
+            return response.status(500).json({
+              message:
+                "Error inesperado al obtener la Inspección Física actual de la inspección.\nRevisar Terminal.",
+            });
+          }
+
+          tmp["inspection_date"] =
+            physicalInspection["$attributes"]["inspection_date"] === null
+              ? "No realizada"
+              : physicalInspection["$attributes"]["inspection_date"];
+
+          tmp["status"] =
+            re["$extras"]["disposition_type"] === null
+              ? "Sin contrato"
+              : "Con contrato";
+        }
+
+        delete tmp["project_name"];
+        delete tmp["status_name"];
+        delete tmp["project_cost_center_id"];
+        delete tmp["re_name"];
+        delete tmp["re_id"];
+
+        await data.push(tmp);
+      })
+    );
+
+    try {
+      realEstates = await RealEstate.query().where("status", 1);
+      logs += "Line 279 | Se obtienen todos los bienes inmuebles.\n";
     } catch (error) {
       console.error(error);
-      return response
-        .status(500)
-        .json({ message: "Error al traer la lista de los Bienes Inmuebles." });
+      return response.status(500).json({
+        message: "Error al traer la lista de todos los Bienes Inmuebles.",
+      });
     }
+
+    data = data.sort((a, b) => b.id - a.id);
+
+    responseData["results"] = data;
+    responseData["page"] = pagination["page"];
+    responseData["count"] = data.length;
+    responseData["next_page"] =
+      realEstates.length - pagination["page"] * pagination["pageSize"] !== 10 &&
+      realEstates.length - pagination["page"] * pagination["pageSize"] > 0
+        ? sum(parseInt(pagination["page"] + ""), 1)
+        : null;
+    responseData["previous_page"] =
+      pagination["page"] - 1 < 0 ? pagination["page"] - 1 : null;
+    responseData["total_results"] = realEstates.length;
+
+    responseData["logs"] = logs;
+
+    if (toExcel) return data;
+    return response.status(responseData["status"]).json(responseData);
   }
 
   /**

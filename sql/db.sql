@@ -388,7 +388,7 @@ CREATE TABLE IF NOT EXISTS contracts (
 	  REFERENCES status(id)
 );
 
-CREATE TABLE IF NOT EXISTS personal_information ( 
+CREATE TABLE IF NOT EXISTS personal_informations ( 
 	id SERIAL PRIMARY KEY,
 	
 	document_type varchar(10) not null,
@@ -415,22 +415,62 @@ CREATE TABLE IF NOT EXISTS personal_information (
 CREATE TABLE IF NOT EXISTS claimants (
 	id SERIAL PRIMARY KEY,
 
-	person_type
-	document_type
-	document_number
-	company_name
-	company_location_id
-	company_phone_number
-	company_email
-	legal_representative_person_type
-	legal_representative_id
+	person_type varchar(10) NOT NULL,
+	document_type int4 NOT NULL,
+	document_number int8 NOT NULL,
+	company_name varchar(100) NOT NULL,
+	company_location_id int4 NOT NULL,
+	company_phone_number int8 NOT NULL,
+	company_phone_number_ext int4,
+	company_email varchar(255) NOT NULL,
+	legal_representative_person_type varchar(10) NOT NULL,
+	legal_representative_id int4 NOT NULL,
 
 	status int NOT NULL,
 	audit_trail json NOT NULL,
 
 	CONSTRAINT fk_personal_information_status
       FOREIGN KEY(status) 
+	  REFERENCES status(id),
+	CONSTRAINT fk_legal_representative
+      FOREIGN KEY(legal_representative_id) 
+	  REFERENCES personal_informations(id)
+);
+
+CREATE TABLE IF NOT EXISTS risks (
+	id SERIAL PRIMARY KEY,
+
+	type varchar(20) NOT NULL,
+
+	occurrence_degree varchar(50) NOT NULL,
+	impact_degree varchar(50) NOT NULL,
+	responsible varchar(100) NOT NULL,
+	mitigation_mechanism varchar(280) NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_risk_status
+      FOREIGN KEY(status) 
 	  REFERENCES status(id)
+);
+
+CREATE TABLE IF NOT EXISTS leaders_in_charge (
+	id SERIAL PRIMARY KEY,
+
+	person_type varchar(50) NOT NULL,
+	position varchar(100) NOT NULL,
+	leader_information_id int4 NOT NULL,
+	localization_id int4 NOT NULL,
+	cost_center_id int4 NOT NULL,
+
+	status int NOT NULL,
+	audit_trail json NOT NULL,
+
+	CONSTRAINT fk_leader_in_charge_status
+      FOREIGN KEY(status) 
+	  REFERENCES status(id)
+
 );
 
 -- INSERTS

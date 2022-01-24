@@ -154,8 +154,8 @@ export default class InspectionsController {
     let owner: RealEstateOwner, updatedOwner: RealEstateOwner;
 
     // PHOTOGRAPHIC REGISTER
-    const images = request.files("image");
-    console.log(images);
+    // const images = request.files("image");
+    // console.log(images);
     // return images
 
     const { token } = getToken(request.headers());
