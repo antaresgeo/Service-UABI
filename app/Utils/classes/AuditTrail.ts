@@ -28,6 +28,7 @@ export default class AuditTrail {
   async init() {
     const self = this;
     const detailsUser = await getDataUser(`Bearer ${self.token}`);
+    console.log(`[line 31 | AuditTrail-init] ${detailsUser}`);
 
     if (detailsUser !== undefined) self.dataUser = detailsUser;
 
@@ -98,6 +99,7 @@ export default class AuditTrail {
 
   public async update(updatedValues: any, model: any) {
     const detailsUser = await getDataUser(this.token);
+    console.log(`[line 101 | AuditTrail-update] ${detailsUser}`);
 
     if (detailsUser !== undefined)
       this.updatedBy = `${detailsUser.names.firstName} ${detailsUser.surnames.firstSurname}`;
