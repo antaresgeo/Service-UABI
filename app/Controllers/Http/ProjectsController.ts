@@ -448,11 +448,16 @@ export default class ProjectsController {
       cost_center_id: project.cost_center_id,
     };
 
+
+
     // Update of Audit Trail | Actualización del Registro de Auditoría
     const auditTrail = new AuditTrail(token, project.audit_trail);
 
     await auditTrail.update({ ...dataUpdated }, project);
     dataUpdated["audit_trail"] = auditTrail.getAsJson();
+
+
+
 
     // Array(newData['contracts']).diff(project)
     // Creation of Contracts
@@ -466,25 +471,57 @@ export default class ProjectsController {
         ctx,
         Number(id)
       );
+
     } catch (error) {
       return messageError(error, response);
     }
+    // const j = Array(newData["contracts"]).diff(oldContracts);
+    const contracts = newData["contracts"].splitItemsObject(oldContracts);
 
-    const j = Array(newData["contracts"]).diff(oldContracts);
-    console.log(j);
+    if (contracts.newItems.length > 0) {
+      try {
+
+        const existsContract = await Promise.all(
+          contracts.newItems.map(async (c) => {
+            const a = await ProjectContract.query().where(
+              "contract_number", c.contract_number)
+            return { ...a }
+          })
+        )
+        if (existsContract.length > 0) {
+
+          return messageError("error", response, "El contrato ya existe.", 400);
+        }
+      } catch (error) {
+        console.log('error', error)
+      }
+    }
 
     try {
       const responseProjectContract =
         await new ProjectContractsController().create(
           ctx,
-          newData["contracts"],
+          // newData["contracts"],
+          contracts.newItems,
           Number(id)
         );
-
       responseData["results"] = {
         project: null,
         contracts: responseProjectContract,
       };
+    } catch (error) {
+      return messageError(error, response);
+    }
+    try {
+      const inactivar = async (ctx, c) => {
+        const res = await new ProjectContractsController().inactivate(ctx,c)
+        return res
+      }
+      await Promise.all(
+        contracts.deletedItems.map((c) =>
+          inactivar(ctx, c)
+        )
+      )
     } catch (error) {
       return messageError(error, response);
     }
@@ -611,9 +648,8 @@ export default class ProjectsController {
 
       if (data === []) {
         return response.status(200).json({
-          message: `Proyecto ${
-            res["results"].status === 1 ? "activado" : "inactivado"
-          }.`,
+          message: `Proyecto ${res["results"].status === 1 ? "activado" : "inactivado"
+            }.`,
           id: IDProject,
         });
       } else {
@@ -632,9 +668,8 @@ export default class ProjectsController {
           realEstatesController.changeStatus(realEstate.id, 2);
         });
         return response.status(200).json({
-          message: `Proyecto ${
-            res["results"].status === 1 ? "activado" : "inactivado"
-          }.\n\n${data.length} bienes inmuebles desasociados.`,
+          message: `Proyecto ${res["results"].status === 1 ? "activado" : "inactivado"
+            }.\n\n${data.length} bienes inmuebles desasociados.`,
         });
       }
     } else {

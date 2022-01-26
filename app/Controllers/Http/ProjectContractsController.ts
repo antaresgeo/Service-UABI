@@ -114,4 +114,51 @@ export default class ProjectContractsController {
   public async update({}: HttpContextContract) {}
 
   public async destroy({}: HttpContextContract) {}
+
+
+  private async changeStatus(id: string | number) {
+    try {
+      const contract = await ProjectContract.findOrFail(id);
+
+      contract.status = contract.status === 1 ? 0 : 1;
+
+      const c = await contract.save();
+
+      return { success: true, results: c };
+    } catch (error) {
+      console.error(`Error changing status:\n${error}`);
+      return { success: false, results: error };
+    }
+  }
+
+  public async inactivate({ request, response }: HttpContextContract, deleteContract: any) {
+    // const { token } = getToken(request.headers());
+    // const { id } = request.params();
+
+    const { success, results } = await this.changeStatus(deleteContract.id);
+
+    if (success)
+      return response.status(200).json({
+        message: "Contrato Inactivado",
+        results,
+      });
+    else {
+      let message: string =
+          "A ocurrido un error inesperado al inactivar el Contrato.",
+        status: number = 500;
+
+      console.error(results.message);
+      console.error(results);
+      if (results.message === "E_ROW_NOT_FOUND: Row not found") {
+        message =
+          "No se ha encontrado un Contrato para el ID buscado.";
+        status = 400;
+      }
+      return response.status(status).json({
+        message,
+        error: { name: results.name },
+      });
+    }
+  }
+
 }
