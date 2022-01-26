@@ -28,7 +28,6 @@ export default class AuditTrail {
   async init() {
     const self = this;
     const detailsUser = await getDataUser(`Bearer ${self.token}`);
-    console.log(`[line 31 | AuditTrail-init] ${detailsUser}`);
 
     if (detailsUser !== undefined) self.dataUser = detailsUser;
 

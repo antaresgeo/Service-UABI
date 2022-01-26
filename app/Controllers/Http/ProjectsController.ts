@@ -371,10 +371,14 @@ export default class ProjectsController {
     }
 
     if (payloadProject["contracts"]) {
+      const { default: ProjectContractsController } = await import(
+        "App/Controllers/Http/ProjectContractsController"
+      );
+
       try {
-        const contracts = await this.createContracts(
+        const contracts = await new ProjectContractsController().create(
+          ctx,
           payloadProject["contracts"],
-          auditTrail,
           Number(responseData["results"]["id"])
         );
 
@@ -400,113 +404,136 @@ export default class ProjectsController {
     return response.status(responseData["status"]).json(responseData);
   }
 
-  /**
-   * createContracts
-   */
-  private async createContracts(
-    contracts: any[],
-    audit_trail: AuditTrail,
-    projectId: number
-  ) {
-    let dataToCreate: any[] = [];
-
-    contracts.map((contract) => {
-      let tmp = {
-        ...contract,
-        vigency_start: contract["validity"]["start_date"],
-        vigency_end: contract["validity"]["end_date"],
-
-        project_id: projectId,
-
-        status: 1,
-        audit_trail: audit_trail.getAsJson(),
-      };
-      delete tmp["validity"];
-      dataToCreate.push({
-        ...tmp,
-      });
-    });
-
-    try {
-      const contractsCreated = await ProjectContract.createMany(dataToCreate);
-      return contractsCreated;
-    } catch (error) {
-      console.error(error);
-      return Promise.reject("Error al crear los contratos del Proyecto");
-    }
-  }
-
   // PUT
   /**
    * update
    */
-  public async update({ request, response }: HttpContextContract) {
+  public async update(ctx: HttpContextContract) {
+    const { request, response } = ctx;
+    let responseData: IResponseData = {
+      message: "Proyecto actualizado correctamente.",
+      status: 200,
+    };
     const { token } = getToken(request.headers());
 
-    const newData = request.body();
-    const { id } = request.qs();
-    let costCenterID;
+    const newData = request.body(),
+      { id } = request.qs();
+
+    if (!id)
+      return messageError(
+        undefined,
+        response,
+        "Ingrese el ID del proyecto.",
+        400
+      );
+
+    let project: Project;
+    try {
+      project = await Project.findOrFail(id);
+    } catch (error) {
+      return messageError(
+        error,
+        response,
+        "Error inesperado al obtener el proyecto.",
+        500
+      );
+    }
+
+    let dataUpdated: IProjectAttributes = {
+      name: newData["name"].toUpperCase().trim(),
+      description: newData["description"].trim(),
+      budget_value: newData.budget_value
+        ? newData.budget_value
+        : project.budget_value,
+      cost_center_id: project.cost_center_id,
+    };
+
+    // Update of Audit Trail | Actualización del Registro de Auditoría
+    const auditTrail = new AuditTrail(token, project.audit_trail);
+
+    await auditTrail.update({ ...dataUpdated }, project);
+    dataUpdated["audit_trail"] = auditTrail.getAsJson();
+
+    // Array(newData['contracts']).diff(project)
+    // Creation of Contracts
+    const { default: ProjectContractsController } = await import(
+      "App/Controllers/Http/ProjectContractsController"
+    );
+
+    let oldContracts;
+    try {
+      oldContracts = await new ProjectContractsController().showByProject(
+        ctx,
+        Number(id)
+      );
+    } catch (error) {
+      return messageError(error, response);
+    }
+
+    const j = Array(newData["contracts"]).diff(oldContracts);
+    console.log(j);
 
     try {
-      if (typeof id === "string") {
-        const project = await Project.findOrFail(id);
-        costCenterID;
-
-        let dataUpdated: IProjectAttributes = {
-          name: newData["name"].toUpperCase().trim(),
-          description: newData["description"].trim(),
-          budget_value: newData.budget_value
-            ? newData.budget_value
-            : project.budget_value,
-          cost_center_id: project.cost_center_id,
-        };
-
-        const { status, results } = await getCostCenterID(
-          newData["dependency"],
-          newData["subdependency"],
-          newData["management_center"],
-          newData["cost_center"]
+      const responseProjectContract =
+        await new ProjectContractsController().create(
+          ctx,
+          newData["contracts"],
+          Number(id)
         );
 
-        if (status === 200)
-          if (results) dataUpdated["cost_center_id"] = parseInt(results.id);
-          else
-            return response.status(status).json({
-              message: results,
-            });
+      responseData["results"] = {
+        project: null,
+        contracts: responseProjectContract,
+      };
+    } catch (error) {
+      return messageError(error, response);
+    }
 
-        // Update of Audit Trail | Actualización del Registro de Auditoría
-        const auditTrail = new AuditTrail(token, project.audit_trail);
-
-        auditTrail.update({ ...dataUpdated }, project);
-        dataUpdated["audit_trail"] = auditTrail.getAsJson();
-
+    if (newData["cost_center_id"]) {
+      dataUpdated["cost_center_id"] = Number(newData["cost_center_id"]);
+    } else {
+      const { status, results } = await getCostCenterID(
+        newData["dependency"],
+        newData["subdependency"],
+        newData["management_center"],
+        newData["cost_center"]
+      );
+      if (status === 200)
+        if (results) dataUpdated["cost_center_id"] = parseInt(results.id);
+        else
+          return messageError(
+            undefined,
+            response,
+            "Error al obtener el ID del Centro de Costos, revisar los valores ingresados.",
+            400
+          );
+    }
+    try {
+      if (typeof id === "string") {
         // Updating data
         try {
-          await project
+          const projectUpdated = await project
             .merge({
               ...dataUpdated,
             })
             .save();
 
-          return response.status(200).json({
-            message: `Proyecto ${capitalize(
-              project.name
-            )} actualizado satisfactoriamente`,
-            results: project,
-          });
+          responseData["message"] = `Proyecto ${capitalize(
+            project.name
+          )} actualizado satisfactoriamente`;
+          responseData["results"]["project"] = projectUpdated;
         } catch (error) {
-          console.error(error);
-          return response
-            .status(500)
-            .json({ message: "Error al actualizar: Servidor", error });
+          return messageError(
+            error,
+            response,
+            "Error inesperado al actualizar el proyecto.",
+            500
+          );
         }
+        return response.status(responseData["status"]).json(responseData);
       }
     } catch (error) {
-      console.error(error);
-      return response
-        .status(500)
-        .json({ message: "Error interno: Servidor", error });
+      return messageError(error, response, "Error inesperado.", 500);
     }
   }
 

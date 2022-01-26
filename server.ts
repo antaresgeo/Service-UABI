@@ -16,7 +16,7 @@ import { Ignitor } from "@adonisjs/core/build/standalone";
 
 declare global {
   interface Array<T> {
-    diff(arr: T[]): T[];
+    diff(arr: T[]): { oldItems: T[] };
   }
 
   interface String {
@@ -24,11 +24,14 @@ declare global {
   }
 }
 
-Array.prototype.diff = function (a) {
-  return this.filter(function (i) {
-    return a.indexOf(i) < 0;
-  });
-};
+if (!Array.prototype.diff)
+  Array.prototype.diff = function (a) {
+    let oldItems = this.filter(function (i) {
+      return a.indexOf(i) < 0;
+    });
+    // this.
+    return { oldItems };
+  };
 
 if (!String.prototype.capitalize) {
   String.prototype.capitalize = function () {
