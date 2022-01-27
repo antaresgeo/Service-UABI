@@ -1,7 +1,7 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Insurability from "App/Models/Insurability";
 // import RealEstate from "App/Models/RealEstate";
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 import { getToken, sum, validateDate } from "App/Utils/functions";
 import RealEstate from "./../../Models/RealEstate";
 import PoliciesInsuranceCompany from "../../Models/PoliciesInsuranceCompany";
@@ -11,7 +11,7 @@ export default class InsurabilitiesController {
    * create Acquisition
    */
   public async create(ctx: HttpContextContract) {
-    const { token } = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers(), ctx);
 
     let dataInsurability = ctx.request.body();
 
@@ -56,7 +56,7 @@ export default class InsurabilitiesController {
         );
 
         dataInsurability.real_estates_id.map((reId) => {
-          new RealEstatesController().update(ctx, {
+          new RealEstatesController(ctx.request.ip()).update(ctx, {
             id: reId,
             data: { policy_id: newInsurability.id },
             dataToShow: newInsurability,
@@ -64,11 +64,9 @@ export default class InsurabilitiesController {
         });
       } catch (error) {
         console.error(error);
-        return ctx.response
-          .status(500)
-          .json({
-            message: "Error al actualizar el Bien Inmueble con su nueva póliza",
-          });
+        return ctx.response.status(500).json({
+          message: "Error al actualizar el Bien Inmueble con su nueva póliza",
+        });
       }
 
       return ctx.response.status(200).json({
@@ -311,7 +309,7 @@ export default class InsurabilitiesController {
    * update
    */
   public async update(ctx: HttpContextContract) {
-    const { token } = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers(), ctx);
     const newData = ctx.request.body();
     const { id } = ctx.request.qs();
 

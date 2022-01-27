@@ -1,19 +1,37 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+
+// MODELS
 import Project from "App/Models/Project";
 import RealEstateOwner from "./../../Models/RealEstateOwner";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import RealEstateProperty from "./../../Models/RealEstateProperty";
 import PublicService from "./../../Models/PublicService";
 import PhysicalInspection from "./../../Models/PhysicalInspection";
-import AuditTrail from "App/Utils/classes/AuditTrail";
 import OcupationRealEstate from "./../../Models/OcupationRealEstate";
+import Dependency from "App/Models/Dependency";
+import RealEstate from "./../../Models/RealEstate";
+
+// VALIDATORS
+import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
+import CreateManyRealeEstateValidator from "App/Validators/CreateManyRealeEstateValidator";
+
+// SERVICES
+import { getAddressById } from "App/Services";
+
+// UTILS
+// Classes
+import { AuditTrail, Logger } from "App/Utils/classes";
+// Functions
 import {
   getCostCenterID,
   getToken,
   messageError,
   sum,
   validatePagination,
+  createSAPID,
+  createXLSXFromInventoryRegister,
 } from "App/Utils/functions";
+// Interfaces
 import {
   IPaginationValidated,
   IPayloadManyRealEstates,
@@ -21,17 +39,17 @@ import {
   IRealEstateAttributes,
   IResponseData,
 } from "App/Utils/interfaces";
-import RealEstate from "./../../Models/RealEstate";
-import CreateRealEstate from "./../../Validators/CreateRealEstateValidator";
-import { createSAPID } from "../../Utils/functions/index";
-import Dependency from "App/Models/Dependency";
-import { getAddressById } from "App/Services";
-import CreateManyRealeEstateValidator from "App/Validators/CreateManyRealeEstateValidator";
-import { createXLSXFromInventoryRegister } from "App/Utils/functions/xlsx";
+import { Manager } from "App/Utils/enums";
 
 export default class RealEstatesController {
-  // GET
+  private logger: Logger;
+  private responseData: IResponseData;
+  constructor(ip: string) {
+    this.logger = new Logger(ip, Manager.RealEstatesController);
+    this.responseData = { message: "", status: 200 };
+  }
 
+  // GET
   /**
    * Index: Currently create the excel with all data of RE
    */
@@ -75,22 +93,22 @@ export default class RealEstatesController {
     { response, request }: HttpContextContract,
     toExcel?: boolean
   ) {
-    let responseData: IResponseData = {
+    this.responseData = {
       message: "Lista de Bienes Inmuebles completa. | Sin paginación.",
       status: 200,
     };
-    const { headerAuthorization } = getToken(request.headers());
-    const { key, value, page, pageSize, to, only } = request.qs();
+    const { headerAuthorization } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
+    const { key, value, page, pageSize, to, only, without } = request.qs();
 
-    let data: any[] = [],
-      logs: string = "";
+    let data: any[] = [];
     let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
     const tmpWith = request.qs().with;
     if (tmpWith && tmpWith === "pagination") {
       pagination = validatePagination(key, value, page, pageSize);
-      responseData["message"] =
+      this.responseData["message"] =
         "Lista de Bienes Inmuebles completa. | Con paginación.";
-      logs += "Line 89 | Paginación validada.\n";
     }
 
     let results: any[] = [],
@@ -102,34 +120,24 @@ export default class RealEstatesController {
         ? pagination["page"] * pagination["pageSize"] - pagination["pageSize"]
         : 0;
 
-    switch (to) {
-      case "insurabilities":
-        try {
-          results = await RealEstatesProject.query()
-            .preload("real_estate_info", (realEstate) => {
-              realEstate.preload("status_info").preload("cost_center_info");
-            })
-            .preload("project_info", (project) => {
-              project.preload("status_info").preload("cost_center_info");
-            })
-            .orderBy("real_estate_id", "desc")
-            .limit(pagination["pageSize"])
-            .offset(count);
-        } catch (error) {
+    if (without) {
+      if (without === "policy") {
+        if (tmpWith && tmpWith === "pagination") {
           return messageError(
-            error,
+            undefined,
             response,
-            "Error al obtener la lista de los Bienes Inmuebles. [ I ]",
+            "Paginación no permitida para esta lista.",
             400
           );
         }
-        break;
 
-      default:
         try {
           results = await RealEstatesProject.query()
             .preload("real_estate_info", (realEstate) => {
-              realEstate.preload("status_info").preload("cost_center_info");
+              realEstate
+                .select(["id", "name", "registry_number"])
+                .whereNull("policy_id")
+                .where("status", 1);
             })
             .preload("project_info", (project) => {
               project.preload("status_info");
@@ -137,32 +145,6 @@ export default class RealEstatesController {
             .orderBy("real_estate_id", "desc")
             .limit(pagination["pageSize"])
             .offset(count);
-
-          if (only) {
-            const num = only === "active" ? 1 : 0;
-            results = await RealEstatesProject.query()
-              .innerJoin(
-                "real_estates as re",
-                "real_estates_projects.real_estate_id",
-                "re.id"
-              )
-              .preload("real_estate_info", (realEstate) => {
-                realEstate
-                  .preload("status_info")
-                  .select(["id", "registry_number", "name", ""]);
-              })
-              .preload("project_info", (project) => {
-                project.preload("status_info");
-              })
-              .orderBy("real_estate_id", "desc")
-              .limit(pagination["pageSize"])
-              .offset(count)
-              .where("re.status", num);
-          }
-
-          // results.map((result) => {
-          //   console.log(result["$preloaded"]);
-          // });
         } catch (error) {
           return messageError(
             error,
@@ -171,9 +153,85 @@ export default class RealEstatesController {
             400
           );
         }
-        break;
-    }
-    logs += "Line 172 | BIs obtenidos.\n";
+        this.responseData["message"] = "Lista de Bienes Inmuebles sin póliza.";
+      }
+    } else
+      switch (to) {
+        case "disposition":
+          try {
+            results = await RealEstatesProject.query()
+              .preload("real_estate_info", (realEstate) => {
+                realEstate.preload("status_info").preload("cost_center_info");
+              })
+              .preload("project_info", (project) => {
+                project
+                  .select(["id"])
+                  .preload("status_info")
+                  .preload("cost_center_info");
+              })
+              .orderBy("real_estate_id", "desc")
+              .limit(pagination["pageSize"])
+              .offset(count);
+
+            this.logger.log(results[0], 135, true);
+          } catch (error) {
+            return messageError(
+              error,
+              response,
+              "Error al obtener la lista de los Bienes Inmuebles. [ I ]",
+              400
+            );
+          }
+          break;
+
+        default:
+          try {
+            results = await RealEstatesProject.query()
+              .preload("real_estate_info", (realEstate) => {
+                realEstate.preload("status_info").preload("cost_center_info");
+              })
+              .preload("project_info", (project) => {
+                project.preload("status_info");
+              })
+              .orderBy("real_estate_id", "desc")
+              .limit(pagination["pageSize"])
+              .offset(count);
+
+            if (only) {
+              const num = only === "active" ? 1 : 0;
+              results = await RealEstatesProject.query()
+                .innerJoin(
+                  "real_estates as re",
+                  "real_estates_projects.real_estate_id",
+                  "re.id"
+                )
+                .preload("real_estate_info", (realEstate) => {
+                  realEstate
+                    .preload("status_info")
+                    .select(["id", "registry_number", "name"]);
+                })
+                .preload("project_info", (project) => {
+                  project.preload("status_info");
+                })
+                .orderBy("real_estate_id", "desc")
+                .limit(pagination["pageSize"])
+                .offset(count)
+                .where("re.status", num);
+            }
+
+            // results.map((result) => {
+            //   console.log(result["$preloaded"]);
+            // });
+          } catch (error) {
+            return messageError(
+              error,
+              response,
+              "Error al obtener la lista de los Bienes Inmuebles. [ RE ]",
+              400
+            );
+          }
+          break;
+      }
 
     //   if (tmpWith === "pagination")
     //     results = await RealEstatesProject.query()
@@ -195,91 +253,85 @@ export default class RealEstatesController {
     //       //   "'%" + pagination["search"]?.value + "%'"
     //       // )
 
-    //   else
-    //     results = await RealEstatesProject.query()
-    //       .from("real_estates_projects as a")
-    //       .innerJoin("projects as p", "a.project_id", "p.id")
-    //       .innerJoin("real_estates as re", "a.real_estate_id", "re.id")
-    //       .innerJoin("status as s", "re.status", "s.id")
-    //       .innerJoin("cost_centers as cc", "re.cost_center_id", "cc.id")
-    //       .innerJoin("dependencies as d", "cc.dependency_id", "d.id")
-    //       .innerJoin("tipologies as t", "re.tipology_id", "t.id")
-    //       .select([
-    //         "p.name as project_name",
-    //         "p.cost_center_id as project_cost_center_id",
-    //         "re.name as re_name",
-    //         "re.id as re_id",
-    //       ])
-
     await Promise.all(
       results.map(async (re) => {
-        // Get Info Address
-        const address: any = await getAddressById(
-          Number(
-            re["$preloaded"]["real_estate_info"]["$attributes"]["address"]
-          ),
-          headerAuthorization
-        );
-
-        let project = { ...re["$preloaded"]["project_info"] };
-        delete project["$attributes"]["audit_trail"]["updated_values"];
-
-        let tmp = {
-          ...re["$preloaded"]["real_estate_info"]["$attributes"],
-          address: { ...address },
-          project: {
-            ...project["$attributes"],
-            status: project["$preloaded"]["status_info"]["status_name"],
-          },
-          // id: re["$extras"]["re_id"],
-          // status: re["$extras"]["status_name"],
-          // name: re["$extras"]["re_name"],
-          // materials: re["$extras"]["materials"].split(","),
-        };
-
-        delete tmp["audit_trail"]["updated_values"];
-
-        logs += "Line 239 | Información limpiada.\n";
-
-        if (to && to === "inspection") {
-          // Physical Inspection
-          try {
-            physicalInspection = await PhysicalInspection.findByOrFail(
-              "real_estate_id",
-              tmp.id
+        if (re["$preloaded"]["real_estate_info"] !== null) {
+          let realEstatesToExport: any;
+          if (without && without === "policy") {
+            this.logger.log(re["$preloaded"]["real_estate_info"], 270, true);
+            realEstatesToExport = {
+              id: re["$preloaded"]["real_estate_info"]["id"],
+              name: re["$preloaded"]["real_estate_info"]["name"],
+              registry_number:
+                re["$preloaded"]["real_estate_info"]["registry_number"],
+            };
+          } else {
+            // Get Info Address
+            const address: any = await getAddressById(
+              Number(
+                re["$preloaded"]["real_estate_info"]["$attributes"]["address"]
+              ),
+              headerAuthorization
             );
-          } catch (error) {
-            console.error(error);
-            return response.status(500).json({
-              message:
-                "Error inesperado al obtener la Inspección Física actual de la inspección.\nRevisar Terminal.",
-            });
+
+            let project = { ...re["$preloaded"]["project_info"] };
+            delete project["$attributes"]["audit_trail"]["updated_values"];
+
+            realEstatesToExport = {
+              ...re["$preloaded"]["real_estate_info"]["$attributes"],
+              address: { ...address },
+              project: {
+                ...project["$attributes"],
+                status: project["$preloaded"]["status_info"]["status_name"],
+              },
+              // id: re["$extras"]["re_id"],
+              // status: re["$extras"]["status_name"],
+              // name: re["$extras"]["re_name"],
+              // materials: re["$extras"]["materials"].split(","),
+            };
+
+            delete realEstatesToExport["project_name"];
+            delete realEstatesToExport["status_name"];
+            delete realEstatesToExport["project_cost_center_id"];
+            delete realEstatesToExport["re_name"];
+            delete realEstatesToExport["re_id"];
+            if (realEstatesToExport["audit_trail"])
+              delete realEstatesToExport["audit_trail"]["updated_values"];
           }
 
-          tmp["inspection_date"] =
-            physicalInspection["$attributes"]["inspection_date"] === null
-              ? "No realizada"
-              : physicalInspection["$attributes"]["inspection_date"];
+          if (to && to === "inspection") {
+            // Physical Inspection
+            try {
+              physicalInspection = await PhysicalInspection.findByOrFail(
+                "real_estate_id",
+                realEstatesToExport.id
+              );
+            } catch (error) {
+              return messageError(
+                error,
+                response,
+                "Error inesperado al obtener la Inspección Física actual de la inspección.\nRevisar Terminal."
+              );
+            }
 
-          tmp["status"] =
-            re["$extras"]["disposition_type"] === null
-              ? "Sin contrato"
-              : "Con contrato";
+            realEstatesToExport["inspection_date"] =
+              physicalInspection["$attributes"]["inspection_date"] === null
+                ? "No realizada"
+                : physicalInspection["$attributes"]["inspection_date"];
+
+            realEstatesToExport["status"] =
+              re["$extras"]["disposition_type"] === null
+                ? "Sin contrato"
+                : "Con contrato";
+          }
+
+          await data.push(realEstatesToExport);
         }
-
-        delete tmp["project_name"];
-        delete tmp["status_name"];
-        delete tmp["project_cost_center_id"];
-        delete tmp["re_name"];
-        delete tmp["re_id"];
-
-        await data.push(tmp);
       })
     );
 
     try {
       realEstates = await RealEstate.query().where("status", 1);
-      logs += "Line 279 | Se obtienen todos los bienes inmuebles.\n";
     } catch (error) {
       console.error(error);
       return response.status(500).json({
@@ -289,22 +341,20 @@ export default class RealEstatesController {
 
     data = data.sort((a, b) => b.id - a.id);
 
-    responseData["results"] = data;
-    responseData["page"] = pagination["page"];
-    responseData["count"] = data.length;
-    responseData["next_page"] =
+    this.responseData["results"] = data;
+    this.responseData["page"] = pagination["page"];
+    this.responseData["count"] = data.length;
+    this.responseData["next_page"] =
       realEstates.length - pagination["page"] * pagination["pageSize"] !== 10 &&
       realEstates.length - pagination["page"] * pagination["pageSize"] > 0
         ? sum(parseInt(pagination["page"] + ""), 1)
         : null;
-    responseData["previous_page"] =
+    this.responseData["previous_page"] =
       pagination["page"] - 1 < 0 ? pagination["page"] - 1 : null;
-    responseData["total_results"] = realEstates.length;
-
-    responseData["logs"] = logs;
+    this.responseData["total_results"] = realEstates.length;
 
     if (toExcel) return data;
-    return response.status(responseData["status"]).json(responseData);
+    return response.status(this.responseData["status"]).json(this.responseData);
   }
 
   /**
@@ -384,7 +434,7 @@ export default class RealEstatesController {
    * index
    */
   public async getOne(ctx: HttpContextContract) {
-    const { token } = getToken(ctx.request.headers());
+    const { token } = getToken(ctx.request.headers(), ctx);
     const { id } = ctx.request.qs();
 
     let results;
@@ -450,7 +500,9 @@ export default class RealEstatesController {
    */
   public async create(ctx: HttpContextContract) {
     const { response, request } = ctx;
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     const payload: IPayloadRealEstate = await request.validate(
       CreateRealEstate
     );
@@ -940,7 +992,9 @@ export default class RealEstatesController {
 
   public async createMany(ctx: HttpContextContract) {
     const { response, request } = ctx;
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     const payload: IPayloadManyRealEstates = await request.validate(
       CreateManyRealeEstateValidator
     );
@@ -1465,7 +1519,9 @@ export default class RealEstatesController {
    * update
    */
   public async update({ response, request }: HttpContextContract, alt?: any) {
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     let newData, _id;
     // let costCenterID;

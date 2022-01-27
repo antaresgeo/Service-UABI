@@ -4,7 +4,7 @@ import moment from "moment";
 import { getDataUser } from "../functions";
 import { IUpdatedValues } from "../interfaces";
 
-export default class AuditTrail {
+export class AuditTrail {
   private dataUser: DetailsUser;
   protected token: string;
   protected createdBy: string;

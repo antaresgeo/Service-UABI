@@ -9,7 +9,7 @@ Route.group(() => {
     const { default: RealEstatesController } = await import(
       "App/Controllers/Http/RealEstatesController"
     );
-    return new RealEstatesController().historic(ctx);
+    return new RealEstatesController(ctx.request.ip()).historic(ctx);
   });
   Route.group(() => {
     // GET
@@ -17,31 +17,31 @@ Route.group(() => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().index(ctx);
+      return new RealEstatesController(ctx.request.ip()).index(ctx);
     });
     Route.get("/list", async (ctx) => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
 
-      // if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
-      return new RealEstatesController().list(ctx);
+      // if (!ctx.request.qs().q) return new RealEstatesController(ctx.request.ip()).getList(ctx);
+      return new RealEstatesController(ctx.request.ip()).list(ctx);
 
-      // return new RealEstatesController().filter(ctx);
+      // return new RealEstatesController(ctx.request.ip()).filter(ctx);
     });
 
     Route.get("/project", async (ctx) => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().getByProject(ctx);
+      return new RealEstatesController(ctx.request.ip()).getByProject(ctx);
     });
 
     Route.get("/", async (ctx) => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().getOne(ctx);
+      return new RealEstatesController(ctx.request.ip()).getOne(ctx);
     });
 
     // POST
@@ -51,9 +51,9 @@ Route.group(() => {
       );
 
       if (ctx.request.qs().action === "many")
-        return new RealEstatesController().createMany(ctx);
+        return new RealEstatesController(ctx.request.ip()).createMany(ctx);
 
-      return new RealEstatesController().create(ctx);
+      return new RealEstatesController(ctx.request.ip()).create(ctx);
     });
 
     // PUT
@@ -61,7 +61,7 @@ Route.group(() => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().update(ctx);
+      return new RealEstatesController(ctx.request.ip()).update(ctx);
     });
 
     // DELETE
@@ -69,7 +69,7 @@ Route.group(() => {
       const { default: RealEstatesController } = await import(
         "App/Controllers/Http/RealEstatesController"
       );
-      return new RealEstatesController().delete(ctx);
+      return new RealEstatesController(ctx.request.ip()).delete(ctx);
     });
   })
     .prefix("/real-estates")

@@ -3,7 +3,7 @@ import ProjectContract from "./../../Models/ProjectContract";
 
 // ******* UTILS *******
 // CLASSES
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 
 // FUNCTIONS
 import {
@@ -295,7 +295,9 @@ export default class ProjectsController {
   public async create(ctx: HttpContextContract) {
     let responseData: IResponseData = { message: "", status: 200 };
     let { request, response } = ctx;
-    let { token } = getToken(request.headers());
+    let { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     const payloadProject: IPayloadProject = await request.validate(
       CreateProjectValidator
@@ -411,7 +413,9 @@ export default class ProjectsController {
       message: "Proyecto actualizado correctamente.",
       status: 200,
     };
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     const newData = request.body(),
       { id } = request.qs();
@@ -652,7 +656,9 @@ export default class ProjectsController {
         const { default: RealEstatesController } = await import(
           "App/Controllers/Http/RealEstatesController"
         );
-        const realEstatesController = new RealEstatesController();
+        const realEstatesController = new RealEstatesController(
+          ctx.request.ip()
+        );
         data.map((realEstate) => {
           realEstatesController.update(ctx, {
             data: { project_id: 0 },

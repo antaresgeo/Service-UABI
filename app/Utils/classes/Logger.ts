@@ -35,14 +35,21 @@ export class Logger {
   /**
    * log
    */
-  public log(text: any, line?: number | string) {
-    console.log(
-      `\n[ ${moment().format("MMMM Do YYYY, h:mm:ss a")} | ${this.manager}${
-        line ? `:${line}` : ""
-      } ]  =>  ${
+  public log(text: any, line?: number | string, printObject: boolean = false) {
+    let output: string = `\n[ ${moment().format("MMMM Do YYYY, h:mm:ss a")} | ${
+      this.manager
+    }${line ? `:${line}` : ""} ]`;
+
+    if (!printObject) {
+      output += `${
         typeof text === "object" ? JSON.stringify(text) : String(text)
-      }`
-    );
+      }`;
+    }
+
+    console.log(output);
+    if (printObject) {
+      console.log(text);
+    }
   }
 
   /**

@@ -4,14 +4,16 @@ import CreateContractValidator from "./../../Validators/CreateContractValidator"
 import { messageError, validatePagination } from "App/Utils/functions";
 import Contract from "./../../Models/Contract";
 import { IContract } from "./../../Utils/interfaces/contract";
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 import { getToken } from "App/Utils/functions/jwt";
 
 export default class ContractsController {
   public async index({}: HttpContextContract) {}
 
   public async create({ request, response }: HttpContextContract, data?) {
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     let responseData: IResponseData = { message: "", status: 200 };
     const bodyPayload = data
       ? data

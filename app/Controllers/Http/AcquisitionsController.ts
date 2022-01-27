@@ -1,6 +1,6 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Acquisition from "App/Models/Acquisition";
-import AuditTrail from "./../../Utils/classes/AuditTrail";
+import { AuditTrail } from "./../../Utils/classes";
 import CreateAcquisitionValidator from "./../../Validators/CreateAcquisitionValidator";
 import { IAcquisition } from "../../Utils/interfaces/acquisitions";
 import { getToken, messageError } from "App/Utils/functions";
@@ -19,7 +19,9 @@ export default class AdquisitionsController {
       message: "Adquisiciones creadas correctamente.",
       status: 200,
     };
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     let dataAcquisition, newAcquisitions: Acquisition[];
     const { action } = request.qs();
 
@@ -208,7 +210,9 @@ export default class AdquisitionsController {
   public async updateMany(ctx: HttpContextContract) {
     let responseData: IResponseData = { message: "", status: 200 };
     const { request, response } = ctx;
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     const { acquisitions } = request.body();
 

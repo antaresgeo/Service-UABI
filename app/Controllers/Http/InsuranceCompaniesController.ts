@@ -1,5 +1,5 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 import {
   IInsuranceCompany,
   IPayloadInsuranceCompany,
@@ -12,7 +12,9 @@ export default class InsuranceCompaniesController {
   public async index({}: HttpContextContract) {}
 
   public async create({ request, response }: HttpContextContract) {
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     const payload: IPayloadInsuranceCompany = await request.validate(
       CreateInsuranceCompanyValidator
@@ -140,7 +142,9 @@ export default class InsuranceCompaniesController {
   public async edit({}: HttpContextContract) {}
 
   public async update({ response, request }: HttpContextContract, alt?: any) {
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     let newData, _id;
 
@@ -204,7 +208,9 @@ export default class InsuranceCompaniesController {
    * inactivate
    */
   public async inactivate({ request, response }: HttpContextContract) {
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     const { id } = request.params();
 

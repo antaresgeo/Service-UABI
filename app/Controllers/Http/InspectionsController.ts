@@ -4,7 +4,7 @@ import OcupationRealEstate from "./../../Models/OcupationRealEstate";
 import PhysicalInspection from "./../../Models/PhysicalInspection";
 import PublicService from "./../../Models/PublicService";
 import RealEstateProperty from "./../../Models/RealEstateProperty";
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 import { getToken } from "App/Utils/functions";
 
 export default class InspectionsController {
@@ -158,7 +158,9 @@ export default class InspectionsController {
     // console.log(images);
     // return images
 
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     // Update Ocupation
     try {

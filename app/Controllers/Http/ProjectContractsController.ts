@@ -1,6 +1,6 @@
 import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import ProjectContract from "App/Models/ProjectContract";
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 import { messageError } from "App/Utils/functions";
 import { IResponseData } from "App/Utils/interfaces";
 import { getToken } from "App/Utils/functions/jwt";
@@ -18,7 +18,9 @@ export default class ProjectContractsController {
     contracts: any[],
     projectId: number
   ) {
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     let dataToCreate: any[] = [];
 
     const auditTrail = new AuditTrail(token);
@@ -134,7 +136,7 @@ export default class ProjectContractsController {
     { response }: HttpContextContract,
     deleteContract: any
   ) {
-    // const { token } = getToken(request.headers());
+    // const { token } = getToken(request.headers(), {response} as HttpContextContract);
     // const { id } = request.params();
 
     const { success, results } = await this.changeStatus(deleteContract.id);

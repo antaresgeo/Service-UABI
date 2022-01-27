@@ -4,7 +4,7 @@ import { IResponseData } from "App/Utils/interfaces";
 import CreatePersonalInformationValidator from "App/Validators/CreatePersonalInformationValidator";
 import { IPersonalInformation } from "./../../Utils/interfaces/personalInformation";
 import PersonalInformation from "./../../Models/PersonalInformation";
-import AuditTrail from "./../../Utils/classes/AuditTrail";
+import { AuditTrail } from "./../../Utils/classes";
 import { getToken } from "App/Utils/functions/jwt";
 import UpdatePersonalInformationValidator from "./../../Validators/UpdatePersonalInformationValidator";
 
@@ -16,7 +16,9 @@ export default class PersonalInformationsController {
       message: "Información personal almacenada correctamente.",
       status: 200,
     };
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
 
     const {
       documentNumber,
@@ -130,7 +132,9 @@ export default class PersonalInformationsController {
       message: "Información Personal actualizada correctamente.",
       status: 200,
     };
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     let personalInformation: PersonalInformation;
 
     const bodyPayload = await request.validate(

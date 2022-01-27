@@ -2,24 +2,14 @@ import CostCenter from "App/Models/CostCenter";
 import Env from "@ioc:Adonis/Core/Env";
 import axios from "axios";
 
-import moment from "moment";
-import AuditTrail from "../classes/AuditTrail";
+import { AuditTrail } from "../classes";
 import Tipology from "./../../Models/Tipology";
 import { IPaginationValidated, IResponseData } from "../interfaces";
+import { Action, To } from "../types";
 
 export const sum = (num1: number, num2: number): number => {
   return num1 + num2;
 };
-
-export const validateDate = (vigencyEnd: number) => {
-  let dateNow = moment().valueOf();
-  var discharge = moment(vigencyEnd);
-  const diff = discharge.diff(dateNow, "days");
-
-  return diff < 0 ? "Vencida" : "Vigente";
-};
-
-type Action = "inactivate" | "terminate" | "activate";
 
 export const changeStatus = async (
   model: any,
@@ -194,8 +184,6 @@ export const validatePagination = (
   return { search: tmpSearch, page: tmpPage, pageSize: tmpPageSize };
 };
 
-type To = "projects" | "realEstates";
-
 export const getWhereRaw = (to: To, search: { key: string; value: string }) => {
   switch (to) {
     case "projects":
@@ -265,3 +253,5 @@ export const messageError = (
 };
 
 export * from "./jwt";
+export * from "./xlsx";
+export * from "./insurabilities";

@@ -12,7 +12,9 @@ export default class VerifyToken {
       error: true,
       status: 401,
     };
-    const { token, payloadToken } = getToken(request.headers());
+    const { token, payloadToken } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     if (payloadToken === undefined) {
       responseData["message"] =
         "Token expirado. Iniciar sesión de nuevo para poder continuar.";

@@ -2,7 +2,7 @@ import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Tipology from "./../../Models/Tipology";
 import { IResponseData } from "App/Utils/interfaces";
 import { ITipology } from "./../../Utils/interfaces/tipology";
-import AuditTrail from "App/Utils/classes/AuditTrail";
+import { AuditTrail } from "App/Utils/classes";
 import { getToken } from "App/Utils/functions/jwt";
 import { messageError } from "App/Utils/functions";
 
@@ -14,7 +14,9 @@ export default class TipologiesController {
       message: "Tipología registrada y creada correctamente.",
       status: 200,
     };
-    const { token } = getToken(request.headers());
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
     const requestBodyPayload = request.body();
     const { action } = request.qs();
     let dataToCreate: ITipology[] = [];
