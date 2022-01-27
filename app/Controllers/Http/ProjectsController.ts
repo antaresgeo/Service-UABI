@@ -486,7 +486,7 @@ export default class ProjectsController {
           })
         );
 
-        if (existsContract[0] === undefined) {
+        if (existsContract[0] !== undefined) {
           return messageError(
             undefined,
             response,
