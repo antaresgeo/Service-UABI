@@ -483,6 +483,8 @@ export default class ProjectsController {
             return { ...a };
           })
         );
+        console.log(existsContract);
+
         if (existsContract.length > 0) {
           return messageError(
             undefined,
