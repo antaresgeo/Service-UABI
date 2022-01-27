@@ -482,7 +482,7 @@ export default class ProjectsController {
                 c.contract_number
               )
             )[0];
-            return { ...a };
+            return a;
           })
         );
         console.log(existsContract);
