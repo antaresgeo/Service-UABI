@@ -1,9 +1,10 @@
 import fs from "fs";
 import moment from "moment";
 import { writeFile, utils, WorkBook } from "xlsx";
+import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
 export const createXLSXFromInventoryRegister = async (
-  ctx,
+  { request, response }: HttpContextContract,
   author: string
   //   data: any[]
 ) => {
@@ -23,8 +24,8 @@ export const createXLSXFromInventoryRegister = async (
   );
 
   // if (!ctx.request.qs().q) return new RealEstatesController().getList(ctx);
-  const data = await new RealEstatesController(ctx.request.ip()).list(
-    ctx,
+  const data = await new RealEstatesController(request.ip()).list(
+    { request, response } as HttpContextContract,
     true
   );
   console.log(data);

@@ -53,16 +53,19 @@ export default class RealEstatesController {
   /**
    * Index: Currently create the excel with all data of RE
    */
-  public async index(ctx: HttpContextContract) {
-    await createXLSXFromInventoryRegister(ctx, "UABI");
+  public async index({ response, request }: HttpContextContract) {
+    await createXLSXFromInventoryRegister(
+      { response, request } as HttpContextContract,
+      "UABI"
+    );
 
-    return ctx.response.download("tmp/Registro de Inventario.xlsx");
+    return response.download("tmp/Registro de Inventario.xlsx");
   }
 
   /**
    * historic
    */
-  public async historic(ctx: HttpContextContract) {
+  public async historic({ response }: HttpContextContract) {
     const realEstates = await RealEstatesProject.query()
       .from("real_estates_projects as a")
       .innerJoin("projects as p", "a.project_id", "p.id")
@@ -83,7 +86,7 @@ export default class RealEstatesController {
 
     console.log(realEstates);
 
-    return ctx.response.json({ results: {} });
+    return response.json({ results: {} });
   }
 
   /**
@@ -93,6 +96,16 @@ export default class RealEstatesController {
     { response, request }: HttpContextContract,
     toExcel?: boolean
   ) {
+    const { key, value, page, pageSize, to, only, without } = request.qs();
+
+    if (!key)
+      return messageError(
+        undefined,
+        response,
+        "Ingrese la clave (key) para poder obtener la lista.",
+        400
+      );
+
     this.responseData = {
       message: "Lista de Bienes Inmuebles completa. | Sin paginación.",
       status: 200,
@@ -100,7 +113,6 @@ export default class RealEstatesController {
     const { headerAuthorization } = getToken(request.headers(), {
       response,
     } as HttpContextContract);
-    const { key, value, page, pageSize, to, only, without } = request.qs();
 
     let data: any[] = [];
     let pagination: IPaginationValidated = { page: 0, pageSize: 1000000 };
@@ -258,7 +270,6 @@ export default class RealEstatesController {
         if (re["$preloaded"]["real_estate_info"] !== null) {
           let realEstatesToExport: any;
           if (without && without === "policy") {
-            this.logger.log(re["$preloaded"]["real_estate_info"], 270, true);
             realEstatesToExport = {
               id: re["$preloaded"]["real_estate_info"]["id"],
               name: re["$preloaded"]["real_estate_info"]["name"],
@@ -360,8 +371,8 @@ export default class RealEstatesController {
   /**
    * Get real estates by Project
    */
-  public async getByProject(ctx: HttpContextContract) {
-    const { id } = ctx.request.qs();
+  public async getByProject({ response, request }: HttpContextContract) {
+    const { id } = request.qs();
 
     let list;
     try {
@@ -386,7 +397,7 @@ export default class RealEstatesController {
         .orderBy("re.id", "desc");
     } catch (error) {
       console.error(error);
-      return ctx.response
+      return response
         .status(500)
         .json({ message: "Request to Real Estates failed!" });
     }
@@ -423,7 +434,7 @@ export default class RealEstatesController {
     //   data.push(re["$extras"]);
     // });
 
-    return ctx.response.json({
+    return response.json({
       message: "List of all Real Estates",
       results: data,
       total: data.length,
@@ -433,9 +444,13 @@ export default class RealEstatesController {
   /**
    * index
    */
-  public async getOne(ctx: HttpContextContract) {
-    const { token } = getToken(ctx.request.headers(), ctx);
-    const { id } = ctx.request.qs();
+  public async getOne({ request, response }: HttpContextContract) {
+    const { token } = getToken(request.headers(), {
+      response,
+    } as HttpContextContract);
+    const { id } = request.qs();
+
+    if (!id) return messageError(undefined, response);
 
     let results;
 
@@ -456,7 +471,7 @@ export default class RealEstatesController {
         .where("re.id", id);
     } catch (error) {
       console.error(error);
-      return ctx.response.status(500).json({ message: "Real Estate error" });
+      return response.status(500).json({ message: "Real Estate error" });
     }
 
     // Get Info Address
@@ -491,7 +506,7 @@ export default class RealEstatesController {
         ? []
         : project["supports_documents"].split(",");
 
-    return ctx.response.json({ message: "Real Estate", results: project });
+    return response.json({ message: "Real Estate", results: project });
   }
 
   // POST
@@ -1648,16 +1663,16 @@ export default class RealEstatesController {
   /**
    * delete
    */
-  public async delete(ctx: HttpContextContract) {
-    const { id } = ctx.request.qs();
+  public async delete({ request, response }: HttpContextContract) {
+    const { id } = request.qs();
 
     if (!id)
-      return ctx.response
+      return response
         .status(400)
         .json({ message: "Colocar el ID del Bien Inmueble a inactivar." });
 
     if (id === "0")
-      return ctx.response
+      return response
         .status(400)
         .json({ message: "Este Bien Inmueble no puede ser activado." });
 
@@ -1675,19 +1690,19 @@ export default class RealEstatesController {
           tmp.delete();
         });
       } catch (error) {
-        return ctx.response.status(500).json({
+        return response.status(500).json({
           message: "Error al eliminar relación con proyecto(s).",
         });
       }
 
-      return ctx.response.status(200).json({
+      return response.status(200).json({
         message: `Bien Inmueble ${
           res["results"].status === 1 ? "activado" : "inactivado"
         }.`,
         results: IDProject,
       });
     } else {
-      return ctx.response.status(500).json({
+      return response.status(500).json({
         message: "Error al inactivar el proyecto.",
         error: res["data"],
       });
