@@ -215,10 +215,9 @@ export default class ProjectsController {
     }
 
     try {
-      contracts = await ProjectContract.query().where(
-        "project_id",
-        project["$extras"]["project_id"]
-      );
+      contracts = await ProjectContract.query()
+        .where("project_id", project["$extras"]["project_id"])
+        .where("status", 1);
     } catch (error) {
       return messageError(
         error,
