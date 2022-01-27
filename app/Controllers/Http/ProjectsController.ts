@@ -484,10 +484,15 @@ export default class ProjectsController {
           })
         );
         if (existsContract.length > 0) {
-          return messageError("error", response, "El contrato ya existe.", 400);
+          return messageError(
+            undefined,
+            response,
+            "El contrato ya existe.",
+            400
+          );
         }
       } catch (error) {
-        console.log("error", error);
+        return messageError(error, response);
       }
     }
 
