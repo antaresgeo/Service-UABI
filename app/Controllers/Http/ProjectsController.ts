@@ -471,6 +471,7 @@ export default class ProjectsController {
     }
     // const j = Array(newData["contracts"]).diff(oldContracts);
     const contracts = newData["contracts"].splitItemsObject(oldContracts);
+    console.log(contracts);
 
     if (contracts.newItems.length > 0) {
       try {
