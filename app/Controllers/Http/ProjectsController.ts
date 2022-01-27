@@ -476,10 +476,12 @@ export default class ProjectsController {
       try {
         const existsContract = await Promise.all(
           contracts.newItems.map(async (c) => {
-            const a = await ProjectContract.query().where(
-              "contract_number",
-              c.contract_number
-            );
+            const a = (
+              await ProjectContract.query().where(
+                "contract_number",
+                c.contract_number
+              )
+            )[0];
             return { ...a };
           })
         );
