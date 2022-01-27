@@ -115,7 +115,6 @@ export default class ProjectContractsController {
 
   public async destroy({}: HttpContextContract) {}
 
-
   private async changeStatus(id: string | number) {
     try {
       const contract = await ProjectContract.findOrFail(id);
@@ -131,7 +130,10 @@ export default class ProjectContractsController {
     }
   }
 
-  public async inactivate({ request, response }: HttpContextContract, deleteContract: any) {
+  public async inactivate(
+    { response }: HttpContextContract,
+    deleteContract: any
+  ) {
     // const { token } = getToken(request.headers());
     // const { id } = request.params();
 
@@ -150,8 +152,7 @@ export default class ProjectContractsController {
       console.error(results.message);
       console.error(results);
       if (results.message === "E_ROW_NOT_FOUND: Row not found") {
-        message =
-          "No se ha encontrado un Contrato para el ID buscado.";
+        message = "No se ha encontrado un Contrato para el ID buscado.";
         status = 400;
       }
       return response.status(status).json({
@@ -160,5 +161,4 @@ export default class ProjectContractsController {
       });
     }
   }
-
 }
