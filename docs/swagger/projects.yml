@@ -23,7 +23,7 @@
 /v1/projects:
   get:
     tags:
-      - Bienes Inmuebles
+      - Proyectos
     security: []
     description: Login
     parameters:

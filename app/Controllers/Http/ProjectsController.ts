@@ -14,8 +14,6 @@ import {
   messageError,
   sum,
   getWhereRaw,
-  // getToken,
-  // getDataUser,
 } from "App/Utils/functions";
 
 // INTERFACES
@@ -27,7 +25,6 @@ import {
 } from "App/Utils/interfaces";
 
 // MODELS
-// import RealEstate from "App/Models/RealEstate";
 import Project from "App/Models/Project";
 import RealEstatesProject from "App/Models/RealEstatesProject";
 import CreateProjectValidator from "App/Validators/CreateProjectValidator";
@@ -37,9 +34,9 @@ export default class ProjectsController {
   // GET
 
   /**
-   * showAll
+   * List of Projects. Can get data paginated or not.
    */
-  public async showAll({ response, request }: HttpContextContract) {
+  public async list({ response, request }: HttpContextContract) {
     let responseData: IResponseData = {
       message: "Lista de Proyectos completa. | Sin paginación.",
       status: 200,
@@ -227,10 +224,10 @@ export default class ProjectsController {
       );
     }
 
-    let tmpNewData: any = {
+    let projectToExport: any = {
       ...project["$original"],
       id: project["$extras"]["project_id"],
-      name: capitalize(project["$original"]["name"]),
+      name: String(project["$original"]["name"]).capitalize(),
       status: project["$extras"]["status_name"],
       dependency: project["$extras"]["dependency"],
       subdependency: project["$extras"]["subdependency"],
@@ -242,9 +239,10 @@ export default class ProjectsController {
       contracts,
     };
 
-    if (id) return tmpNewData;
+    responseData["results"] = projectToExport;
+    if (id) return responseData["results"];
 
-    return response.json({ message: "Project", results: tmpNewData });
+    return response.status(responseData["status"]).json(responseData);
   }
 
   // POST
@@ -453,7 +451,6 @@ export default class ProjectsController {
     await auditTrail.update({ ...dataUpdated }, project);
     dataUpdated["audit_trail"] = auditTrail.getAsJson();
 
-    // Array(newData['contracts']).diff(project)
     // Creation of Contracts
     const { default: ProjectContractsController } = await import(
       "App/Controllers/Http/ProjectContractsController"
@@ -468,9 +465,7 @@ export default class ProjectsController {
     } catch (error) {
       return messageError(error, response);
     }
-    // const j = Array(newData["contracts"]).diff(oldContracts);
     const contracts = newData["contracts"].splitItemsObject(oldContracts);
-    console.log(contracts);
 
     if (contracts.newItems.length > 0) {
       try {
@@ -494,15 +489,6 @@ export default class ProjectsController {
             400
           );
         }
-
-        // if (existsContract.length > 0) {
-        //   return messageError(
-        //     undefined,
-        //     response,
-        //     "El contrato ya existe.",
-        //     400
-        //   );
-        // }
       } catch (error) {
         return messageError(error, response);
       }
@@ -532,7 +518,6 @@ export default class ProjectsController {
     } catch (error) {
       return messageError(error, response);
     }
-    console.log(newData["cost_center_id"]);
 
     if (newData["cost_center_id"]) {
       dataUpdated["cost_center_id"] = Number(newData["cost_center_id"]);
@@ -595,7 +580,9 @@ export default class ProjectsController {
 
       return { success: true, results: tmpProject };
     } catch (error) {
-      console.error(`Error changing status:\n${error}`);
+      console.error(`Error cambiando el status:\n`);
+      console.error(error);
+
       return { success: false, results: error };
     }
   }

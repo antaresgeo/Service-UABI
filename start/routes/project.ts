@@ -19,7 +19,7 @@ Route.group(() => {
         "App/Controllers/Http/ProjectsController"
       );
 
-      return new ProjectsController().showAll(ctx);
+      return new ProjectsController().list(ctx);
     });
 
     Route.get("/", async (ctx) => {
