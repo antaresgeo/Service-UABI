@@ -485,9 +485,8 @@ export default class ProjectsController {
             return a;
           })
         );
-        console.log(existsContract);
 
-        if (existsContract.length > 0) {
+        if (existsContract[0] === undefined) {
           return messageError(
             undefined,
             response,
@@ -495,6 +494,15 @@ export default class ProjectsController {
             400
           );
         }
+
+        // if (existsContract.length > 0) {
+        //   return messageError(
+        //     undefined,
+        //     response,
+        //     "El contrato ya existe.",
+        //     400
+        //   );
+        // }
       } catch (error) {
         return messageError(error, response);
       }
