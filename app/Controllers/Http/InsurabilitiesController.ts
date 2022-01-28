@@ -145,7 +145,7 @@ export default class InsurabilitiesController {
         count: data.length,
         next_page:
           data.length - tmpPage * tmpPageSize !== 10 &&
-          data.length - tmpPage * tmpPageSize > 0
+            data.length - tmpPage * tmpPageSize > 0
             ? sum(parseInt(tmpPage + ""), 1)
             : null,
         previous_page: tmpPage - 1 < 0 ? tmpPage - 1 : null,
@@ -261,15 +261,15 @@ export default class InsurabilitiesController {
       insurability === null
         ? {}
         : {
-            ...insurability[0]["$attributes"],
-            insurance_broker: {
-              ...insurability[0]["$extras"],
-              id: insurability[0]["$attributes"]["id"],
-            },
-            status: validateDate(
-              parseInt(insurability[0]["$attributes"]["vigency_end"])
-            ),
-          };
+          ...insurability[0]["$attributes"],
+          insurance_broker: {
+            ...insurability[0]["$extras"],
+            id: insurability[0]["$attributes"]["id"],
+          },
+          status: validateDate(
+            parseInt(insurability[0]["$attributes"]["vigency_end"])
+          ),
+        };
 
     delete data.insurance_broker_id;
 
@@ -322,6 +322,7 @@ export default class InsurabilitiesController {
         };
 
         delete dataUpdated.insurance_companies;
+        delete dataUpdated.real_estates_id;
 
         const auditTrail = new AuditTrail(token, insurabilty["audit_trail"]);
         await auditTrail.update(dataUpdated, insurabilty);
@@ -333,6 +334,48 @@ export default class InsurabilitiesController {
             audit_trail: auditTrail.getAsJson(),
           });
           const results = insurabilty.save();
+
+          try {
+
+            let _realEstates: RealEstate[] = await RealEstate.query()
+              .where("policy_id", id)
+              .where("status", 1)
+              .orderBy("id", "desc");
+
+            let oldRealEstatePolicy: any[] = _realEstates.map((re) => re["$attributes"]["id"]);
+
+            const realEstates = newData.real_estates_id.splitItems(oldRealEstatePolicy)
+
+            const { default: RealEstatesController } = await import(
+              "App/Controllers/Http/RealEstatesController"
+            );
+
+            if (realEstates.newItems > 0) {
+              realEstates.newItems.map((reId) => {
+                new RealEstatesController(ctx.request.ip()).update(ctx, {
+                  id: reId,
+                  data: { policy_id: id },
+                  dataToShow: newData,
+                });
+              });
+            }
+
+            if (realEstates.deletedItems > 0) {
+              realEstates.deletedItems.map((reId) => {
+                new RealEstatesController(ctx.request.ip()).update(ctx, {
+                  id: reId,
+                  data: { policy_id: null },
+                  dataToShow: newData,
+                });
+              });
+            }
+
+          } catch (error) {
+            console.error(error);
+            return ctx.response.status(500).json({
+              message: "Error al actualizar el Bien Inmueble con su nueva póliza",
+            });
+          }
 
           return ctx.response.status(200).json({
             message: `Póliza ${insurabilty.id} actualizada satisfactoriamente`,
