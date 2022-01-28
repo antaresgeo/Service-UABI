@@ -29,7 +29,6 @@ import {
   sum,
   validatePagination,
   createSAPID,
-  createXLSXFromInventoryRegister,
 } from "App/Utils/functions";
 // Interfaces
 import {
@@ -53,13 +52,21 @@ export default class RealEstatesController {
   /**
    * Index: Currently create the excel with all data of RE
    */
-  public async index({ response, request }: HttpContextContract) {
-    await createXLSXFromInventoryRegister(
-      { response, request } as HttpContextContract,
-      "UABI"
-    );
+  public async index({}: /*response, request*/ HttpContextContract) {
+    // await createXLSXFromInventoryRegister(
+    //   { response, request } as HttpContextContract,
+    //   "UABI"
+    // );
 
-    return response.download("tmp/Registro de Inventario.xlsx");
+    // return response.download("tmp/Registro de Inventario.xlsx");
+
+    const realEstates = await RealEstate.query().paginate(1);
+    const paginationJSON = realEstates.serialize({
+      fields: ["id", "name", "registry_number"],
+    });
+
+    this.logger.log(realEstates, 64, true);
+    this.logger.log(paginationJSON, 65, true);
   }
 
   /**
@@ -145,6 +152,8 @@ export default class RealEstatesController {
 
         try {
           results = await RealEstatesProject.query()
+            // .select([""])
+            .distinct(["real_estate_id", "project_id"])
             .preload("real_estate_info", (realEstate) => {
               realEstate
                 .select(["id", "name", "registry_number"])
@@ -154,9 +163,12 @@ export default class RealEstatesController {
             .preload("project_info", (project) => {
               project.preload("status_info");
             })
+            // .groupBy(["real_estate_id"])
             .orderBy("real_estate_id", "desc")
             .limit(pagination["pageSize"])
             .offset(count);
+
+          this.logger.log(results, 155, true);
         } catch (error) {
           return messageError(
             error,
@@ -199,16 +211,28 @@ export default class RealEstatesController {
         default:
           try {
             results = await RealEstatesProject.query()
+              // .withAggregate('')
               .preload("real_estate_info", (realEstate) => {
-                realEstate.preload("status_info").preload("cost_center_info");
+                realEstate
+                  .select([
+                    "id",
+                    "name",
+                    "registry_number",
+                    "audit_trail",
+                    "destination_type",
+                    "status",
+                    "address",
+                  ])
+                  .preload("status_info");
               })
               .preload("project_info", (project) => {
-                project.preload("status_info");
+                project.select(["id", "name", "status"]).preload("status_info");
               })
+              // .groupBy(["real_estate_id"])
               .orderBy("real_estate_id", "desc")
               .limit(pagination["pageSize"])
               .offset(count);
-
+            this.logger.log(results, 201, true);
             if (only) {
               const num = only === "active" ? 1 : 0;
               results = await RealEstatesProject.query()
@@ -286,26 +310,22 @@ export default class RealEstatesController {
             );
 
             let project = { ...re["$preloaded"]["project_info"] };
-            delete project["$attributes"]["audit_trail"]["updated_values"];
 
             realEstatesToExport = {
               ...re["$preloaded"]["real_estate_info"]["$attributes"],
+              active_code: re["$extras"]["active_code"],
               address: { ...address },
               project: {
                 ...project["$attributes"],
                 status: project["$preloaded"]["status_info"]["status_name"],
               },
-              // id: re["$extras"]["re_id"],
-              // status: re["$extras"]["status_name"],
-              // name: re["$extras"]["re_name"],
               // materials: re["$extras"]["materials"].split(","),
             };
 
-            delete realEstatesToExport["project_name"];
-            delete realEstatesToExport["status_name"];
-            delete realEstatesToExport["project_cost_center_id"];
-            delete realEstatesToExport["re_name"];
-            delete realEstatesToExport["re_id"];
+            // delete realEstatesToExport["project_name"];
+            delete realEstatesToExport["status"];
+            // delete realEstatesToExport["status_name"];
+            // delete realEstatesToExport["project_cost_center_id"];
             if (realEstatesToExport["audit_trail"])
               delete realEstatesToExport["audit_trail"]["updated_values"];
           }
